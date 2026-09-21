@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Troubleshooting — Hotend HQ</title>
+<meta name="description" content="Diagnose any 3D print failure: a guided question flow plus a searchable database of failure modes, the check that confirms each cause, and the fix.">
+<link rel="canonical" href="https://hotendhq.com/troubleshoot.html">
+<link rel="icon" href="assets/img/favicon-32.png" sizes="32x32">
+<link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png">
+<link rel="manifest" href="site.webmanifest">
+<link rel="stylesheet" href="assets/css/fonts.css">
+<link rel="stylesheet" href="assets/css/theme.css">
+<link rel="stylesheet" href="assets/css/pages.css">
+<script src="assets/js/config.js" defer></script>
+<script src="assets/js/nav.js" defer></script>
+<script src="assets/js/site.js" defer></script>
+<script src="assets/js/data-troubleshoot.js" defer></script>
+<script src="assets/js/api.js" defer></script>
+</head>
+<body>
+<main id="main">
+  <section class="wrap section--tight">
+    <span class="eyebrow">Diagnostics</span>
+    <h1>What's actually broken?</h1>
+    <p class="lede">Every failure below lists the <strong>cause</strong>, the <strong>check</strong>
+      that confirms it, and the <strong>fix</strong>. Work top to bottom — the list is ordered by how
+      often each cause turns out to be the real one.</p>
+
+    <div class="ts-tabs" role="tablist" style="margin-top:26px">
+      <button role="tab" id="tab-dx" aria-selected="true" aria-controls="pane-dx">Guided diagnostic</button>
+      <button role="tab" id="tab-br" aria-selected="false" aria-controls="pane-br">Browse all</button>
+    </div>
+  </section>
+
+  <!-- ===== guided ===== -->
+  <section class="wrap section--tight" id="pane-dx" role="tabpanel" style="padding-top:0">
+    <div class="card dx-card" id="dx"></div>
+  </section>
+
+  <!-- ===== browse ===== -->
+  <section class="wrap section--tight" id="pane-br" role="tabpanel" hidden style="padding-top:0">
+    <input type="search" id="tq" placeholder="Search symptoms, causes, fixes…"
+           aria-label="Search troubleshooting database" style="margin-bottom:14px">
+    <div class="chips" id="tcats" style="margin-bottom:22px"></div>
+    <div id="issues" class="stack"></div>
+    <p id="tcount" class="faint center" style="margin-top:24px"></p>
+  </section>
+</main>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const $ = s => document.querySelector(s);
+  const ISSUES = window.HHQ_ISSUES, TREE = window.HHQ_TREE;
+
+  /* ---------------- tabs ---------------- */
+  function tab(which){
+    const dx = which === 'dx';
+    $('#tab-dx').setAttribute('aria-selected', String(dx));
+    $('#tab-br').setAttribute('aria-selected', String(!dx));
+    $('#pane-dx').hidden = !dx;
+    $('#pane-br').hidden = dx;
+  }
+  $('#tab-dx').onclick = () => tab('dx');
+  $('#tab-br').onclick = () => tab('br');
+
+  /* ---------------- issue rendering (one renderer, used by both panes) ------- */
+  function issueHtml(i, open){
+    const sev = { high:['tag--bad','Stops the print'], med:['tag--flame','Degrades quality'],
+                  low:['tag','Cosmetic'] }[i.sev];
+    const reads = (i.read || []).map(s =>
+      `<a class="btn btn-ghost btn-sm" href="article.html?a=${s}">${icon('news')}Full guide</a>`).join('');
+    return `<details class="acc issue" id="${i.id}"${open ? ' open' : ''}>
+      <summary>
+        <span>${HHQ.esc(i.title)}</span>
+      </summary>
+      <div class="acc-body">
+        <div class="row" style="margin-bottom:16px">
+          <span class="tag ${sev[0]}">${sev[1]}</span>
+          <span class="tag">${HHQ.esc(i.cat)}</span>
+        </div>
+        <p class="faint" style="margin-bottom:18px"><strong style="color:var(--text-dim)">You will see:</strong>
+          ${i.symptoms.map(HHQ.esc).join(' &nbsp;·&nbsp; ')}</p>
+        ${i.causes.map((c, n) => `
+          <div class="cause">
+            <b>${n+1}. ${HHQ.esc(c.c)}</b>
+            <div class="ck"><span class="lbl">Check</span><span>${HHQ.esc(c.ck)}</span></div>
+            <div class="fx"><span class="lbl">Fix</span><span>${HHQ.esc(c.fx)}</span></div>
+          </div>`).join('')}
+        ${reads ? `<div class="row" style="margin-top:18px">${reads}</div>` : ''}
+      </div>
+    </details>`;
+  }
+
+  /* ---------------- guided tree ---------------- */
+  let path = [];
+  function dxRender(){
+    const crumbs = path.length
+      ? `<div class="dx-crumbs">${icon('bolt')}
+          <button data-back="0">Start over</button>
+          ${path.map((p,i) => i < path.length-1
+            ? ` <span>›</span> <button data-back="${i+1}">${HHQ.esc(p.label)}</button>`
+            : ` <span>›</span> <span>${HHQ.esc(p.label)}</span>`).join('')}
+        </div>` : '';
+
+    const last = path[path.length-1];
+    if (last && last.issue){
+      const i = ISSUES.find(x => x.id === last.issue);
+      $('#dx').innerHTML = crumbs + `
+        <span class="eyebrow">Most likely</span>
+        <div class="dx-q">${HHQ.esc(i.title)}</div>
+        <p class="muted" style="margin-bottom:0">Work through the causes in order.</p>
+        <div style="margin-top:20px">${issueHtml(i, true)}</div>
+        <div class="row" style="margin-top:20px">
+          <button class="btn btn-ghost btn-sm" data-back="0">${icon('arrow')}Start again</button>
+          <button class="btn btn-ghost btn-sm" id="not-it">That wasn't it — show everything</button>
+        </div>`;
+      $('#not-it').onclick = () => { tab('br'); window.scrollTo({top:0}); };
+    } else {
+      const node = TREE[last ? last.next : 'start'];
+      $('#dx').innerHTML = crumbs + `
+        <span class="eyebrow">Step ${path.length + 1}</span>
+        <div class="dx-q">${HHQ.esc(node.q)}</div>
+        <div class="dx-opts">${node.opts.map((o,n) => `
+          <button class="dx-opt" data-i="${n}">
+            <span class="n">${n+1}</span>
+            <span><b>${HHQ.esc(o.l)}</b><span>${HHQ.esc(o.d)}</span></span>
+          </button>`).join('')}</div>`;
+      HHQ.els('.dx-opt', $('#dx')).forEach(b => b.onclick = () => {
+        const o = node.opts[+b.dataset.i];
+        path.push({ label:o.l, next:o.next, issue:o.issue });
+        dxRender();
+        $('#dx').scrollIntoView({ block:'nearest', behavior:'smooth' });
+      });
+    }
+    HHQ.els('[data-back]', $('#dx')).forEach(b =>
+      b.onclick = () => { path = path.slice(0, +b.dataset.back); dxRender(); });
+  }
+
+  /* ---------------- browse pane ---------------- */
+  let tcat = 'All', tterm = '';
+  const cats = ['All', ...[...new Set(ISSUES.map(i => i.cat))]];
+  $('#tcats').innerHTML = cats.map(c =>
+    `<button class="chip" aria-pressed="${c===tcat}" data-c="${HHQ.esc(c)}">${HHQ.esc(c)}</button>`).join('');
+
+  function brRender(openId){
+    const t = tterm.toLowerCase();
+    const rows = ISSUES.filter(i =>
+      (tcat === 'All' || i.cat === tcat) &&
+      (!t || JSON.stringify(i).toLowerCase().includes(t)));
+    $('#issues').innerHTML = rows.length
+      ? rows.map(i => issueHtml(i, i.id === openId)).join('')
+      : `<div class="empty">${icon('search')}<p>No failure mode matches that.</p></div>`;
+    $('#tcount').textContent = `${rows.length} of ${ISSUES.length} documented failure modes`;
+  }
+  $('#tcats').onclick = e => {
+    const b = e.target.closest('[data-c]'); if (!b) return;
+    tcat = b.dataset.c;
+    HHQ.els('#tcats .chip').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+    brRender();
+  };
+  $('#tq').oninput = e => { tterm = e.target.value; brRender(); };
+
+  /* ---------------- boot, with deep-link support ---------------- */
+  function openHash(){
+    const hash = location.hash.slice(1);
+    if (!hash || !ISSUES.some(i => i.id === hash)) return false;
+    tterm = ''; tcat = 'All';
+    HHQ.els('#tcats .chip').forEach(x => x.setAttribute('aria-pressed', String(x.dataset.c === 'All')));
+    brRender(hash);
+    tab('br');
+    requestAnimationFrame(() =>
+      document.getElementById(hash)?.scrollIntoView({ block:'center' }));
+    return true;
+  }
+  brRender();
+  dxRender();
+  openHash();
+  window.addEventListener('hashchange', openHash);
+});
+</script>
+</body>
+</html>

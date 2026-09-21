@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Article — Hotend HQ</title>
+<meta name="description" content="A Hotend HQ article.">
+<link rel="canonical" href="https://hotendhq.com/article.html">
+<link rel="icon" href="assets/img/favicon-32.png" sizes="32x32">
+<link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png">
+<link rel="manifest" href="site.webmanifest">
+<link rel="stylesheet" href="assets/css/fonts.css">
+<link rel="stylesheet" href="assets/css/theme.css">
+<link rel="stylesheet" href="assets/css/pages.css">
+<script src="assets/js/config.js" defer></script>
+<script src="assets/js/nav.js" defer></script>
+<script src="assets/js/site.js" defer></script>
+<script src="assets/js/data-articles.js" defer></script>
+<script src="assets/js/md.js" defer></script>
+<script src="assets/js/api.js" defer></script>
+</head>
+<body>
+<main id="main">
+  <article class="wrap section--tight" id="art">
+    <div class="spin"></div>
+  </article>
+  <section class="wrap section" id="related-wrap" hidden>
+    <div class="sec-head"><span class="eyebrow">Keep reading</span><h2>Related</h2></div>
+    <div class="grid g3" id="related"></div>
+  </section>
+</main>
+
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+  const $ = s => document.querySelector(s);
+  const slug = new URLSearchParams(location.search).get('a');
+  if (!slug) { location.replace('news.html'); return; }
+
+  let a;
+  try { a = await HHQ_API.getArticle(slug); } catch {}
+  if (!a) {
+    $('#art').innerHTML = `<div class="empty">${icon('search')}
+      <h2>Article not found</h2>
+      <p>It may have been unpublished or the link may be wrong.</p>
+      <a class="btn btn-ghost" href="news.html" style="margin-top:14px">Back to all articles</a></div>`;
+    return;
+  }
+
+  document.title = a.title + ' — Hotend HQ';
+  const d = document.querySelector('meta[name=description]');
+  if (d) d.content = a.excerpt || '';
+
+  $('#art').innerHTML = `
+    <div class="article-head">
+      <a href="news.html" class="faint" style="display:inline-block;margin-bottom:16px">← All articles</a>
+      <div><span class="tag tag--flame">${HHQ.esc(a.category)}</span>
+        ${a.status === 'draft' ? '<span class="tag tag--bad">Draft preview</span>' : ''}</div>
+      <h1 style="margin:14px 0 12px">${HHQ.esc(a.title)}</h1>
+      <p class="lede" style="margin-inline:auto">${HHQ.esc(a.excerpt || '')}</p>
+      <div class="post-meta" style="justify-content:center;margin-top:16px">
+        <span>${HHQ.esc(a.author_name || 'Hotend HQ')}</span><span>·</span>
+        <span>${HHQ.date(a.published_at || a.created_at)}</span><span>·</span>
+        <span>${HHQ.readTime(a.body)}</span>
+      </div>
+    </div>
+    ${a.cover_url ? `<img src="${HHQ.esc(a.cover_url)}" alt=""
+        style="max-width:860px;margin:0 auto 34px;border-radius:var(--r-lg);border:1px solid var(--border)">` : ''}
+    <div class="prose">${mdToHtml(a.body)}</div>
+    <div class="prose" style="margin-top:38px">
+      <div class="note note--info">${icon('info')}
+        <p>Spotted something wrong, or have a fix that works better? Tell us at
+        <a href="mailto:${HHQ_CONFIG.social.email}">${HHQ_CONFIG.social.email}</a> — corrections get
+        credited.</p></div>
+      <div class="row" style="margin-top:20px">
+        <button class="btn btn-ghost btn-sm" id="share">${icon('ext')}Share</button>
+        <a class="btn btn-ghost btn-sm" href="troubleshoot.html">${icon('wrench')}Diagnose a problem</a>
+      </div>
+    </div>`;
+
+  $('#share').addEventListener('click', async () => {
+    const url = location.href;
+    if (navigator.share) { try { await navigator.share({ title:a.title, url }); return; } catch {} }
+    try { await navigator.clipboard.writeText(url); HHQ.toast('Link copied.'); }
+    catch { HHQ.toast('Copy the address bar link.', 'warn'); }
+  });
+
+  /* related: same category first, then anything else */
+  try {
+    const rows = (await HHQ_API.listArticles({ limit:60 })).filter(r => r.slug !== a.slug);
+    const score = r => (r.category === a.category ? 2 : 0) +
+      ((r.tags||[]).filter(t => (a.tags||[]).includes(t)).length ? 1 : 0);
+    const rel = rows.sort((x,y) => score(y) - score(x)).slice(0,3);
+    if (rel.length) {
+      document.getElementById('related').innerHTML = rel.map(postCard).join('');
+      document.getElementById('related-wrap').hidden = false;
+    }
+  } catch {}
+});
+</script>
+</body>
+</html>

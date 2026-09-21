@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Editor — Hotend HQ</title>
+<meta name="description" content="Write and publish Hotend HQ articles.">
+<link rel="canonical" href="https://hotendhq.com/admin.html">
+<link rel="icon" href="assets/img/favicon-32.png" sizes="32x32">
+<link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png">
+<link rel="manifest" href="site.webmanifest">
+<link rel="stylesheet" href="assets/css/fonts.css">
+<link rel="stylesheet" href="assets/css/theme.css">
+<link rel="stylesheet" href="assets/css/pages.css">
+<script src="assets/js/config.js" defer></script>
+<script src="assets/js/nav.js" defer></script>
+<script src="assets/js/site.js" defer></script>
+<meta name="robots" content="noindex">
+<script src="assets/js/data-articles.js" defer></script>
+<script src="assets/js/md.js" defer></script>
+<script src="assets/js/api.js" defer></script>
+</head>
+<body>
+<main id="main">
+  <section class="wrap section--tight">
+    <div class="between">
+      <div>
+        <span class="eyebrow">Editor</span>
+        <h1 style="font-size:clamp(1.6rem,4vw,2.4rem)">Publish an article</h1>
+      </div>
+      <div class="row" id="acct"></div>
+    </div>
+    <div id="mode-note" style="margin-top:18px"></div>
+  </section>
+
+  <section class="wrap section--tight" style="padding-top:8px">
+    <div class="admin-grid">
+      <!-- ============ composer ============ -->
+      <form class="card" id="composer">
+        <div class="field">
+          <label for="t">Headline</label>
+          <input type="text" id="t" required placeholder="What the article is about, plainly">
+        </div>
+        <div class="grid g2" style="gap:14px">
+          <div class="field">
+            <label for="slug">URL slug</label>
+            <input type="text" id="slug" required pattern="[a-z0-9\-]+"
+                   placeholder="auto-generated-from-the-headline">
+            <p class="hint">Lower case, hyphens only. Changing this after publishing breaks old links.</p>
+          </div>
+          <div class="field">
+            <label for="cat">Category</label>
+            <input type="text" id="cat" list="cats" value="News" required>
+            <datalist id="cats"></datalist>
+          </div>
+        </div>
+        <div class="field">
+          <label for="ex">Summary</label>
+          <textarea id="ex" rows="2" style="min-height:0"
+            placeholder="One or two sentences. This is what shows on cards and in search results."></textarea>
+        </div>
+        <div class="field">
+          <label for="tags">Tags</label>
+          <input type="text" id="tags" placeholder="hot ends, clogs, beginner">
+          <p class="hint">Comma separated. Used for related-article matching.</p>
+        </div>
+        <div class="field">
+          <label for="cover">Cover image</label>
+          <input type="file" id="cover" accept="image/*">
+          <div id="cover-prev"></div>
+        </div>
+
+        <div class="field">
+          <div class="between" style="margin-bottom:6px">
+            <label for="body" style="margin:0">Body</label>
+            <span class="faint" id="wc">0 words</span>
+          </div>
+          <div class="editor-split">
+            <textarea id="body" rows="20" style="min-height:340px;font-family:var(--mono);font-size:.88rem"
+              placeholder="Markdown.&#10;&#10;## A heading&#10;&#10;**Bold**, *italic*, [links](https://example.com), `code`.&#10;&#10;- bullet&#10;1. numbered&#10;&gt; a quoted line"></textarea>
+            <div id="md-preview" aria-live="polite"></div>
+          </div>
+        </div>
+
+        <div class="row" style="gap:18px;margin-bottom:18px">
+          <div class="toggle-row" style="margin:0">
+            <input type="checkbox" id="feat"><label for="feat">Feature on the homepage</label>
+          </div>
+        </div>
+
+        <div class="row">
+          <button class="btn btn-ghost" type="button" id="save-draft">Save draft</button>
+          <button class="btn btn-primary" type="submit" id="publish">Publish</button>
+          <button class="btn btn-ghost btn-sm" type="button" id="clear">New article</button>
+        </div>
+      </form>
+
+      <!-- ============ sidebar ============ -->
+      <aside class="admin-side stack">
+        <div class="card">
+          <h3 style="font-size:1rem">Your articles</h3>
+          <div id="list"><div class="spin"></div></div>
+        </div>
+        <div class="card">
+          <h3 style="font-size:1rem">Markdown quick reference</h3>
+          <div class="faint" style="font-size:.84rem;line-height:1.9">
+            <code>## Heading</code> · <code>### Sub-heading</code><br>
+            <code>**bold**</code> · <code>*italic*</code> · <code>`code`</code><br>
+            <code>- bullet</code> · <code>1. numbered</code><br>
+            <code>&gt; quoted line</code> · <code>---</code> for a rule<br>
+            <code>[text](https://url)</code><br>
+            <code>![alt](image-url)</code>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </section>
+</main>
+
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+  const $ = s => document.querySelector(s);
+  let coverUrl = null, editingSlug = null;
+
+  await HHQ_API.ready;
+
+  /* ---- account strip + mode notice ---- */
+  function accountUI(){
+    const u = HHQ_API.user;
+    $('#acct').innerHTML = u
+      ? `<span class="tag">${HHQ.esc(HHQ_API.profile?.role || 'reader')}</span>
+         <span class="faint">${HHQ.esc(u.email)}</span>
+         <button class="btn btn-ghost btn-sm" id="out">Sign out</button>`
+      : `<a class="btn btn-ghost btn-sm" href="login.html">Sign in</a>`;
+    const out = $('#out');
+    if (out) out.onclick = async () => { await HHQ_API.signOut(); location.href = './'; };
+  }
+  accountUI();
+  window.addEventListener('hhq:auth', accountUI);
+
+  if (!HHQ_API.isLive){
+    $('#mode-note').innerHTML = `<div class="note note--warn">${icon('warn')}
+      <p><strong>Local preview mode.</strong> No backend is connected, so anything you save stays in
+      this browser only and no one else can see it. Add your Supabase URL and anon key to
+      <code>assets/js/config.js</code> and run <code>supabase/schema.sql</code> to publish for real —
+      the editor works exactly the same way afterwards.</p></div>`;
+  } else if (!HHQ_API.user){
+    $('#mode-note').innerHTML = `<div class="note note--bad">${icon('warn')}
+      <p>You are signed out. <a href="login.html">Sign in</a> to publish.</p></div>`;
+  } else if (!HHQ_API.isStaff){
+    $('#mode-note').innerHTML = `<div class="note note--warn">${icon('warn')}
+      <p>Your account is a reader. An administrator can change your role to
+      <code>editor</code> in the profiles table to give you publishing rights.</p></div>`;
+  }
+
+  /* ---- live preview + slug + word count ---- */
+  const render = () => {
+    $('#md-preview').innerHTML = mdToHtml($('#body').value) ||
+      '<p class="faint">Preview appears here as you type.</p>';
+    const w = $('#body').value.trim().split(/\s+/).filter(Boolean).length;
+    $('#wc').textContent = `${w} words · ${HHQ.readTime($('#body').value)}`;
+  };
+  $('#body').addEventListener('input', render);
+  render();
+
+  let slugTouched = false;
+  $('#slug').addEventListener('input', () => slugTouched = true);
+  $('#t').addEventListener('input', e => {
+    if (!slugTouched) $('#slug').value = HHQ.slug(e.target.value);
+  });
+
+  /* ---- cover upload ---- */
+  $('#cover').addEventListener('change', async e => {
+    const f = e.target.files[0]; if (!f) return;
+    $('#cover-prev').innerHTML = '<div class="spin"></div>';
+    try {
+      coverUrl = await HHQ_API.uploadImage(f);
+      $('#cover-prev').innerHTML =
+        `<img src="${HHQ.esc(coverUrl)}" alt="" style="margin-top:10px;border-radius:11px;max-height:150px">`;
+    } catch (err) {
+      coverUrl = null;
+      $('#cover-prev').innerHTML = `<p class="hint" style="color:var(--bad)">${HHQ.esc(err.message)}</p>`;
+    }
+  });
+
+  /* ---- list ---- */
+  async function refresh(){
+    const rows = await HHQ_API.listArticles({ limit:200, includeDrafts:true });
+    $('#cats').innerHTML = [...new Set(rows.map(r => r.category))]
+      .map(c => `<option value="${HHQ.esc(c)}">`).join('');
+    $('#list').innerHTML = rows.length ? rows.map(r => `
+      <div class="draft-row">
+        <div class="t">
+          <b>${HHQ.esc(r.title)}</b>
+          <span class="faint">${r.status === 'published'
+            ? HHQ.date(r.published_at) : 'Draft'}${r.seed ? ' · bundled' : ''}</span>
+        </div>
+        <button class="icon-btn" data-edit="${HHQ.esc(r.slug)}" title="Edit">${icon('edit')}</button>
+        ${r.seed ? '' : `<button class="icon-btn" data-del="${HHQ.esc(r.slug)}" title="Delete">${icon('trash')}</button>`}
+      </div>`).join('') : '<p class="faint">Nothing yet.</p>';
+
+    HHQ.els('[data-edit]').forEach(b => b.onclick = async () => {
+      const a = await HHQ_API.getArticle(b.dataset.edit);
+      if (!a) return;
+      editingSlug = a.slug; slugTouched = true;
+      $('#t').value = a.title; $('#slug').value = a.slug; $('#cat').value = a.category;
+      $('#ex').value = a.excerpt || ''; $('#tags').value = (a.tags||[]).join(', ');
+      $('#body').value = a.body || ''; $('#feat').checked = !!a.featured;
+      coverUrl = a.cover_url || null;
+      $('#cover-prev').innerHTML = coverUrl
+        ? `<img src="${HHQ.esc(coverUrl)}" alt="" style="margin-top:10px;border-radius:11px;max-height:150px">` : '';
+      render();
+      window.scrollTo({ top:0, behavior:'smooth' });
+      HHQ.toast(a.seed ? 'Loaded a bundled article — saving makes your own copy.' : 'Loaded for editing.');
+    });
+    HHQ.els('[data-del]').forEach(b => b.onclick = async () => {
+      if (!confirm('Delete "' + b.dataset.del + '"? This cannot be undone.')) return;
+      try { await HHQ_API.deleteArticle(b.dataset.del); HHQ.toast('Deleted.'); refresh(); }
+      catch (e) { HHQ.toast(e.message, 'bad'); }
+    });
+  }
+  refresh();
+
+  /* ---- save ---- */
+  async function save(status){
+    const title = $('#t').value.trim();
+    if (!title) return HHQ.toast('A headline is required.', 'warn');
+    const slug = HHQ.slug($('#slug').value || title);
+    const row = {
+      slug, title, category: $('#cat').value.trim() || 'News',
+      excerpt: $('#ex').value.trim(), body: $('#body').value,
+      tags: $('#tags').value.split(',').map(s => s.trim()).filter(Boolean),
+      cover_url: coverUrl, status, featured: $('#feat').checked
+    };
+    try {
+      await HHQ_API.saveArticle(row);
+      editingSlug = slug;
+      HHQ.toast(status === 'published' ? 'Published.' : 'Draft saved.');
+      refresh();
+      if (status === 'published')
+        setTimeout(() => { location.href = 'article.html?a=' + encodeURIComponent(slug); }, 700);
+    } catch (e) { HHQ.toast(e.message, 'bad'); }
+  }
+  $('#save-draft').onclick = () => save('draft');
+  $('#composer').addEventListener('submit', e => { e.preventDefault(); save('published'); });
+  $('#clear').onclick = () => {
+    $('#composer').reset(); coverUrl = null; editingSlug = null; slugTouched = false;
+    $('#cover-prev').innerHTML = ''; render();
+  };
+});
+</script>
+</body>
+</html>
