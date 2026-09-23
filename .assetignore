@@ -1,0 +1,10 @@
+.git
+.wrangler
+.github
+node_modules
+*.zip
+README.md
+supabase
+hotendhq updates
+.assetsignore
+wrangler.jsonc
