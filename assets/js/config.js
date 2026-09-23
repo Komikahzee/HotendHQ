@@ -25,8 +25,8 @@ window.HHQ_CONFIG = {
      Leave these blank and the site runs in demo mode on the
      bundled seed content.                                     */
   supabase: {
-    url: 'https://supabase.com/dashboard/project/izkqzodgvkzvjekafyhn',
-    anonKey: 'izkqzodgvkzvjekafyhn'
+    url: 'https://izkqzodgvkzvjekafyhn.supabase.co',
+    anonKey: 'sb_publishable_DU5YH5j1cx3V6MziTknhOQ_j4_a3aUq'
   },
 
   social: {
@@ -35,7 +35,3 @@ window.HHQ_CONFIG = {
     email: 'cobornassets@gmail.com'
   }
 };
-   supabase: {
-     url: 'https://supabase.com/dashboard/project/izkqzodgvkzvjekafyhn',
-     anonKey: 'izkqzodgvkzvjekafyhn'
-   },
