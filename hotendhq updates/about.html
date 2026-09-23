@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>About Hotend HQ</title>
+<meta name="description" content="Who runs Hotend HQ, how the site makes money, how we handle your data, and how to get in touch.">
+<link rel="canonical" href="https://hotendhq.com/about.html">
+<link rel="icon" href="assets/img/favicon-32.png" sizes="32x32">
+<link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png">
+<link rel="manifest" href="site.webmanifest">
+<link rel="stylesheet" href="assets/css/fonts.css">
+<link rel="stylesheet" href="assets/css/theme.css">
+<link rel="stylesheet" href="assets/css/pages.css">
+<script src="assets/js/config.js" defer></script>
+<script src="assets/js/nav.js" defer></script>
+<script src="assets/js/site.js" defer></script>
+<script src="assets/js/api.js" defer></script>
+</head>
+<body>
+<main id="main">
+  <section class="wrap section--tight">
+    <span class="eyebrow">About</span>
+    <h1>Hotend HQ</h1>
+    <p class="lede">A working reference for people who run 3D printers and fix them themselves.
+      Everything here exists because someone needed the answer and could not find a straight one.</p>
+  </section>
+
+  <section class="wrap section--tight" style="padding-top:0">
+    <div class="prose" style="margin-inline:0">
+      <h2>What this site is</h2>
+      <p>Three things, and deliberately nothing else:</p>
+      <ul>
+        <li><strong>A troubleshooting reference</strong> that names the cause, the check that confirms
+          it, and the fix — ordered by how often each one turns out to be the real problem.</li>
+        <li><strong>Tools that do the arithmetic</strong>: flow limits, calibration, shrinkage, material
+          reference, and a parametric generator that produces printable STLs in the browser.</li>
+        <li><strong>Hardware opinions</strong> that say who a part is <em>not</em> for as clearly as
+          who it is for.</li>
+      </ul>
+
+      <h2 id="disclosure">How the site makes money</h2>
+      <p id="disc-body"></p>
+      <p>What that does not buy: placement, rankings, or a good review. Nothing on the gear page is
+        sponsored, no manufacturer sees an article before it goes up, and where the honest answer is
+        "the cheap one is fine", the page says so.</p>
+
+      <h2 id="privacy">Privacy</h2>
+      <p>No advertising trackers and no third-party analytics that follow you off this site.
+        If you subscribe to the newsletter we store your email address and nothing else, and one click
+        removes it. Calculators and the model generator run entirely in your browser — the numbers you
+        type and the models you generate are never sent anywhere.</p>
+      <p>Affiliate links go to the retailer with a tracking tag attached. The retailer knows you arrived
+        from here; they do not learn anything else about you from us.</p>
+
+      <h2>Corrections</h2>
+      <p>If something here is wrong, say so and it gets fixed and credited. A reference that quietly
+        keeps its mistakes is not worth reading.</p>
+
+      <h2 id="contact">Contact</h2>
+      <p>Email <a href="#" id="mail"></a>. Corrections, questions, and "this fixed it for me" reports
+        are all welcome.</p>
+
+      <div class="note note--info" style="margin-top:28px" id="safety"></div>
+    </div>
+  </section>
+</main>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('disc-body').textContent = HHQ_CONFIG.affiliate.disclosure;
+  const m = document.getElementById('mail');
+  m.href = 'mailto:' + HHQ_CONFIG.social.email;
+  m.textContent = HHQ_CONFIG.social.email;
+  document.getElementById('safety').innerHTML = icon('warn') +
+    '<p><strong>One standing caveat.</strong> 3D printers combine mains electricity, heaters that reach ' +
+    '300 °C, and unattended operation. Everything here assumes you will use your own judgement, ' +
+    'work on a printer that is unplugged when it should be, and not leave a machine running ' +
+    'somewhere a fire would be a catastrophe.</p>';
+});
+</script>
+</body>
+</html>

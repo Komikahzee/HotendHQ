@@ -1,0 +1,297 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Calculators &amp; Filament Database — Hotend HQ</title>
+<meta name="description" content="3D printing calculators: volumetric flow and max speed, filament cost, e-step calibration, shrinkage compensation and spool remaining. Plus a full filament reference.">
+<link rel="canonical" href="https://hotendhq.com/tools.html">
+<link rel="icon" href="assets/img/favicon-32.png" sizes="32x32">
+<link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png">
+<link rel="manifest" href="site.webmanifest">
+<link rel="stylesheet" href="assets/css/fonts.css">
+<link rel="stylesheet" href="assets/css/theme.css">
+<link rel="stylesheet" href="assets/css/pages.css">
+<script src="assets/js/config.js" defer></script>
+<script src="assets/js/nav.js" defer></script>
+<script src="assets/js/site.js" defer></script>
+<script src="assets/js/data-filament.js" defer></script>
+<script src="assets/js/api.js" defer></script>
+</head>
+<body>
+<main id="main">
+  <section class="wrap section--tight">
+    <span class="eyebrow">Tools</span>
+    <h1>Calculators &amp; reference</h1>
+    <p class="lede">The arithmetic behind the settings, done for you. Everything runs locally and
+      updates as you type.</p>
+  </section>
+
+  <section class="wrap section--tight" style="padding-top:8px">
+
+    <!-- 1 FLOW -->
+    <details class="acc" open>
+      <summary><span class="card-ico" data-ico="bolt"></span>Volumetric flow &amp; maximum speed</summary>
+      <div class="acc-body">
+        <p class="muted" style="font-size:.93rem">Your hot end has a melting ceiling in mm³/s. This tells
+          you the fastest you can print before you are extruding under-melted plastic.</p>
+        <div class="calc">
+          <div>
+            <div class="field"><label for="f-lh">Layer height (mm)</label>
+              <input type="number" id="f-lh" value="0.2" step="0.02" min="0.04"></div>
+            <div class="field"><label for="f-ew">Extrusion width (mm)</label>
+              <input type="number" id="f-ew" value="0.42" step="0.02" min="0.1"></div>
+            <div class="field"><label for="f-sp">Print speed (mm/s)</label>
+              <input type="number" id="f-sp" value="200" step="5" min="1"></div>
+            <div class="field"><label for="f-max">Hot end max flow (mm³/s)</label>
+              <input type="number" id="f-max" value="24" step="1" min="1">
+              <p class="hint">Stock lined hot end ≈ 11–13 · good all-metal ≈ 18–24 · high-flow ≈ 28–40.
+                Use about 60 % of a manufacturer's headline figure.</p></div>
+          </div>
+          <div class="calc-out">
+            <div><span class="lbl">Flow required</span><div class="big" id="f-need">—</div></div>
+            <div class="sub" id="f-verdict"></div>
+            <div class="sub" id="f-cap"></div>
+          </div>
+        </div>
+      </div>
+    </details>
+
+    <!-- 2 COST -->
+    <details class="acc">
+      <summary><span class="card-ico" data-ico="tag"></span>Filament cost &amp; usage</summary>
+      <div class="acc-body">
+        <div class="calc">
+          <div>
+            <div class="field"><label for="c-g">Print weight from your slicer (g)</label>
+              <input type="number" id="c-g" value="85" step="1" min="0"></div>
+            <div class="field"><label for="c-price">Spool price</label>
+              <input type="number" id="c-price" value="22" step="0.5" min="0"></div>
+            <div class="field"><label for="c-spool">Spool weight (g)</label>
+              <input type="number" id="c-spool" value="1000" step="50" min="1"></div>
+            <div class="field"><label for="c-hours">Print time (hours)</label>
+              <input type="number" id="c-hours" value="6" step="0.5" min="0"></div>
+            <div class="field"><label for="c-kwh">Electricity (per kWh)</label>
+              <input type="number" id="c-kwh" value="0.17" step="0.01" min="0">
+              <p class="hint">A typical FDM printer with a heated bed averages roughly 120 W.</p></div>
+          </div>
+          <div class="calc-out">
+            <div><span class="lbl">Material cost</span><div class="big" id="c-mat">—</div></div>
+            <div class="sub" id="c-power"></div>
+            <div class="sub" id="c-total"></div>
+            <div class="sub" id="c-len"></div>
+          </div>
+        </div>
+      </div>
+    </details>
+
+    <!-- 3 ESTEPS -->
+    <details class="acc">
+      <summary><span class="card-ico" data-ico="calc"></span>E-step &amp; flow calibration</summary>
+      <div class="acc-body">
+        <p class="muted" style="font-size:.93rem">Mark the filament 120 mm above the extruder inlet,
+          command 100 mm of extrusion at 100 mm/min, then measure what is left to the mark.</p>
+        <div class="calc">
+          <div>
+            <div class="field"><label for="e-cur">Current E steps/mm</label>
+              <input type="number" id="e-cur" value="93" step="0.01" min="1"></div>
+            <div class="field"><label for="e-req">Commanded extrusion (mm)</label>
+              <input type="number" id="e-req" value="100" step="1" min="1"></div>
+            <div class="field"><label for="e-left">Measured remaining to the mark (mm)</label>
+              <input type="number" id="e-left" value="22" step="0.1" min="0">
+              <p class="hint">Starting from a 120 mm mark, a perfect printer leaves 20 mm.</p></div>
+            <hr>
+            <div class="field"><label for="e-wall">Single-wall test: measured thickness (mm)</label>
+              <input type="number" id="e-wall" value="0.44" step="0.01" min="0.05"></div>
+            <div class="field"><label for="e-nom">Commanded wall width (mm)</label>
+              <input type="number" id="e-nom" value="0.42" step="0.01" min="0.05"></div>
+          </div>
+          <div class="calc-out">
+            <div><span class="lbl">New E steps/mm</span><div class="big" id="e-new">—</div></div>
+            <div class="sub" id="e-err"></div>
+            <hr style="margin:4px 0">
+            <div><span class="lbl">Flow multiplier</span><div class="big" id="e-flow"
+              style="font-size:1.5rem">—</div></div>
+          </div>
+        </div>
+      </div>
+    </details>
+
+    <!-- 4 SHRINKAGE -->
+    <details class="acc">
+      <summary><span class="card-ico" data-ico="wrench"></span>Shrinkage &amp; hole fit compensation</summary>
+      <div class="acc-body">
+        <div class="calc">
+          <div>
+            <div class="field"><label for="s-target">Dimension you want (mm)</label>
+              <input type="number" id="s-target" value="100" step="0.1" min="0.1"></div>
+            <div class="field"><label for="s-got">What the printer produced (mm)</label>
+              <input type="number" id="s-got" value="99.4" step="0.01" min="0.1"></div>
+            <hr>
+            <div class="field"><label for="s-hole">Hole diameter you need (mm)</label>
+              <input type="number" id="s-hole" value="5" step="0.1" min="0.5"></div>
+            <div class="field"><label for="s-fit">Fit</label>
+              <select id="s-fit">
+                <option value="0.1">Press fit — tight, needs force</option>
+                <option value="0.25" selected>Clearance — slides together</option>
+                <option value="0.45">Loose — easy assembly, painted parts</option>
+              </select></div>
+          </div>
+          <div class="calc-out">
+            <div><span class="lbl">Scale factor</span><div class="big" id="s-scale">—</div></div>
+            <div class="sub" id="s-pct"></div>
+            <hr style="margin:4px 0">
+            <div><span class="lbl">Model the hole at</span><div class="big" id="s-holeout"
+              style="font-size:1.5rem">—</div></div>
+          </div>
+        </div>
+      </div>
+    </details>
+
+    <!-- 5 SPOOL -->
+    <details class="acc">
+      <summary><span class="card-ico" data-ico="filament"></span>How much filament is left?</summary>
+      <div class="acc-body">
+        <div class="calc">
+          <div>
+            <div class="field"><label for="r-total">Spool + filament weight now (g)</label>
+              <input type="number" id="r-total" value="640" step="1" min="0"></div>
+            <div class="field"><label for="r-empty">Empty spool weight (g)</label>
+              <input type="number" id="r-empty" value="215" step="1" min="0">
+              <p class="hint">Printed on most spools. Cardboard 130–180 g, plastic 200–250 g.</p></div>
+            <div class="field"><label for="r-mat">Material</label>
+              <select id="r-mat"></select></div>
+            <div class="field"><label for="r-dia">Filament diameter (mm)</label>
+              <select id="r-dia"><option value="1.75" selected>1.75 mm</option>
+                <option value="2.85">2.85 mm</option></select></div>
+          </div>
+          <div class="calc-out">
+            <div><span class="lbl">Filament remaining</span><div class="big" id="r-g">—</div></div>
+            <div class="sub" id="r-len"></div>
+            <div class="sub" id="r-note"></div>
+          </div>
+        </div>
+      </div>
+    </details>
+  </section>
+
+  <!-- FILAMENT DATABASE -->
+  <section class="wrap section" id="filaments">
+    <div class="sec-head">
+      <span class="eyebrow">Reference</span>
+      <h2>Filament database</h2>
+      <p class="muted" style="max-width:66ch">Starting points, not gospel — always check the spec sheet
+        for the specific spool in your hand. Chamber column: "Required" means an enclosure, not a hope.</p>
+    </div>
+    <input type="search" id="fq" placeholder="Search materials…" aria-label="Search filaments"
+           style="max-width:340px;margin-bottom:16px">
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th>Material</th><th>Nozzle °C</th><th>Bed °C</th><th>Chamber</th>
+          <th>Cooling</th><th>Drying</th><th>Difficulty</th><th>Notes</th>
+        </tr></thead>
+        <tbody id="ftable"></tbody>
+      </table>
+    </div>
+  </section>
+</main>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const $ = s => document.querySelector(s);
+  const n = id => parseFloat($(id).value) || 0;
+  HHQ.els('[data-ico]').forEach(e => e.innerHTML = icon(e.dataset.ico));
+
+  const AREA = d => Math.PI * (d/2) * (d/2);
+
+  /* ---- 1 flow ---- */
+  function flow(){
+    const need = n('#f-lh') * n('#f-ew') * n('#f-sp');
+    const max = n('#f-max');
+    $('#f-need').textContent = need.toFixed(1) + ' mm³/s';
+    const ok = need <= max;
+    $('#f-verdict').innerHTML = ok
+      ? `<span class="tag tag--ok">Within capacity</span> using ${(need/max*100).toFixed(0)} % of your hot end.`
+      : `<span class="tag tag--bad">Over capacity</span> by ${(need-max).toFixed(1)} mm³/s — expect under-extrusion.`;
+    const maxSpeed = (n('#f-lh') * n('#f-ew')) > 0 ? max / (n('#f-lh') * n('#f-ew')) : 0;
+    $('#f-cap').textContent = `Your ceiling at this layer and width is ${maxSpeed.toFixed(0)} mm/s.`;
+  }
+
+  /* ---- 2 cost ---- */
+  function cost(){
+    const g = n('#c-g'), perG = n('#c-spool') ? n('#c-price')/n('#c-spool') : 0;
+    const mat = g * perG;
+    const kwh = n('#c-hours') * 0.12;
+    const pwr = kwh * n('#c-kwh');
+    $('#c-mat').textContent = mat.toFixed(2);
+    $('#c-power').textContent = `Electricity ≈ ${pwr.toFixed(2)} (${kwh.toFixed(2)} kWh at 120 W average)`;
+    $('#c-total').innerHTML = `<strong style="color:var(--text)">Total ≈ ${(mat+pwr).toFixed(2)}</strong>`;
+    const metres = (g / 1.24) / AREA(1.75);
+    $('#c-len').textContent = `About ${metres.toFixed(1)} m of 1.75 mm PLA, ${(g/n('#c-spool')*100).toFixed(1)} % of the spool.`;
+  }
+
+  /* ---- 3 esteps ---- */
+  function esteps(){
+    const actual = 120 - n('#e-left');
+    const req = n('#e-req');
+    const neu = actual > 0 ? n('#e-cur') * req / actual : 0;
+    $('#e-new').textContent = neu ? neu.toFixed(2) : '—';
+    const err = req ? ((actual - req) / req * 100) : 0;
+    $('#e-err').innerHTML = Math.abs(err) < 1
+      ? '<span class="tag tag--ok">Within 1 %</span> — leave it alone.'
+      : `Extruding ${err > 0 ? 'too much' : 'too little'} by ${Math.abs(err).toFixed(1)} %.`;
+    const fm = n('#e-wall') ? (n('#e-nom') / n('#e-wall') * 100) : 0;
+    $('#e-flow').textContent = fm ? fm.toFixed(1) + ' %' : '—';
+  }
+
+  /* ---- 4 shrinkage ---- */
+  function shrink(){
+    const t = n('#s-target'), g = n('#s-got');
+    const sc = g ? t / g : 1;
+    $('#s-scale').textContent = (sc * 100).toFixed(2) + ' %';
+    $('#s-pct').textContent = `The part came out ${((g - t)/t*100).toFixed(2)} % ${g<t?'small':'large'} — scale by this in the slicer.`;
+    $('#s-holeout').textContent = (n('#s-hole') + parseFloat($('#s-fit').value)).toFixed(2) + ' mm';
+  }
+
+  /* ---- 5 spool ---- */
+  const mats = window.HHQ_FILAMENTS || [];
+  $('#r-mat').innerHTML = mats.map((m,i) =>
+    `<option value="${i}"${m.name==='PLA'?' selected':''}>${HHQ.esc(m.name)} (${m.density} g/cm³)</option>`).join('');
+  function remain(){
+    const g = Math.max(0, n('#r-total') - n('#r-empty'));
+    const m = mats[+$('#r-mat').value] || { density:1.24 };
+    const d = parseFloat($('#r-dia').value);
+    const metres = (g / m.density) / AREA(d);
+    $('#r-g').textContent = g.toFixed(0) + ' g';
+    $('#r-len').textContent = `About ${metres.toFixed(1)} m (${(metres*3.28).toFixed(0)} ft) of ${d} mm.`;
+    $('#r-note').textContent = g < 120
+      ? 'Low — start a new spool for anything long.'
+      : `Roughly ${Math.floor(g/25)} average-sized prints left.`;
+  }
+
+  const all = [flow, cost, esteps, shrink, remain];
+  document.addEventListener('input', () => all.forEach(f => f()));
+  all.forEach(f => f());
+
+  /* ---- filament table ---- */
+  function ftable(term){
+    const t = (term||'').toLowerCase();
+    const rows = mats.filter(m => !t || JSON.stringify(m).toLowerCase().includes(t));
+    const diff = d => ({Easy:'tag--ok',Medium:'tag',Hard:'tag--flame',Expert:'tag--bad'}[d]||'tag');
+    $('#ftable').innerHTML = rows.map(m => `
+      <tr>
+        <td><strong>${HHQ.esc(m.name)}</strong>${m.abrasive?' <span class="tag tag--bad">Abrasive</span>':''}
+            <div class="faint">${HHQ.esc(m.full)}</div></td>
+        <td>${m.nozzle}</td><td>${m.bed}</td><td>${HHQ.esc(m.chamber)}</td>
+        <td>${HHQ.esc(m.cooling)}</td><td>${HHQ.esc(m.dry)}</td>
+        <td><span class="tag ${diff(m.diff)}">${m.diff}</span></td>
+        <td style="min-width:260px">${HHQ.esc(m.notes)}</td>
+      </tr>`).join('') || '<tr><td colspan="8" class="muted">No material matches that.</td></tr>';
+  }
+  $('#fq').addEventListener('input', e => ftable(e.target.value));
+  ftable('');
+});
+</script>
+</body>
+</html>

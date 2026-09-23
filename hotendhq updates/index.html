@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Hotend HQ — Everything 3D Printing</title>
+<meta name="description" content="News, troubleshooting, parametric model generators, calculators and tested gear for 3D printing. Built for makers who fix things themselves.">
+<link rel="canonical" href="https://hotendhq.com/">
+<link rel="icon" href="assets/img/favicon-32.png" sizes="32x32">
+<link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png">
+<link rel="manifest" href="site.webmanifest">
+<link rel="stylesheet" href="assets/css/fonts.css">
+<link rel="stylesheet" href="assets/css/theme.css">
+<link rel="stylesheet" href="assets/css/pages.css">
+<script src="assets/js/config.js" defer></script>
+<script src="assets/js/nav.js" defer></script>
+<script src="assets/js/site.js" defer></script>
+<script src="assets/js/data-articles.js" defer></script>
+<script src="assets/js/data-troubleshoot.js" defer></script>
+<script src="assets/js/data-filament.js" defer></script>
+<script src="assets/js/api.js" defer></script>
+</head>
+<body>
+<main id="main">
+
+  <!-- ============ HERO ============ -->
+  <section class="wrap hero">
+    <div class="hero-grid">
+      <div>
+        <span class="eyebrow">Everything 3D Printing</span>
+        <h1>Stop guessing.<br><span class="fire">Start fixing.</span></h1>
+        <p class="lede">Hotend HQ is a working reference for people who actually run printers.
+          Diagnose failures step by step, generate parts you can print in the next hour,
+          and get straight answers on the hardware that matters.</p>
+        <div class="row" style="margin-top:26px">
+          <a class="btn btn-primary" href="troubleshoot.html" id="hero-fix"></a>
+          <a class="btn btn-ghost" href="generator.html" id="hero-gen"></a>
+        </div>
+        <div class="stats">
+          <div class="stat"><b id="s-issues">—</b><span>Failure modes</span></div>
+          <div class="stat"><b id="s-causes">—</b><span>Diagnosed causes</span></div>
+          <div class="stat"><b id="s-models">5</b><span>Parametric models</span></div>
+          <div class="stat"><b id="s-mats">—</b><span>Materials profiled</span></div>
+        </div>
+      </div>
+      <div class="hero-art">
+        <picture>
+          <source srcset="assets/img/logo-mark.webp" type="image/webp">
+          <img src="assets/img/logo-mark.png" width="706" height="556"
+               alt="Hotend HQ — a flaming hot end nozzle printing onto blue layers">
+        </picture>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ FOUR PILLARS ============ -->
+  <section class="wrap section--tight">
+    <div class="grid g4" id="pillars"></div>
+  </section>
+
+  <!-- ============ LATEST ============ -->
+  <section class="wrap section">
+    <div class="sec-head between">
+      <div>
+        <span class="eyebrow">From the workshop</span>
+        <h2>Latest guides &amp; news</h2>
+      </div>
+      <a class="btn btn-ghost btn-sm" href="news.html">All articles</a>
+    </div>
+    <div id="home-feature" style="margin-bottom:30px"></div>
+    <div class="grid g3" id="home-posts"><div class="spin"></div></div>
+  </section>
+
+  <!-- ============ TROUBLESHOOT TEASER ============ -->
+  <section class="wrap section--tight">
+    <div class="card card--flame">
+      <div class="between" style="align-items:flex-start;gap:26px">
+        <div style="flex:1;min-width:260px">
+          <span class="eyebrow">Diagnostics</span>
+          <h2 style="margin-bottom:.3em">What's actually broken?</h2>
+          <p class="muted" style="max-width:56ch">Answer a few questions about what you are seeing and
+            land on the real cause — with the check that confirms it and the fix that clears it.
+            No forum archaeology.</p>
+          <a class="btn btn-primary" href="troubleshoot.html" style="margin-top:8px" id="ts-cta"></a>
+        </div>
+        <div style="flex:1;min-width:250px">
+          <div class="faint" style="margin-bottom:9px">Jump straight to a common one</div>
+          <div class="chips" id="quick-issues"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ NEWSLETTER ============ -->
+  <section class="wrap section">
+    <div class="subscribe">
+      <span class="eyebrow" style="justify-content:center">Stay current</span>
+      <h2 style="margin-bottom:.3em">New guides, fixes and finds</h2>
+      <p class="muted" style="max-width:48ch;margin-inline:auto">One email when something worth
+        reading goes up. No drip sequences, no filler.</p>
+      <form id="sub-form">
+        <input type="email" required placeholder="you@example.com" aria-label="Email address">
+        <button class="btn btn-primary" type="submit">Subscribe</button>
+      </form>
+      <p class="faint" style="margin-top:12px">Unsubscribe any time.</p>
+    </div>
+  </section>
+
+</main>
+
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+  const $ = s => document.querySelector(s);
+
+  $('#hero-fix').innerHTML = icon('wrench') + 'Diagnose a problem';
+  $('#hero-gen').innerHTML = icon('cube') + 'Generate a part';
+  $('#ts-cta').innerHTML   = icon('bolt') + 'Start the diagnostic';
+
+  /* stats come from the real data, so they can never drift out of date */
+  const issues = window.HHQ_ISSUES || [];
+  $('#s-issues').textContent = issues.length || '23';
+  $('#s-causes').textContent = issues.reduce((n,i)=>n+i.causes.length,0) || '80';
+  $('#s-mats').textContent   = (window.HHQ_FILAMENTS||[]).length || '16';
+
+  /* pillars render from the nav model — one source of truth */
+  const ICO = {'News':'news','Troubleshoot':'wrench','Generator':'cube','Tools':'calc','Gear':'tag'};
+  $('#pillars').innerHTML = HHQ_NAV.primary.map(n => `
+    <a class="card card--link" href="${n.href}">
+      <div class="card-ico">${icon(ICO[n.label])}</div>
+      <h3>${n.label}</h3>
+      <p class="muted" style="font-size:.9rem;margin:0">${n.desc}</p>
+    </a>`).join('');
+
+  /* quick issue chips */
+  $('#quick-issues').innerHTML = ['fl-not-sticking','ex-none','ex-stringing','q-layer-shift','t-runaway','ex-under']
+    .map(id => { const i = issues.find(x=>x.id===id); return i ?
+      `<a class="chip" href="troubleshoot.html#${i.id}">${HHQ.esc(i.title)}</a>` : ''; }).join('');
+
+  /* latest articles */
+  try {
+    const rows = await HHQ_API.listArticles({ limit:7 });
+    const [lead, ...rest] = rows;
+    if (lead) $('#home-feature').innerHTML = `
+      <a class="card card--link feature" href="article.html?a=${encodeURIComponent(lead.slug)}">
+        <div class="post-cover">${lead.cover_url
+          ? `<img src="${HHQ.esc(lead.cover_url)}" alt="" loading="lazy">`
+          : `<span class="ph">${icon('flame')}</span>`}</div>
+        <div>
+          <span class="tag tag--flame">${HHQ.esc(lead.category)}</span>
+          <h3 style="margin:11px 0 8px">${HHQ.esc(lead.title)}</h3>
+          <p class="muted">${HHQ.esc(lead.excerpt||'')}</p>
+          <div class="post-meta">
+            <span>${HHQ.date(lead.published_at)}</span><span>·</span>
+            <span>${HHQ.readTime(lead.body)}</span>
+          </div>
+        </div>
+      </a>`;
+    $('#home-posts').innerHTML = rest.slice(0,6).map(postCard).join('') ||
+      '<p class="muted">More going up shortly.</p>';
+  } catch (e) {
+    $('#home-posts').innerHTML = '<p class="muted">Could not load articles right now.</p>';
+  }
+
+  /* newsletter */
+  $('#sub-form').addEventListener('submit', async e => {
+    e.preventDefault();
+    const email = e.target.querySelector('input').value.trim();
+    try { await HHQ_API.subscribe(email,'home'); HHQ.toast('You are on the list.'); e.target.reset(); }
+    catch (err) { HHQ.toast(err.message, 'warn'); }
+  });
+});
+
+</script>
+</body>
+</html>

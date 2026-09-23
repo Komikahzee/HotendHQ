@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>News &amp; Guides — Hotend HQ</title>
+<meta name="description" content="Every Hotend HQ article: 3D printing news, hardware guides, tuning walkthroughs, materials deep dives and troubleshooting explainers.">
+<link rel="canonical" href="https://hotendhq.com/news.html">
+<link rel="icon" href="assets/img/favicon-32.png" sizes="32x32">
+<link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png">
+<link rel="manifest" href="site.webmanifest">
+<link rel="stylesheet" href="assets/css/fonts.css">
+<link rel="stylesheet" href="assets/css/theme.css">
+<link rel="stylesheet" href="assets/css/pages.css">
+<script src="assets/js/config.js" defer></script>
+<script src="assets/js/nav.js" defer></script>
+<script src="assets/js/site.js" defer></script>
+<script src="assets/js/data-articles.js" defer></script>
+<script src="assets/js/api.js" defer></script>
+</head>
+<body>
+<main id="main">
+  <section class="wrap section--tight">
+    <span class="eyebrow">Library</span>
+    <h1>News &amp; guides</h1>
+    <p class="lede">Everything we publish, newest first. Hardware explainers, tuning walkthroughs,
+      materials deep dives, and what is actually worth paying attention to in 3D printing right now.</p>
+
+    <div class="row" style="margin:26px 0 16px;gap:12px">
+      <div style="flex:1;min-width:220px;position:relative">
+        <input type="search" id="q" placeholder="Search articles…" aria-label="Search articles">
+      </div>
+      <a class="btn btn-ghost btn-sm" href="login.html" id="write-link"></a>
+    </div>
+    <div class="chips" id="cats"></div>
+  </section>
+
+  <section class="wrap section--tight" style="padding-top:8px">
+    <div class="grid g3" id="feed"><div class="spin"></div></div>
+    <p id="count" class="faint center" style="margin-top:26px"></p>
+  </section>
+</main>
+
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+  const $ = s => document.querySelector(s);
+  let all = [], cat = 'All', term = '';
+
+  $('#write-link').innerHTML = icon('plus') + 'Write an article';
+  window.addEventListener('hhq:auth', e => {
+    if (e.detail?.user) { $('#write-link').href = 'admin.html';
+      $('#write-link').innerHTML = icon('edit') + 'Open the editor'; }
+  });
+
+  function render(){
+    const t = term.toLowerCase();
+    const rows = all.filter(r =>
+      (cat === 'All' || r.category === cat) &&
+      (!t || (r.title + ' ' + (r.excerpt||'') + ' ' + (r.tags||[]).join(' ') + ' ' + (r.body||''))
+        .toLowerCase().includes(t)));
+    $('#feed').innerHTML = rows.length
+      ? rows.map(postCard).join('')
+      : `<div class="empty" style="grid-column:1/-1">${icon('search')}
+           <p>Nothing matches that yet.</p></div>`;
+    $('#count').textContent = `${rows.length} of ${all.length} article${all.length===1?'':'s'}`;
+  }
+
+  try {
+    all = await HHQ_API.listArticles({ limit:200 });
+    const cats = ['All', ...[...new Set(all.map(r => r.category))].sort()];
+    $('#cats').innerHTML = cats.map(c =>
+      `<button class="chip" aria-pressed="${c===cat}" data-c="${HHQ.esc(c)}">${HHQ.esc(c)}</button>`).join('');
+    $('#cats').addEventListener('click', e => {
+      const b = e.target.closest('[data-c]'); if(!b) return;
+      cat = b.dataset.c;
+      HHQ.els('#cats .chip').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+      render();
+    });
+    $('#q').addEventListener('input', e => { term = e.target.value; render(); });
+    render();
+  } catch (err) {
+    $('#feed').innerHTML = '<p class="muted">Could not load the article list right now.</p>';
+  }
+});
+</script>
+</body>
+</html>

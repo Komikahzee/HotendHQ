@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sign in — Hotend HQ</title>
+<meta name="description" content="Sign in to Hotend HQ to publish articles and save generator presets.">
+<link rel="canonical" href="https://hotendhq.com/login.html">
+<link rel="icon" href="assets/img/favicon-32.png" sizes="32x32">
+<link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png">
+<link rel="manifest" href="site.webmanifest">
+<link rel="stylesheet" href="assets/css/fonts.css">
+<link rel="stylesheet" href="assets/css/theme.css">
+<link rel="stylesheet" href="assets/css/pages.css">
+<script src="assets/js/config.js" defer></script>
+<script src="assets/js/nav.js" defer></script>
+<script src="assets/js/site.js" defer></script>
+<script src="assets/js/api.js" defer></script>
+</head>
+<body>
+<main id="main">
+  <section class="wrap">
+    <div class="auth-wrap">
+      <div class="card">
+        <div class="center" style="margin-bottom:22px">
+          <img src="assets/img/icon-192.png" alt="" width="64" height="64"
+               style="margin:0 auto 14px;filter:drop-shadow(0 0 14px rgba(243,102,46,.4))">
+          <h1 style="font-size:1.5rem;margin-bottom:.2em" id="a-title">Sign in</h1>
+          <p class="faint" id="a-sub">Contributors publish articles from here.</p>
+        </div>
+
+        <div id="setup-note"></div>
+
+        <form id="auth-form">
+          <div class="field" id="name-field" hidden>
+            <label for="dn">Display name</label>
+            <input type="text" id="dn" autocomplete="name" placeholder="How your byline reads">
+          </div>
+          <div class="field">
+            <label for="em">Email</label>
+            <input type="email" id="em" required autocomplete="email" placeholder="you@example.com">
+          </div>
+          <div class="field">
+            <label for="pw">Password</label>
+            <input type="password" id="pw" required autocomplete="current-password"
+                   minlength="8" placeholder="At least 8 characters">
+          </div>
+          <button class="btn btn-primary btn-block" type="submit" id="a-go">Sign in</button>
+        </form>
+
+        <div class="row" style="justify-content:space-between;margin-top:16px;font-size:.87rem">
+          <button class="chip" id="toggle-mode" style="border:0;background:none;padding:0;
+            color:var(--blue-200)">Create an account</button>
+          <button class="chip" id="forgot" style="border:0;background:none;padding:0;
+            color:var(--text-faint)">Forgot password</button>
+        </div>
+      </div>
+      <p class="faint center" style="margin-top:18px">
+        Readers do not need an account. Sign-in exists for publishing and saving presets.</p>
+    </div>
+  </section>
+</main>
+
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+  const $ = s => document.querySelector(s);
+  let mode = 'in';
+
+  await HHQ_API.ready;
+  if (!HHQ_API.isLive){
+    $('#setup-note').innerHTML = `<div class="note note--warn" style="margin-bottom:18px">${icon('warn')}
+      <p><strong>No backend connected yet.</strong> Add your Supabase project URL and anon key to
+      <code>assets/js/config.js</code> and run <code>supabase/schema.sql</code> once. Until then the
+      site serves its bundled articles and the editor saves drafts in this browser only —
+      <a href="admin.html">open the editor</a> to try it.</p></div>`;
+  }
+  if (HHQ_API.user){ location.replace('admin.html'); return; }
+
+  $('#toggle-mode').onclick = () => {
+    mode = mode === 'in' ? 'up' : 'in';
+    const up = mode === 'up';
+    $('#a-title').textContent = up ? 'Create an account' : 'Sign in';
+    $('#a-sub').textContent = up
+      ? 'The first account created becomes the site administrator.'
+      : 'Contributors publish articles from here.';
+    $('#a-go').textContent = up ? 'Create account' : 'Sign in';
+    $('#toggle-mode').textContent = up ? 'I already have an account' : 'Create an account';
+    $('#name-field').hidden = !up;
+    $('#pw').autocomplete = up ? 'new-password' : 'current-password';
+  };
+
+  $('#forgot').onclick = async () => {
+    const em = $('#em').value.trim();
+    if (!em) return HHQ.toast('Enter your email address first.', 'warn');
+    try { await HHQ_API.resetPassword(em); HHQ.toast('Reset link sent.'); }
+    catch (e) { HHQ.toast(e.message, 'bad'); }
+  };
+
+  $('#auth-form').addEventListener('submit', async e => {
+    e.preventDefault();
+    const btn = $('#a-go'), label = btn.textContent;
+    btn.disabled = true; btn.textContent = 'Working…';
+    try {
+      if (mode === 'up'){
+        await HHQ_API.signUp($('#em').value.trim(), $('#pw').value, $('#dn').value.trim());
+        HHQ.toast('Account created — check your email to confirm.');
+      } else {
+        await HHQ_API.signIn($('#em').value.trim(), $('#pw').value);
+        location.href = 'admin.html';
+      }
+    } catch (err) { HHQ.toast(err.message || 'That did not work.', 'bad'); }
+    finally { btn.disabled = false; btn.textContent = label; }
+  });
+});
+</script>
+</body>
+</html>

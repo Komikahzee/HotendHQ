@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Gear We Recommend — Hotend HQ</title>
+<meta name="description" content="Hot ends, nozzles, extruders, adhesion, drying and tools — what to buy, what it fixes, and who it is actually for.">
+<link rel="canonical" href="https://hotendhq.com/gear.html">
+<link rel="icon" href="assets/img/favicon-32.png" sizes="32x32">
+<link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png">
+<link rel="manifest" href="site.webmanifest">
+<link rel="stylesheet" href="assets/css/fonts.css">
+<link rel="stylesheet" href="assets/css/theme.css">
+<link rel="stylesheet" href="assets/css/pages.css">
+<script src="assets/js/config.js" defer></script>
+<script src="assets/js/nav.js" defer></script>
+<script src="assets/js/site.js" defer></script>
+<script src="assets/js/data-gear.js" defer></script>
+<script src="assets/js/api.js" defer></script>
+</head>
+<body>
+<main id="main">
+  <section class="wrap section--tight">
+    <span class="eyebrow">Gear</span>
+    <h1>What to buy, and why</h1>
+    <p class="lede">Organised by the problem it solves rather than by brand. Each pick says what it
+      fixes and who it is for — including when the cheap option is the right one.</p>
+    <div class="note note--warn" style="margin-top:22px;max-width:74ch" id="disc"></div>
+  </section>
+
+  <section class="wrap section--tight" style="padding-top:8px">
+    <div class="chips" id="gcats" style="margin-bottom:26px"></div>
+    <div id="gsections"></div>
+  </section>
+
+  <section class="wrap section">
+    <div class="card card--flame">
+      <span class="eyebrow">Before you buy anything</span>
+      <h2 style="margin-bottom:.3em">Most problems are free to fix</h2>
+      <p class="muted" style="max-width:62ch">A surprising share of what people try to buy their way out
+        of is a setting, a clean bed, or a dry spool. Run the diagnostic first — if it points at hardware,
+        come back and the list above will still be here.</p>
+      <a class="btn btn-ghost" href="troubleshoot.html" style="margin-top:6px" id="gcta"></a>
+    </div>
+  </section>
+</main>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const $ = s => document.querySelector(s);
+  $('#disc').innerHTML = icon('info') + `<p>${HHQ_CONFIG.affiliate.disclosure}</p>`;
+  $('#gcta').innerHTML = icon('wrench') + 'Run the diagnostic first';
+
+  const CATS = window.HHQ_GEAR_CATS, ITEMS = window.HHQ_GEAR;
+  let active = 'all';
+
+  $('#gcats').innerHTML = [{key:'all',label:'Everything'}, ...CATS].map(c =>
+    `<button class="chip" aria-pressed="${c.key===active}" data-c="${c.key}">${HHQ.esc(c.label)}</button>`).join('');
+
+  function itemCard(g){
+    const href = HHQ.affLink(g);
+    return `<div class="card gear-item">
+      <span class="tier">${HHQ.esc(g.tier)}</span>
+      <h3>${HHQ.esc(g.name)}</h3>
+      <span class="brand">${HHQ.esc(g.brand)} · ${HHQ.esc(g.price)}</span>
+      <p class="why">${HHQ.esc(g.why)}</p>
+      <dl class="spec-list">${Object.entries(g.specs).map(([k,v]) =>
+        `<div><dt>${HHQ.esc(k)}</dt><dd>${HHQ.esc(v)}</dd></div>`).join('')}</dl>
+      <p class="faint" style="margin:8px 0 0"><strong style="color:var(--text-dim)">Best for:</strong>
+        ${HHQ.esc(g.bestFor)}</p>
+      <a class="btn btn-primary btn-sm" href="${HHQ.esc(href)}" target="_blank"
+         rel="nofollow sponsored noopener" style="margin-top:12px">
+         ${icon('ext')}Check current price</a>
+    </div>`;
+  }
+
+  function render(){
+    const cats = active === 'all' ? CATS : CATS.filter(c => c.key === active);
+    $('#gsections').innerHTML = cats.map(c => {
+      const items = ITEMS.filter(i => i.cat === c.key);
+      if (!items.length) return '';
+      return `<section style="margin-bottom:46px">
+        <div class="sec-head">
+          <h2 id="${c.key}" style="font-size:1.5rem;margin-bottom:.25em">${HHQ.esc(c.label)}</h2>
+          <p class="muted" style="margin:0">${HHQ.esc(c.blurb)}</p>
+        </div>
+        <div class="grid g3">${items.map(itemCard).join('')}</div>
+      </section>`;
+    }).join('');
+  }
+
+  $('#gcats').addEventListener('click', e => {
+    const b = e.target.closest('[data-c]'); if (!b) return;
+    active = b.dataset.c;
+    HHQ.els('#gcats .chip').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+    render();
+  });
+  render();
+});
+</script>
+</body>
+</html>
