@@ -14,9 +14,9 @@
 <link rel="stylesheet" href="assets/css/pages.css">
 <script src="assets/js/config.js" defer></script>
 <script src="assets/js/nav.js?v=2" defer></script>
-<script src="assets/js/site.js" defer></script>
+<script src="assets/js/site.js?v=2" defer></script>
 <script src="assets/js/data-troubleshoot.js" defer></script>
-<script src="assets/js/api.js" defer></script>
+<script src="assets/js/api.js?v=2" defer></script>
 </head>
 <body>
 <main id="main">
@@ -69,7 +69,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const sev = { high:['tag--bad','Stops the print'], med:['tag--flame','Degrades quality'],
                   low:['tag','Cosmetic'] }[i.sev];
     const reads = (i.read || []).map(s =>
-      `<a class="btn btn-ghost btn-sm" href="article.html?a=${s}">${icon('news')}Full guide</a>`).join('');
+      `<a class="btn btn-ghost btn-sm" href="/guides/${encodeURIComponent(s)}/">${icon('news')}Full guide</a>`).join('');
     return `<details class="acc issue" id="${i.id}"${open ? ' open' : ''}>
       <summary>
         <span>${HHQ.esc(i.title)}</span>

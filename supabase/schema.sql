@@ -38,6 +38,10 @@ create table if not exists public.articles (
   created_at   timestamptz not null default now(),
   updated_at   timestamptz not null default now()
 );
+-- SEO overrides used by the static build (build/build.mjs). Safe to re-run.
+alter table public.articles add column if not exists seo_title text;
+alter table public.articles add column if not exists meta_description text;
+
 create index if not exists articles_pub_idx  on public.articles (status, published_at desc);
 create index if not exists articles_cat_idx  on public.articles (category);
 create index if not exists articles_slug_idx on public.articles (slug);

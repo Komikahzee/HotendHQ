@@ -1,8 +1,16 @@
 {
+  // Hotend HQ — Cloudflare Workers config.
+  // Build command:  node build/build.mjs     (writes ./dist)
+  // Deploy command: npx wrangler deploy
   "name": "hotendhq",
+  "main": "worker/index.js",
   "compatibility_date": "2026-09-18",
   "assets": {
-    "directory": ".",
-    "not_found_handling": "404-page"
+    "directory": "./dist",
+    "binding": "ASSETS",
+    "html_handling": "auto-trailing-slash",
+    "not_found_handling": "404-page",
+    // the worker only wakes up for the old article URLs, to 301 them
+    "run_worker_first": ["/article", "/article.html"]
   }
 }

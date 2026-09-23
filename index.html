@@ -14,11 +14,11 @@
 <link rel="stylesheet" href="assets/css/pages.css">
 <script src="assets/js/config.js" defer></script>
 <script src="assets/js/nav.js?v=2" defer></script>
-<script src="assets/js/site.js" defer></script>
-<script src="assets/js/data-articles.js" defer></script>
+<script src="assets/js/site.js?v=2" defer></script>
+<script src="assets/js/data-articles.js?v=2" defer></script>
 <script src="assets/js/data-troubleshoot.js" defer></script>
 <script src="assets/js/data-filament.js" defer></script>
-<script src="assets/js/api.js" defer></script>
+<script src="assets/js/api.js?v=2" defer></script>
 </head>
 <body>
 <main id="main">
@@ -67,8 +67,8 @@
       </div>
       <a class="btn btn-ghost btn-sm" href="news.html">All articles</a>
     </div>
-    <div id="home-feature" style="margin-bottom:30px"></div>
-    <div class="grid g3" id="home-posts"><div class="spin"></div></div>
+    <div id="home-feature" style="margin-bottom:30px"><!--prerender:home-feature--></div>
+    <div class="grid g3" id="home-posts"><!--prerender:home-posts--><div class="spin"></div><!--/prerender--></div>
   </section>
 
   <!-- ============ TROUBLESHOOT TEASER ============ -->
@@ -123,7 +123,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   $('#s-mats').textContent   = (window.HHQ_FILAMENTS||[]).length || '16';
 
   /* pillars render from the nav model — one source of truth */
-  const ICO = {'News':'news','Troubleshoot':'wrench','Generator':'cube','Tools':'calc','Gear':'tag'};
+  const ICO = window.HHQ_NAV_ICONS || {};
   $('#pillars').innerHTML = HHQ_NAV.primary.map(n => `
     <a class="card card--link" href="${n.href}">
       <div class="card-ico">${icon(ICO[n.label])}</div>
@@ -140,21 +140,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   try {
     const rows = await HHQ_API.listArticles({ limit:7 });
     const [lead, ...rest] = rows;
-    if (lead) $('#home-feature').innerHTML = `
-      <a class="card card--link feature" href="article.html?a=${encodeURIComponent(lead.slug)}">
-        <div class="post-cover">${lead.cover_url
-          ? `<img src="${HHQ.esc(lead.cover_url)}" alt="" loading="lazy">`
-          : `<span class="ph">${icon('flame')}</span>`}</div>
-        <div>
-          <span class="tag tag--flame">${HHQ.esc(lead.category)}</span>
-          <h3 style="margin:11px 0 8px">${HHQ.esc(lead.title)}</h3>
-          <p class="muted">${HHQ.esc(lead.excerpt||'')}</p>
-          <div class="post-meta">
-            <span>${HHQ.date(lead.published_at)}</span><span>·</span>
-            <span>${HHQ.readTime(lead.body)}</span>
-          </div>
-        </div>
-      </a>`;
+    if (lead) $('#home-feature').innerHTML = featureCard(lead);
     $('#home-posts').innerHTML = rest.slice(0,6).map(postCard).join('') ||
       '<p class="muted">More going up shortly.</p>';
   } catch (e) {

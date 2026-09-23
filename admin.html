@@ -14,11 +14,11 @@
 <link rel="stylesheet" href="assets/css/pages.css">
 <script src="assets/js/config.js" defer></script>
 <script src="assets/js/nav.js?v=2" defer></script>
-<script src="assets/js/site.js" defer></script>
+<script src="assets/js/site.js?v=2" defer></script>
 <meta name="robots" content="noindex">
-<script src="assets/js/data-articles.js" defer></script>
+<script src="assets/js/data-articles.js?v=2" defer></script>
 <script src="assets/js/md.js" defer></script>
-<script src="assets/js/api.js" defer></script>
+<script src="assets/js/api.js?v=2" defer></script>
 </head>
 <body>
 <main id="main">
@@ -59,6 +59,19 @@
           <textarea id="ex" rows="2" style="min-height:0"
             placeholder="One or two sentences. This is what shows on cards and in search results."></textarea>
         </div>
+        <details class="field" id="seo-box">
+          <summary style="cursor:pointer;font-weight:700;font-size:.9rem">Search appearance (optional)</summary>
+          <div class="field" style="margin-top:12px">
+            <label for="seo-t">Search title</label>
+            <input type="text" id="seo-t" maxlength="70" placeholder="Leave blank to use the headline">
+            <p class="hint"><span id="seo-t-n">0</span>/60 characters. Shown in Google and browser tabs, used exactly as written.</p>
+          </div>
+          <div class="field">
+            <label for="seo-d">Meta description</label>
+            <textarea id="seo-d" rows="2" maxlength="170" style="min-height:0" placeholder="Leave blank to use the summary"></textarea>
+            <p class="hint"><span id="seo-d-n">0</span>/155 characters. The snippet under the title in search results.</p>
+          </div>
+        </details>
         <div class="field">
           <label for="tags">Tags</label>
           <input type="text" id="tags" placeholder="hot ends, clogs, beginner">
@@ -206,6 +219,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       $('#t').value = a.title; $('#slug').value = a.slug; $('#cat').value = a.category;
       $('#ex').value = a.excerpt || ''; $('#tags').value = (a.tags||[]).join(', ');
       $('#body').value = a.body || ''; $('#feat').checked = !!a.featured;
+      $('#seo-t').value = a.seo_title || ''; $('#seo-d').value = a.meta_description || ''; seoCount();
       coverUrl = a.cover_url || null;
       $('#cover-prev').innerHTML = coverUrl
         ? `<img src="${HHQ.esc(coverUrl)}" alt="" style="margin-top:10px;border-radius:11px;max-height:150px">` : '';
@@ -230,22 +244,25 @@ document.addEventListener('DOMContentLoaded', async () => {
       slug, title, category: $('#cat').value.trim() || 'News',
       excerpt: $('#ex').value.trim(), body: $('#body').value,
       tags: $('#tags').value.split(',').map(s => s.trim()).filter(Boolean),
-      cover_url: coverUrl, status, featured: $('#feat').checked
+      cover_url: coverUrl, status, featured: $('#feat').checked,
+      seo_title: $('#seo-t').value.trim(), meta_description: $('#seo-d').value.trim()
     };
     try {
       await HHQ_API.saveArticle(row);
       editingSlug = slug;
-      HHQ.toast(status === 'published' ? 'Published.' : 'Draft saved.');
+      HHQ.toast(status === 'published' ? 'Published. The permanent page goes live in about a minute.' : 'Draft saved.');
       refresh();
       if (status === 'published')
         setTimeout(() => { location.href = 'article.html?a=' + encodeURIComponent(slug); }, 700);
     } catch (e) { HHQ.toast(e.message, 'bad'); }
   }
+  function seoCount(){ $('#seo-t-n').textContent = $('#seo-t').value.length; $('#seo-d-n').textContent = $('#seo-d').value.length; }
+  $('#seo-t').addEventListener('input', seoCount); $('#seo-d').addEventListener('input', seoCount);
   $('#save-draft').onclick = () => save('draft');
   $('#composer').addEventListener('submit', e => { e.preventDefault(); save('published'); });
   $('#clear').onclick = () => {
     $('#composer').reset(); coverUrl = null; editingSlug = null; slugTouched = false;
-    $('#cover-prev').innerHTML = ''; render();
+    $('#cover-prev').innerHTML = ''; seoCount(); render();
   };
 });
 </script>

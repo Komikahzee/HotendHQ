@@ -136,6 +136,7 @@
         body: row.body || '', category: row.category || 'News',
         tags: row.tags || [], cover_url: row.cover_url || null,
         status: row.status || 'draft', featured: !!row.featured,
+        seo_title: row.seo_title || null, meta_description: row.meta_description || null,
         published_at: row.status === 'published' ? (row.published_at || now) : null
       };
       if (!sb) {

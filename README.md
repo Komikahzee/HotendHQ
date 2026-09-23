@@ -6,23 +6,34 @@ and it works; connect Supabase and the accounts, publishing and uploads switch o
 
 ---
 
-## 1. Get it online (5 minutes, free)
+## 1. Get it online (Cloudflare Workers, free)
 
-**Cloudflare Pages** (recommended — free, fast, free SSL, custom domain):
+The repo is the source. A small build step (`build/build.mjs`, plain Node, no
+dependencies) turns it into the deployable site in `dist/`: every published
+article gets a real page at `/guides/<slug>/` with its title, description,
+canonical, Open Graph tags and full text already in the HTML, and the gear
+picks, filament table and article lists are pre-rendered too.
 
-1. Push this folder to a GitHub repo.
-2. Cloudflare dashboard → Workers & Pages → Create → Pages → connect the repo.
-3. Build command: *(leave empty)*. Build output directory: `/`.
-4. Deploy, then Custom domains → add `hotendhq.com`.
+In Cloudflare: **Workers & Pages → hotendhq → Settings → Builds**
 
-**Netlify** works the same way, or just drag the folder onto app.netlify.com/drop.
+| Setting | Value |
+|---|---|
+| Build command | `node build/build.mjs` |
+| Deploy command | `npx wrangler deploy` |
 
-`_headers` and `_redirects` are already set up for both (security headers, asset
-caching, and a 404 page).
+`wrangler.jsonc` does the rest: serves `dist/`, shows `404.html` for missing
+pages, and runs `worker/index.js` only for old `article.html?a=<slug>` links,
+which it 301-redirects to `/guides/<slug>/`.
 
-At this point the site is fully live: every article, the troubleshooter, the
-generator, the calculators and the gear pages all work. Only accounts and
-publishing-from-the-browser need step 2.
+Try the build locally with `node build/build.mjs`, then open `dist/`.
+
+### Rebuild automatically when you publish
+
+Articles published from `/admin` (with Supabase connected) are live right away
+through the live renderer, and get their permanent `/guides/<slug>/` page on
+the next build. To make that build happen by itself, create a Deploy Hook
+(Settings → Builds → Deploy Hooks) and follow `supabase/rebuild-hook.sql`.
+It only fires when a published article actually changes.
 
 ---
 
@@ -74,7 +85,9 @@ terms and Google both require.
 ```
 index.html          Homepage — teasers only, no content of its own
 news.html           Article index (search + category filter)
-article.html        Single article  (article.html?a=slug)
+article.html        Live renderer for drafts / just-published articles (noindex)
+guides/<slug>/      Built article pages (generated into dist/, not in the repo)
+gridfinity.html     Gridfinity generator (bins, baseplates, lids, drawer fitter)
 troubleshoot.html   Guided diagnostic + searchable failure database
 generator.html      Parametric 3D model generator with STL export
 tools.html          Five calculators + the filament database
@@ -91,11 +104,17 @@ assets/css/fonts.css    Self-hosted Inter + JetBrains Mono
 assets/js/config.js     ← the only file you need to edit
 assets/js/nav.js        Site structure. Header, footer and sitemap read from it
 assets/js/site.js       Header, footer, shared helpers and the article card
+assets/js/render.js     Article, gear and filament markup (shared with the build)
 assets/js/api.js        Data layer. Supabase when configured, seed content when not
 assets/js/md.js         Markdown renderer (escapes everything before rendering)
 assets/js/generator.js  The parametric models and the 3D viewer
 assets/js/data-*.js     Content: articles, troubleshooting, gear, filaments
 assets/vendor/three/    three.js, self-hosted so the site has no CDN dependency
+
+build/build.mjs         Builds dist/: guide pages, pre-rendered lists, sitemap
+worker/index.js         301s old article.html?a= links to /guides/<slug>/
+wrangler.jsonc          Cloudflare config (serves dist/, 404 page, worker routes)
+supabase/rebuild-hook.sql  Rebuild the site automatically on publish
 
 supabase/schema.sql     Run once. Tables, RLS policies, storage, triggers
 ```

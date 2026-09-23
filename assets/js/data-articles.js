@@ -1,9 +1,14 @@
-/* Seed articles. These ship with the site so it is never empty, and they are
+/* Seed articles.
+   Optional SEO fields: seo_title (the <title>, used as-is) and meta_description.
+   Without them the build falls back to "<title> — Hotend HQ" and the excerpt.
+ These ship with the site so it is never empty, and they are
    the fallback when no backend is configured. Once Supabase is connected,
    published rows from the database are shown first and these fill in behind. */
 window.HHQ_SEED_ARTICLES = [
 {
   slug:'all-metal-vs-ptfe-hotends',
+  seo_title:'All-Metal vs PTFE Hotend: Which Does Your Printer Need? (2026)',
+  meta_description:'PTFE-lined hotends cap out around 240°C. Here\'s when an all-metal upgrade pays off, when it causes new clogs, and which one to buy.',
   title:'All-Metal vs PTFE-Lined Hot Ends: What Actually Changes',
   category:'Guides',
   tags:['hot ends','upgrades','beginner'],
@@ -51,6 +56,8 @@ Finally, cold-pull once after assembly with a piece of nylon. It scrubs the tran
 },
 {
   slug:'clogged-nozzle-five-minute-diagnostic',
+  seo_title:'Clogged Nozzle? A 5-Minute Diagnostic to Find the Real Cause',
+  meta_description:'Most 3D printer "clogs" aren\'t clogs. Check extruder grip, heat creep and the heat break, then cold pull, in that order, before you replace a nozzle.',
   title:'Fix a Clogged Nozzle for Good: The Five-Minute Diagnostic',
   category:'Troubleshooting',
   tags:['clogs','maintenance','extruder'],
@@ -106,6 +113,8 @@ Nozzles are cheap and the internal geometry matters more than people think. If y
 },
 {
   slug:'nozzle-materials-decoded',
+  seo_title:'Brass vs Hardened Steel vs Tungsten Carbide Nozzles (2026)',
+  meta_description:'Nozzle choice is heat transfer versus wear. When brass is right, when abrasive filaments need hardened steel, and whether tungsten carbide or ruby is worth it.',
   title:'Nozzle Materials Decoded: Brass, Steel, Hardened Steel, Tungsten Carbide, Ruby',
   category:'Materials',
   tags:['nozzles','abrasives','materials'],
@@ -156,6 +165,8 @@ If you print functional parts and you have never left 0.4 mm, try 0.6 mm before 
 },
 {
   slug:'retraction-tuning-that-works',
+  seo_title:'Retraction Settings: Fix 3D Print Stringing in 20 Minutes',
+  meta_description:'Stringing is a pressure problem, not a distance problem. Dry the spool, run a temperature tower, then tune retraction in the right order and it disappears.',
   title:'Why Your Retraction Settings Are Wrong (And the 20-Minute Fix)',
   category:'Tuning',
   tags:['stringing','retraction','calibration'],
@@ -202,6 +213,8 @@ Fine, glassy strings that break when you touch them are cosmetic and take second
 },
 {
   slug:'thermal-runaway-protection',
+  seo_title:'Thermal Runaway Protection: A 10-Minute Test for Your Printer',
+  meta_description:'Would your printer catch a failed heater or loose thermistor? How thermal runaway protection works, how to test it safely, and what quietly disables it.',
   title:'Thermal Runaway: What It Is, and How to Prove Your Printer Survives It',
   category:'Safety',
   tags:['safety','firmware','thermistor'],
@@ -260,6 +273,8 @@ Put the printer on a non-combustible surface. Keep it out of the path of anythin
 },
 {
   slug:'high-flow-hotends-explained',
+  seo_title:'High-Flow Hotends: What Volumetric Flow Specs Really Mean',
+  meta_description:'Manufacturers quote mm³/s at conditions you\'ll never print in. How to read the spec, turn flow into real print speed, and measure your own hotend honestly.',
   title:'High-Flow Hot Ends: What the Numbers Mean and Which Ones Matter',
   category:'Reviews',
   tags:['hot ends','flow rate','upgrades'],

@@ -14,9 +14,10 @@
 <link rel="stylesheet" href="assets/css/pages.css">
 <script src="assets/js/config.js" defer></script>
 <script src="assets/js/nav.js?v=2" defer></script>
-<script src="assets/js/site.js" defer></script>
+<script src="assets/js/site.js?v=2" defer></script>
 <script src="assets/js/data-gear.js" defer></script>
-<script src="assets/js/api.js" defer></script>
+<script src="assets/js/render.js?v=1" defer></script>
+<script src="assets/js/api.js?v=2" defer></script>
 </head>
 <body>
 <main id="main">
@@ -25,12 +26,12 @@
     <h1>What to buy, and why</h1>
     <p class="lede">Organised by the problem it solves rather than by brand. Each pick says what it
       fixes and who it is for — including when the cheap option is the right one.</p>
-    <div class="note note--warn" style="margin-top:22px;max-width:74ch" id="disc"></div>
+    <div class="note note--warn" style="margin-top:22px;max-width:74ch" id="disc"><!--prerender:gear-disc--></div>
   </section>
 
   <section class="wrap section--tight" style="padding-top:8px">
-    <div class="chips" id="gcats" style="margin-bottom:26px"></div>
-    <div id="gsections"></div>
+    <div class="chips" id="gcats" style="margin-bottom:26px"><!--prerender:gear-chips--></div>
+    <div id="gsections"><!--prerender:gear--></div>
   </section>
 
   <section class="wrap section">
@@ -51,43 +52,9 @@ document.addEventListener('DOMContentLoaded', () => {
   $('#disc').innerHTML = icon('info') + `<p>${HHQ_CONFIG.affiliate.disclosure}</p>`;
   $('#gcta').innerHTML = icon('wrench') + 'Run the diagnostic first';
 
-  const CATS = window.HHQ_GEAR_CATS, ITEMS = window.HHQ_GEAR;
   let active = 'all';
-
-  $('#gcats').innerHTML = [{key:'all',label:'Everything'}, ...CATS].map(c =>
-    `<button class="chip" aria-pressed="${c.key===active}" data-c="${c.key}">${HHQ.esc(c.label)}</button>`).join('');
-
-  function itemCard(g){
-    const href = HHQ.affLink(g);
-    return `<div class="card gear-item">
-      <span class="tier">${HHQ.esc(g.tier)}</span>
-      <h3>${HHQ.esc(g.name)}</h3>
-      <span class="brand">${HHQ.esc(g.brand)} · ${HHQ.esc(g.price)}</span>
-      <p class="why">${HHQ.esc(g.why)}</p>
-      <dl class="spec-list">${Object.entries(g.specs).map(([k,v]) =>
-        `<div><dt>${HHQ.esc(k)}</dt><dd>${HHQ.esc(v)}</dd></div>`).join('')}</dl>
-      <p class="faint" style="margin:8px 0 0"><strong style="color:var(--text-dim)">Best for:</strong>
-        ${HHQ.esc(g.bestFor)}</p>
-      <a class="btn btn-primary btn-sm" href="${HHQ.esc(href)}" target="_blank"
-         rel="nofollow sponsored noopener" style="margin-top:12px">
-         ${icon('ext')}Check current price</a>
-    </div>`;
-  }
-
-  function render(){
-    const cats = active === 'all' ? CATS : CATS.filter(c => c.key === active);
-    $('#gsections').innerHTML = cats.map(c => {
-      const items = ITEMS.filter(i => i.cat === c.key);
-      if (!items.length) return '';
-      return `<section style="margin-bottom:46px">
-        <div class="sec-head">
-          <h2 id="${c.key}" style="font-size:1.5rem;margin-bottom:.25em">${HHQ.esc(c.label)}</h2>
-          <p class="muted" style="margin:0">${HHQ.esc(c.blurb)}</p>
-        </div>
-        <div class="grid g3">${items.map(itemCard).join('')}</div>
-      </section>`;
-    }).join('');
-  }
+  const render = () => { $('#gsections').innerHTML = HHQ_RENDER.gearSections(active); };
+  $('#gcats').innerHTML = HHQ_RENDER.gearChips(active);
 
   $('#gcats').addEventListener('click', e => {
     const b = e.target.closest('[data-c]'); if (!b) return;

@@ -14,9 +14,10 @@
 <link rel="stylesheet" href="assets/css/pages.css">
 <script src="assets/js/config.js" defer></script>
 <script src="assets/js/nav.js?v=2" defer></script>
-<script src="assets/js/site.js" defer></script>
+<script src="assets/js/site.js?v=2" defer></script>
 <script src="assets/js/data-filament.js" defer></script>
-<script src="assets/js/api.js" defer></script>
+<script src="assets/js/render.js?v=1" defer></script>
+<script src="assets/js/api.js?v=2" defer></script>
 </head>
 <body>
 <main id="main">
@@ -191,7 +192,7 @@
           <th>Material</th><th>Nozzle °C</th><th>Bed °C</th><th>Chamber</th>
           <th>Cooling</th><th>Drying</th><th>Difficulty</th><th>Notes</th>
         </tr></thead>
-        <tbody id="ftable"></tbody>
+        <tbody id="ftable"><!--prerender:filaments--></tbody>
       </table>
     </div>
   </section>
@@ -277,17 +278,7 @@ document.addEventListener('DOMContentLoaded', () => {
   /* ---- filament table ---- */
   function ftable(term){
     const t = (term||'').toLowerCase();
-    const rows = mats.filter(m => !t || JSON.stringify(m).toLowerCase().includes(t));
-    const diff = d => ({Easy:'tag--ok',Medium:'tag',Hard:'tag--flame',Expert:'tag--bad'}[d]||'tag');
-    $('#ftable').innerHTML = rows.map(m => `
-      <tr>
-        <td><strong>${HHQ.esc(m.name)}</strong>${m.abrasive?' <span class="tag tag--bad">Abrasive</span>':''}
-            <div class="faint">${HHQ.esc(m.full)}</div></td>
-        <td>${m.nozzle}</td><td>${m.bed}</td><td>${HHQ.esc(m.chamber)}</td>
-        <td>${HHQ.esc(m.cooling)}</td><td>${HHQ.esc(m.dry)}</td>
-        <td><span class="tag ${diff(m.diff)}">${m.diff}</span></td>
-        <td style="min-width:260px">${HHQ.esc(m.notes)}</td>
-      </tr>`).join('') || '<tr><td colspan="8" class="muted">No material matches that.</td></tr>';
+    $('#ftable').innerHTML = HHQ_RENDER.filamentRows(mats.filter(m => !t || JSON.stringify(m).toLowerCase().includes(t)));
   }
   $('#fq').addEventListener('input', e => ftable(e.target.value));
   ftable('');

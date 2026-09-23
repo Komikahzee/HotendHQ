@@ -28,14 +28,16 @@
     edit:'<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>',
     trash:'<path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/>',
     filament:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/>',
-    flame:'<path d="M12 2s5 5.5 5 10a5 5 0 0 1-10 0c0-2 1-3.5 1-3.5S9.5 11 11 12c1.5-2-1-5 1-10z"/>'
+    flame:'<path d="M12 2s5 5.5 5 10a5 5 0 0 1-10 0c0-2 1-3.5 1-3.5S9.5 11 11 12c1.5-2-1-5 1-10z"/>',
+    grid:'<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M15 3v18M3 9h18M3 15h18"/>'
   };
   window.icon = (name, cls) =>
     `<svg class="${cls||''}" viewBox="0 0 24 24" fill="none" stroke="currentColor"
       stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"
       aria-hidden="true">${ICONS[name]||''}</svg>`;
 
-  const NAV_ICONS = { 'News':'news','Troubleshoot':'wrench','Generator':'cube','Tools':'calc','Gear':'tag' };
+  const NAV_ICONS = { 'News':'news','Troubleshoot':'wrench','Generator':'cube','Gridfinity':'grid','Tools':'calc','Gear':'tag' };
+  window.HHQ_NAV_ICONS = NAV_ICONS;
 
   /* ---------- helpers exposed to pages ---------- */
   window.HHQ = {
@@ -51,7 +53,9 @@
     },
     date(d){
       if(!d) return '';
-      const dt = new Date(d);
+      // bare YYYY-MM-DD is a calendar date, not UTC midnight (which shows as the day before in the US)
+      const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(d));
+      const dt = m ? new Date(+m[1], m[2] - 1, +m[3]) : new Date(d);
       return isNaN(dt) ? '' : dt.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
     },
     slug(s){ return String(s).toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,80); },
@@ -78,9 +82,10 @@
       'Everything 3D printing — news, troubleshooting, parametric model generators, calculators, and tested gear picks.';
     const add = (html) => document.head.insertAdjacentHTML('beforeend', html);
     if(!document.querySelector('link[rel=icon]')) add(
-      `<link rel="icon" href="assets/img/favicon-32.png" sizes="32x32">
-       <link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png">
-       <link rel="manifest" href="site.webmanifest">`);
+      `<link rel="icon" href="/assets/img/favicon-32.png" sizes="32x32">
+       <link rel="apple-touch-icon" href="/assets/img/apple-touch-icon.png">
+       <link rel="manifest" href="/site.webmanifest">`);
+    if(document.querySelector('meta[property="og:title"]')) return;   // pre-rendered page already has them
     add(`<meta name="theme-color" content="#00091c">
       <meta property="og:site_name" content="${CFG.siteName}">
       <meta property="og:title" content="${HHQ.esc(page)}">
@@ -90,24 +95,32 @@
       <meta name="twitter:card" content="summary_large_image">`);
   }
 
-  /* ---------- header ---------- */
-  function header(){
-    const here = (location.pathname.split('/').pop() || 'index.html').toLowerCase();
+  /* ---------- header & footer ----------
+     Pure HTML builders, so the build step (build/build.mjs) can bake the
+     same chrome into every page. At runtime we only inject them when a
+     page does not already contain them.                                   */
+  const abs = h => /^(https?:|mailto:|\/|#)/.test(h) ? h : '/' + h.replace(/^\.\//, '');
+  const pageKey = p => {
+    p = String(p || '').toLowerCase().replace(/[?#].*$/, '').replace(/\/+$/, '');
+    if (p.startsWith('/guides') || /(^|\/)article(\.html)?$/.test(p)) return 'news';
+    const last = p.split('/').pop() || 'index';
+    return last.replace(/\.html$/, '') || 'index';
+  };
+  function headerHTML(path){
+    const here = pageKey(path);
     const links = NAV.primary.map(n => {
-      const cur = n.href.toLowerCase() === here ||
-        (here === 'article.html' && n.href === 'news.html');
-      return `<a href="${n.href}"${cur?' aria-current="page"':''}>${n.label}</a>`;
+      const cur = pageKey('/' + n.href) === here;
+      return `<a href="${abs(n.href)}"${cur?' aria-current="page"':''}>${n.label}</a>`;
     }).join('');
     const cta = `<div class="head-cta">
-        <a class="btn btn-ghost btn-sm" href="login.html" data-auth-chip>${icon('user')}<span>Sign in</span></a>
-        <a class="btn btn-primary btn-sm" href="generator.html">${icon('cube')}Generate a part</a>
+        <a class="btn btn-ghost btn-sm" href="/login.html" data-auth-chip>${icon('user')}<span>Sign in</span></a>
+        <a class="btn btn-primary btn-sm" href="/generator.html">${icon('cube')}Generate a part</a>
       </div>`;
-    document.body.insertAdjacentHTML('afterbegin',
-      `<a class="skip" href="#main">Skip to content</a>
+    return `<a class="skip" href="#main">Skip to content</a>
        <header class="site-head">
         <div class="wrap head-in">
-          <a class="brand" href="./" aria-label="${CFG.siteName} home">
-            <img src="assets/img/icon-192.png" alt="" width="38" height="38">
+          <a class="brand" href="/" aria-label="${CFG.siteName} home">
+            <img src="/assets/img/icon-192.png" alt="" width="38" height="38">
             <span class="brand-txt">
               <span class="brand-name"><span class="h">Hotend</span> <span class="q">HQ</span></span>
               <span class="brand-tag">${CFG.tagline}</span>
@@ -118,36 +131,25 @@
           </button>
           <nav class="nav" id="nav">${links}${cta}</nav>
         </div>
-       </header>`);
-
-    const b = document.getElementById('burger'), nav = document.getElementById('nav');
-    b.addEventListener('click', () => {
-      const open = nav.classList.toggle('open');
-      b.setAttribute('aria-expanded', String(open));
-      b.innerHTML = icon(open ? 'close' : 'menu');
-    });
-    nav.addEventListener('click', e => { if(e.target.closest('a')){
-      nav.classList.remove('open'); b.setAttribute('aria-expanded','false'); b.innerHTML = icon('menu'); }});
+       </header>`;
   }
-
-  /* ---------- footer ---------- */
-  function footer(){
+  function footerHTML(year){
     const cols = NAV.footer.map(c => `
       <div class="foot-col"><h4>${c.title}</h4><ul>${
-        c.links.map(l=>`<li><a href="${l.href}">${l.label}</a></li>`).join('')
+        c.links.map(l=>`<li><a href="${abs(l.href)}">${l.label}</a></li>`).join('')
       }</ul></div>`).join('');
     const social = [
       CFG.social.tiktok && `<a href="${CFG.social.tiktok}" rel="noopener">TikTok</a>`,
       CFG.social.youtube && `<a href="${CFG.social.youtube}" rel="noopener">YouTube</a>`,
       CFG.social.email && `<a href="mailto:${CFG.social.email}">Email</a>`
     ].filter(Boolean).join('');
-    document.body.insertAdjacentHTML('beforeend', `
+    return `
       <footer class="site-foot">
         <div class="wrap">
           <div class="foot-grid">
             <div class="foot-col">
-              <a class="brand" href="./" style="margin-bottom:14px">
-                <img src="assets/img/icon-192.png" alt="" width="38" height="38">
+              <a class="brand" href="/" style="margin-bottom:14px">
+                <img src="/assets/img/icon-192.png" alt="" width="38" height="38">
                 <span class="brand-txt">
                   <span class="brand-name"><span class="h">Hotend</span> <span class="q">HQ</span></span>
                   <span class="brand-tag">${CFG.tagline}</span>
@@ -159,11 +161,30 @@
             ${cols}
           </div>
           <div class="foot-bottom">
-            <span>© ${new Date().getFullYear()} ${CFG.siteName}. All rights reserved.</span>
+            <span>© ${year || new Date().getFullYear()} ${CFG.siteName}. All rights reserved.</span>
             <span>Built for makers who fix things themselves.</span>
           </div>
         </div>
-      </footer>`);
+      </footer>`;
+  }
+  window.HHQ_CHROME = { headerHTML, footerHTML, pageKey };
+
+  function header(){
+    if (!document.querySelector('.site-head'))
+      document.body.insertAdjacentHTML('afterbegin', headerHTML(location.pathname));
+    const b = document.getElementById('burger'), nav = document.getElementById('nav');
+    if (!b || !nav) return;
+    b.addEventListener('click', () => {
+      const open = nav.classList.toggle('open');
+      b.setAttribute('aria-expanded', String(open));
+      b.innerHTML = icon(open ? 'close' : 'menu');
+    });
+    nav.addEventListener('click', e => { if(e.target.closest('a')){
+      nav.classList.remove('open'); b.setAttribute('aria-expanded','false'); b.innerHTML = icon('menu'); }});
+  }
+  function footer(){
+    if (!document.querySelector('.site-foot'))
+      document.body.insertAdjacentHTML('beforeend', footerHTML());
   }
 
   /* ---------- auth chip in header (filled once auth resolves) ---------- */
@@ -180,9 +201,33 @@
     }
   });
 
-  /* ---------- article card (shared by home, news, related lists) ---------- */
+  /* ---------- article URLs & cards (shared by home, news, related lists) ----------
+     Published articles live at /guides/<slug>/ (built by build/build.mjs).
+     Drafts and not-yet-built articles fall back to the live renderer.      */
+  window.articleUrl = function (p) {
+    const slug = encodeURIComponent(p.slug);
+    return p.status === 'draft' || p.local ? `/article.html?a=${slug}` : `/guides/${slug}/`;
+  };
+  window.featureCard = function (lead) {
+    return `<a class="card card--link feature" href="${articleUrl(lead)}">
+        <div class="post-cover">${lead.cover_url
+          ? `<img src="${HHQ.esc(lead.cover_url)}" alt="" loading="lazy">`
+          : `<span class="ph">${icon('flame')}</span>`}</div>
+        <div>
+          <span class="tag tag--flame">${HHQ.esc(lead.category)}</span>
+          <h3 style="margin:11px 0 8px">${HHQ.esc(lead.title)}</h3>
+          <p class="muted">${HHQ.esc(lead.excerpt||'')}</p>
+          <div class="post-meta">
+            <span>${HHQ.date(lead.published_at)}</span><span>·</span>
+            <span>${HHQ.readTime(lead.body)}</span>
+          </div>
+        </div>
+      </a>`;
+  };
+
+  /* ---------- article card ---------- */
   window.postCard = function (p) {
-    return `<a class="card card--link post" href="article.html?a=${encodeURIComponent(p.slug)}">
+    return `<a class="card card--link post" href="${articleUrl(p)}">
       <div class="post-cover">${p.cover_url
         ? `<img src="${HHQ.esc(p.cover_url)}" alt="" loading="lazy">`
         : `<span class="ph">${icon('flame')}</span>`}</div>
