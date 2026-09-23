@@ -13,7 +13,7 @@ window.HHQ_CONFIG = {
      Put your Amazon Associates tag here ONCE. Every product
      link on the site is built from it at runtime.            */
   affiliate: {
-    amazonTag: 'hotendhq-20',
+    amazonTag: '',
     disclosure: 'Hotend HQ is reader-supported. When you buy through links on this site we may earn an affiliate commission at no extra cost to you. We only recommend hardware we would run on our own machines.'
   },
 
@@ -25,13 +25,13 @@ window.HHQ_CONFIG = {
      Leave these blank and the site runs in demo mode on the
      bundled seed content.                                     */
   supabase: {
-    url: '',
-    anonKey: ''
+    url: 'https://supabase.com/dashboard/project/izkqzodgvkzvjekafyhn',
+    anonKey: 'izkqzodgvkzvjekafyhn'
   },
 
   social: {
     tiktok: 'https://www.tiktok.com/@hotendhq',
     youtube: '',
-    email: 'hello@hotendhq.com'
+    email: 'cobornassets@gmail.com'
   }
 };
