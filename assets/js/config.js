@@ -35,3 +35,7 @@ window.HHQ_CONFIG = {
     email: 'cobornassets@gmail.com'
   }
 };
+   supabase: {
+     url: 'https://supabase.com/dashboard/project/izkqzodgvkzvjekafyhn',
+     anonKey: 'izkqzodgvkzvjekafyhn'
+   },
