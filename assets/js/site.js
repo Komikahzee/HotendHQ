@@ -36,7 +36,7 @@
       stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"
       aria-hidden="true">${ICONS[name]||''}</svg>`;
 
-  const NAV_ICONS = { 'News':'news','Troubleshoot':'wrench','Generator':'cube','Gridfinity':'grid','Tools':'calc','Gear':'tag' };
+  const NAV_ICONS = { 'News':'news','Troubleshoot':'wrench','Generator':'cube','Generators':'cube','Gridfinity':'grid','Tools':'calc','Gear':'tag' };
   window.HHQ_NAV_ICONS = NAV_ICONS;
 
   /* ---------- helpers exposed to pages ---------- */
@@ -109,12 +109,12 @@
   function headerHTML(path){
     const here = pageKey(path);
     const links = NAV.primary.map(n => {
-      const cur = pageKey('/' + n.href) === here;
+      const cur = pageKey('/' + n.href) === here || (n.also || []).includes(here);
       return `<a href="${abs(n.href)}"${cur?' aria-current="page"':''}>${n.label}</a>`;
     }).join('');
     const cta = `<div class="head-cta">
         <a class="btn btn-ghost btn-sm" href="/login.html" data-auth-chip>${icon('user')}<span>Sign in</span></a>
-        <a class="btn btn-primary btn-sm" href="/generator.html">${icon('cube')}Generate a part</a>
+        <a class="btn btn-primary btn-sm" href="/generators.html">${icon('cube')}Generate a part</a>
       </div>`;
     return `<a class="skip" href="#main">Skip to content</a>
        <header class="site-head">

@@ -3,110 +3,21 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>3D Parametric Generator — Hotend HQ</title>
-<meta name="description" content="Customize printable 3D models in your browser with live preview and instant STL download. Boxes, spool holders, brackets, organisers and cable clips.">
-<link rel="canonical" href="https://hotendhq.com/generator.html">
-<link rel="icon" href="assets/img/favicon-32.png" sizes="32x32">
-<link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png">
-<link rel="manifest" href="site.webmanifest">
-<link rel="stylesheet" href="assets/css/fonts.css">
-<link rel="stylesheet" href="assets/css/theme.css">
-<link rel="stylesheet" href="assets/css/pages.css">
-<script src="assets/js/config.js" defer></script>
-<script src="assets/js/nav.js?v=2" defer></script>
-<script src="assets/js/site.js?v=2" defer></script>
-<script src="assets/js/api.js?v=2" defer></script>
-<script type="importmap">
-{"imports":{
-  "three":"./assets/vendor/three/three.module.js",
-  "three/addons/":"./assets/vendor/three/addons/"
-}}
+<title>3D Model Generators — Hotend HQ</title>
+<meta name="robots" content="noindex, follow">
+<link rel="canonical" href="https://hotendhq.com/generators.html">
+<script>
+(function () {
+  var map = {"box":"storage-box","tray":"grid-organiser","clip":"cable-clip","spool":"spool-holder","bracket":"wall-bracket"};
+  var q = new URLSearchParams(location.search), m = q.get('m');
+  q.delete('m');
+  var rest = q.toString();
+  location.replace('/' + (map[m] || 'generators') + (rest ? '?' + rest : '') + location.hash);
+})();
 </script>
+<meta http-equiv="refresh" content="0; url=/generators">
 </head>
 <body>
-<main id="main">
-  <section class="wrap section--tight">
-    <span class="eyebrow">Parametric generator</span>
-    <h1>Build the part you need</h1>
-    <p class="lede">Pick a model, move the sliders, download the STL. Everything is generated in your
-      browser — nothing is uploaded, nothing is queued, and the dimensions are exactly what you set.</p>
-  </section>
-
-  <section class="wrap" style="padding-bottom:8px">
-    <a class="note note--info" href="gridfinity.html" style="color:inherit">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M15 3v18M3 9h18M3 15h18"/></svg>
-      <p><strong>Organising with Gridfinity?</strong> The <span style="color:var(--link)">Gridfinity generator</span> makes bins, baseplates,
-        lids and tool holders to spec, and splits baseplates to fit your drawer and bed.</p></a>
-  </section>
-
-  <section class="wrap section--tight" style="padding-top:8px">
-    <div class="gen">
-      <!-- controls -->
-      <div class="gen-panel">
-        <div class="model-pick" id="picker"></div>
-        <h2 id="gen-title" style="font-size:1.15rem;margin-bottom:.2em"></h2>
-        <p id="gen-blurb" class="faint" style="margin-bottom:18px"></p>
-        <div id="controls"></div>
-        <div class="stack" style="margin-top:20px">
-          <button class="btn btn-primary btn-block" id="dl">Download STL</button>
-          <div class="row" style="gap:8px;flex-wrap:nowrap">
-            <button class="btn btn-ghost btn-sm" id="share-cfg" style="flex:1">Copy link</button>
-            <button class="btn btn-ghost btn-sm" id="reset" style="flex:1">Reset</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- viewport -->
-      <div class="gen-view">
-        <div class="gen-stage" id="stage">
-          <span class="gen-badge">Drag to orbit · scroll to zoom</span>
-          <div class="gen-readout" id="readout"></div>
-        </div>
-        <div class="card" style="margin-top:16px">
-          <h3 style="font-size:1rem;margin-bottom:10px">About this part</h3>
-          <ul id="notes" class="muted" style="font-size:.92rem;margin:0;padding-left:1.2em;
-            display:grid;gap:6px"></ul>
-        </div>
-        <div class="note note--info" style="margin-top:16px" id="print-note"></div>
-      </div>
-    </div>
-  </section>
-
-  <section class="wrap section">
-    <div class="sec-head"><span class="eyebrow">Printing it</span><h2>Settings that work for these parts</h2></div>
-    <div class="grid g3">
-      <div class="card"><div class="card-ico" id="i1"></div>
-        <h3>Functional, not pretty</h3>
-        <p class="muted" style="font-size:.93rem;margin:0">0.2 mm layers, 4 perimeters, 25 % gyroid infill.
-          Perimeters carry the load in a printed part far more than infill does — add walls before you add infill.</p></div>
-      <div class="card"><div class="card-ico" id="i2"></div>
-        <h3>Holes print undersized</h3>
-        <p class="muted" style="font-size:.93rem;margin:0">Every screw hole here is modelled at its nominal
-          size. Enable hole horizontal expansion of +0.1 to +0.2 mm in your slicer, or drill them out.</p></div>
-      <div class="card"><div class="card-ico" id="i3"></div>
-        <h3>Material</h3>
-        <p class="muted" style="font-size:.93rem;margin:0">PLA is fine indoors. Anything in a hot car,
-          near a printer's heated bed, or outdoors wants PETG or ASA — see the
-          <a href="tools.html#filaments">filament database</a>.</p></div>
-    </div>
-  </section>
-</main>
-
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-  document.getElementById('i1').innerHTML = icon('cube');
-  document.getElementById('i2').innerHTML = icon('calc');
-  document.getElementById('i3').innerHTML = icon('filament');
-  document.getElementById('print-note').innerHTML = icon('info') +
-    '<p><strong>How exact is this?</strong> Every dimension you set is the dimension in the file — ' +
-    'measured on the exported STLs, outer sizes match to within 0.01 mm, and holes are cut as ' +
-    '48-sided polygons sized so the narrowest measurement equals the diameter you asked for. ' +
-    'Each part of a model is its own closed shell and they overlap rather than being boolean-united, ' +
-    'which every slicer resolves correctly but a strict mesh validator will call non-manifold. ' +
-    'Generated geometry is not a substitute for engineering judgement — check load-bearing parts ' +
-    'before you trust them. Everything here is yours to use, modify and sell.</p>';
-});
-</script>
-<script type="module" src="assets/js/generator.js"></script>
+<p>The generators have moved. <a href="/generators">Go to the 3D model generators</a>.</p>
 </body>
 </html>

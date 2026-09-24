@@ -4,8 +4,8 @@ window.HHQ_NAV = {
   primary: [
     { href:'news.html',        label:'News',      desc:'Latest 3D printing news, guides, and reviews' },
     { href:'troubleshoot.html',label:'Troubleshoot', desc:'Diagnose any print failure step by step' },
-    { href:'generator.html',   label:'Generator', desc:'Parametric models you customize and download' },
-    { href:'gridfinity.html',  label:'Gridfinity', desc:'Custom Gridfinity bins, baseplates and drawer layouts' },
+    { href:'generators.html',  label:'Generators', desc:'Gridfinity, boxes, brackets, chains and more, made to your size',
+      also:['gridfinity','chain','storage-box','grid-organiser','cable-clip','spool-holder','wall-bracket','generator'] },
     { href:'tools.html',       label:'Tools',     desc:'Calculators and reference databases' },
     { href:'gear.html',        label:'Gear',      desc:'Tested hardware picks and buying guides' }
   ],
@@ -13,8 +13,9 @@ window.HHQ_NAV = {
     { title:'Explore', links:[
       { href:'news.html', label:'News & Articles' },
       { href:'troubleshoot.html', label:'Troubleshooting' },
-      { href:'generator.html', label:'3D Generator' },
+      { href:'generators.html', label:'3D Model Generators' },
       { href:'gridfinity.html', label:'Gridfinity Generator' },
+      { href:'chain.html', label:'Chain Generator' },
       { href:'tools.html', label:'Calculators' },
       { href:'gear.html', label:'Gear Picks' }
     ]},

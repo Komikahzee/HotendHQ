@@ -460,7 +460,9 @@ function volumeOf(geo, targetRays = 20000){
 /* ============================================================
    UI
    ============================================================ */
-let modelKey = new URLSearchParams(location.search).get('m') || 'box';
+/* A page for one model sets <body data-model="…">; the picker is then hidden. */
+const LOCK = MODELS[document.body.dataset.model] ? document.body.dataset.model : null;
+let modelKey = LOCK || new URLSearchParams(location.search).get('m') || 'box';
 if (!MODELS[modelKey]) modelKey = 'box';
 let state = {};
 
@@ -481,8 +483,8 @@ function paramsUI(){
     if (Number.isNaN(state[k])) state[k] = m.params.find(p => p.k === k)?.v ?? state[k];
   }
 
-  $('#gen-title').textContent = m.label;
-  $('#gen-blurb').textContent = m.blurb;
+  if ($('#gen-title')) $('#gen-title').textContent = m.label;
+  if ($('#gen-blurb')) $('#gen-blurb').textContent = m.blurb;
   $('#controls').innerHTML =
     m.params.map(p => `
       <div class="slider-row">
@@ -497,7 +499,8 @@ function paramsUI(){
         <label for="t-${t.k}">${t.l}</label>
       </div>`).join('');
 
-  $('#controls').addEventListener('input', e => {
+}
+$('#controls').addEventListener('input', e => {
     const el = e.target;
     if (el.dataset.k){
       state[el.dataset.k] = parseFloat(el.value);
@@ -506,8 +509,7 @@ function paramsUI(){
       state[el.dataset.t] = el.checked;
     }
     rebuild();
-  });
-}
+});
 
 function rebuild(){
   const m = MODELS[modelKey];
@@ -565,6 +567,7 @@ function scheduleVolume(geo){
 }
 
 function pickerUI(){
+  if (LOCK || !$('#picker')) return;
   $('#picker').innerHTML = Object.entries(MODELS).map(([k,m]) =>
     `<button data-m="${k}" aria-pressed="${k===modelKey}">${icon(m.icon)}<span>${m.label}</span></button>`).join('');
   $('#picker').addEventListener('click', e => {
@@ -591,7 +594,7 @@ $('#dl').addEventListener('click', () => {
 });
 
 $('#share-cfg').addEventListener('click', async () => {
-  const q = new URLSearchParams({ m: modelKey });
+  const q = new URLSearchParams(LOCK ? {} : { m: modelKey });
   for (const [k,v] of Object.entries(state)) q.set(k, typeof v === 'boolean' ? (v?'1':'0') : v);
   const url = location.origin + location.pathname + '?' + q;
   try { await navigator.clipboard.writeText(url); HHQ.toast('Configuration link copied.'); }
@@ -599,7 +602,7 @@ $('#share-cfg').addEventListener('click', async () => {
 });
 
 $('#reset').addEventListener('click', () => {
-  history.replaceState(null,'', location.pathname + '?m=' + modelKey);
+  history.replaceState(null,'', location.pathname + (LOCK ? '' : '?m=' + modelKey));
   paramsUI(); rebuild();
 });
 

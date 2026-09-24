@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>3D Printed Chain Generator: Print-in-Place Necklace Chains — Hotend HQ</title>
+<meta name="description" content="Free print-in-place chain generator: 26 styles from cable, rolo and paperclip to Cuban, figaro, rope, snake and name chains. Sized to your printer and bed, with clasps, extender and jump rings. STL and 3MF.">
+<link rel="canonical" href="https://hotendhq.com/chain.html">
+<link rel="icon" href="assets/img/favicon-32.png" sizes="32x32">
+<link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png">
+<link rel="manifest" href="site.webmanifest">
+<link rel="stylesheet" href="assets/css/fonts.css">
+<link rel="stylesheet" href="assets/css/theme.css">
+<link rel="stylesheet" href="assets/css/pages.css">
+<link rel="stylesheet" href="assets/css/gridfinity.css">
+<link rel="stylesheet" href="assets/css/chain.css">
+<script src="assets/js/config.js" defer></script>
+<script src="assets/js/nav.js?v=2" defer></script>
+<script src="assets/js/site.js?v=2" defer></script>
+<script src="assets/js/api.js?v=2" defer></script>
+<script type="importmap">
+{"imports":{
+  "three":"./assets/vendor/three/three.module.js",
+  "three/addons/":"./assets/vendor/three/addons/"
+}}
+</script>
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebApplication","name":"Hotend HQ Chain Generator",
+ "url":"https://hotendhq.com/chain.html","applicationCategory":"DesignApplication","operatingSystem":"Any (runs in the browser)",
+ "offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},
+ "description":"Generate print-in-place 3D printable necklace chains in 26 styles and download STL or 3MF."}
+</script>
+</head>
+<body>
+<main id="main" class="gf-page">
+  <section class="wrap gf-hero">
+    <nav class="crumbs" aria-label="Breadcrumb"><a href="generators.html">3D model generators</a><span aria-hidden="true">/</span><span>Chains</span></nav>
+    <h1>Print-in-place chains, any style</h1>
+    <p class="lede">Cable to Cuban, rope to name chains: 26 styles that come off the bed already linked. Sized to your
+      nozzle and bed, with clasps, an extender and jump rings. STL or 3MF, built in your browser.</p>
+  </section>
+
+  <section class="wrap gf-wrap" aria-label="Chain generator">
+    <div class="gf">
+      <!-- controls -->
+      <div class="gf-panel">
+        <div class="gf-presets chips" id="ch-presets"></div>
+        <ul id="ch-warn" class="gf-warn hidden" aria-live="polite"></ul>
+        <div id="ch-kit" class="note note--info hidden"></div>
+        <div id="ch-controls"></div>
+        <div class="ch-howto card">
+          <h3>How to print it</h3>
+          <ul>
+            <li><strong>Layer height 0.12–0.16 mm.</strong> Small links need fine layers to keep their gaps open.</li>
+            <li><strong>PETG or silk PLA.</strong> PETG flexes without cracking; silk PLA looks like metal.</li>
+            <li><strong>No supports, no brim.</strong> Every link rests on the bed and leans at about 45°, so nothing overhangs.</li>
+            <li><strong>Print the test strip first</strong> to find the gap your printer needs, then set it under Printer fit.</li>
+            <li><strong>After printing,</strong> flex the chain gently along its length to free any link that stuck.</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- preview -->
+      <div class="gf-view">
+        <div class="gf-stage" id="ch-stage">
+          <span class="gen-badge">Drag to orbit · scroll or pinch to zoom</span>
+          <div class="gf-tools">
+            <button type="button" class="gf-tool" id="ch-fit" aria-label="Reset the view" title="Reset view">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg></button>
+            <button type="button" class="gf-tool" id="ch-full" aria-label="Full screen" title="Full screen">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
+          </div>
+          <div class="ch-swatches" id="ch-swatches" role="group" aria-label="Preview color"></div>
+          <div class="gen-readout" id="ch-readout"></div>
+          <div class="gf-busy" aria-hidden="true"><span class="spin"></span></div>
+        </div>
+        <div class="ch-parts chips hidden" id="ch-parts" role="group" aria-label="Parts"></div>
+        <p id="ch-status" class="gf-status" role="status" aria-live="polite">Loading…</p>
+        <dl class="ch-stats" id="ch-stats"></dl>
+        <div class="gf-bar">
+          <div class="gf-actions">
+            <button class="btn btn-primary" id="ch-stl" type="button">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M7 11l5 5 5-5"/><path d="M4 20h16"/></svg><span id="ch-stl-label">Download STL</span></button>
+            <button class="btn btn-ghost" id="ch-3mf" type="button">3MF</button>
+            <button class="btn btn-ghost" id="ch-link" type="button" aria-label="Copy a link to this chain">Copy link</button>
+            <button class="btn btn-ghost ch-full" id="ch-fullset" type="button" disabled title="Coming with the clasp and medallion generators">Send to Full set</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="wrap section">
+    <div class="sec-head"><span class="eyebrow">Styles</span><h2>Every chain an FDM printer can make</h2></div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th scope="col">Style</th><th scope="col">Look</th><th scope="col">Difficulty</th></tr></thead>
+        <tbody id="ch-style-table"></tbody>
+      </table>
+    </div>
+    <p class="faint" style="margin-top:14px">True snake and herringbone chains are solid tubes of tiny plates and can't be printed on
+      FDM printers; the hinged versions here stand in for them.</p>
+  </section>
+
+  <section class="wrap section--tight">
+    <div class="sec-head"><span class="eyebrow">Questions</span><h2>Chain generator FAQ</h2></div>
+    <div class="gf-faq">
+      <details><summary>How do the links come off the bed already joined?</summary>
+        <p>Neighbouring links lean at about 45° in opposite directions, each resting on the bed and threaded through the next
+          with a gap all the way round. The generator searches for the spacing where every pair is linked and nothing touches,
+          so the chain moves as soon as it's off the printer.</p></details>
+      <details><summary>What gap should I use?</summary>
+        <p>0.35 mm suits most 0.4 mm nozzles. If links fuse, raise it; if the chain is loose and floppy, lower it.
+          The test strip prints three short chains at your gap and 0.1 mm either side so you can see which works.</p></details>
+      <details><summary>My chain is longer than my bed. What happens?</summary>
+        <p>It folds back and forth to fit. If it still won't fit, it splits into parts, and matching jump rings are added
+          so you can join them.</p></details>
+      <details><summary>Can I sell what I print?</summary>
+        <p>Yes. Everything you make here is yours to print, give and sell.</p></details>
+    </div>
+  </section>
+
+  <section class="wrap section--tight">
+    <div class="sec-head between"><div><span class="eyebrow">More generators</span><h2>Make something else</h2></div>
+      <a class="btn btn-ghost btn-sm" href="generators.html">All 3D model generators</a></div>
+    <div class="grid g3 gens-grid">
+      <a class="card card--link gens-card" href="gridfinity.html" data-cat="organize">
+        <img src="assets/img/generators/gridfinity.webp" alt="Gridfinity generator preview" width="800" height="500" loading="lazy" decoding="async">
+        <div class="gens-body">
+          <h3>Gridfinity generator</h3>
+          <p class="muted">Bins with dividers, scoops, labels and magnets, plus baseplates, lids, tool holders and a drawer fitter.</p>
+          <div class="gens-tags"><span class="tag">STL</span><span class="tag">3MF</span><span class="tag">Splits for your bed</span></div>
+          <span class="gens-go">Open generator <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+        </div>
+      </a>
+      <a class="card card--link gens-card" href="storage-box.html" data-cat="organize">
+        <img src="assets/img/generators/storage-box.webp" alt="Storage box generator preview" width="800" height="500" loading="lazy" decoding="async">
+        <div class="gens-body">
+          <h3>Storage box generator</h3>
+          <p class="muted">A box to your exact size, with dividers, a snap-on lid and screw-down mounting ears.</p>
+          <div class="gens-tags"><span class="tag">STL</span><span class="tag">Lid</span><span class="tag">Dividers</span></div>
+          <span class="gens-go">Open generator <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+        </div>
+      </a>
+      <a class="card card--link gens-card" href="grid-organiser.html" data-cat="organize">
+        <img src="assets/img/generators/grid-organiser.webp" alt="Grid organiser generator preview" width="800" height="500" loading="lazy" decoding="async">
+        <div class="gens-body">
+          <h3>Grid organiser generator</h3>
+          <p class="muted">A drawer tray with a grid of cells sized to what you store, with optional stacking feet.</p>
+          <div class="gens-tags"><span class="tag">STL</span><span class="tag">Stackable</span></div>
+          <span class="gens-go">Open generator <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+        </div>
+      </a>
+    </div>
+  </section>
+</main>
+
+<script type="module" src="assets/js/chain.js?v=1"></script>
+<script>
+setTimeout(function () {
+  var t = document.getElementById('ch-controls'), s = document.getElementById('ch-status');
+  if (t && !t.children.length && s) {
+    s.textContent = 'The 3D generator could not start in this browser. Update it, or open this page in Chrome, Edge, Firefox or Safari.';
+    s.setAttribute('data-kind', 'bad');
+  }
+}, 12000);
+</script>
+</body>
+</html>

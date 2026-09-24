@@ -13,7 +13,6 @@
 <link rel="stylesheet" href="assets/css/theme.css">
 <link rel="stylesheet" href="assets/css/pages.css">
 <link rel="stylesheet" href="assets/css/gridfinity.css?v=1">
-<link rel="modulepreload" href="assets/js/gridfinity-core.js?v=1">
 <script src="assets/js/config.js" defer></script>
 <script src="assets/js/nav.js?v=2" defer></script>
 <script src="assets/js/site.js?v=2" defer></script>
@@ -34,7 +33,7 @@
 <body>
 <main id="main" class="gf-page">
   <section class="wrap gf-hero">
-    <span class="eyebrow">Gridfinity generator</span>
+    <nav class="crumbs" aria-label="Breadcrumb"><a href="generators.html">3D model generators</a><span aria-hidden="true">/</span><span>Gridfinity</span></nav>
     <h1>Gridfinity, built for your drawer</h1>
     <p class="lede">Bins, baseplates, lids and tool holders to spec. Compartments, magnets, printed labels,
       half units. Clean STL or 3MF, generated right in your browser.</p>
@@ -58,7 +57,13 @@
       <!-- preview -->
       <div class="gf-view">
         <div class="gf-stage" id="gf-stage">
-          <span class="gen-badge">Drag to orbit · pinch to zoom</span>
+          <span class="gen-badge">Drag to orbit · scroll or pinch to zoom</span>
+          <div class="gf-tools">
+            <button type="button" class="gf-tool" id="gf-fit" aria-label="Reset the view" title="Reset view">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg></button>
+            <button type="button" class="gf-tool" id="gf-full" aria-label="Full screen" title="Full screen">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
+          </div>
           <div class="gen-readout" id="gf-readout"></div>
           <div class="gf-busy" aria-hidden="true"><span class="spin"></span></div>
         </div>
@@ -135,11 +140,53 @@
         <p>Yes. Files you generate here are yours to print, modify and sell. Gridfinity itself is an open standard created by
           Zack Freedman. Please credit it.</p></details>
     </div>
-    <p class="faint gf-more">Need a different part? Try the <a href="generator.html">parametric generator</a> or the
-      <a href="tools.html">calculators</a>.</p>
+  </section>
+
+  <section class="wrap section--tight">
+    <div class="sec-head between"><div><span class="eyebrow">More generators</span><h2>Make something else</h2></div>
+      <a class="btn btn-ghost btn-sm" href="generators.html">All 3D model generators</a></div>
+    <div class="grid g3 gens-grid">
+      <a class="card card--link gens-card" href="chain.html" data-cat="jewelry">
+        <img src="assets/img/generators/chain.webp" alt="Chain generator preview" width="800" height="500" loading="lazy" decoding="async">
+        <div class="gens-body">
+          <h3>Chain generator</h3>
+          <p class="muted">Print-in-place necklace chains in 26 styles, sized to your nozzle and bed, with clasps and an extender.</p>
+          <div class="gens-tags"><span class="tag">STL</span><span class="tag">3MF</span><span class="tag">Print-in-place</span></div>
+          <span class="gens-go">Open generator <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+        </div>
+      </a>
+      <a class="card card--link gens-card" href="storage-box.html" data-cat="organize">
+        <img src="assets/img/generators/storage-box.webp" alt="Storage box generator preview" width="800" height="500" loading="lazy" decoding="async">
+        <div class="gens-body">
+          <h3>Storage box generator</h3>
+          <p class="muted">A box to your exact size, with dividers, a snap-on lid and screw-down mounting ears.</p>
+          <div class="gens-tags"><span class="tag">STL</span><span class="tag">Lid</span><span class="tag">Dividers</span></div>
+          <span class="gens-go">Open generator <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+        </div>
+      </a>
+      <a class="card card--link gens-card" href="grid-organiser.html" data-cat="organize">
+        <img src="assets/img/generators/grid-organiser.webp" alt="Grid organiser generator preview" width="800" height="500" loading="lazy" decoding="async">
+        <div class="gens-body">
+          <h3>Grid organiser generator</h3>
+          <p class="muted">A drawer tray with a grid of cells sized to what you store, with optional stacking feet.</p>
+          <div class="gens-tags"><span class="tag">STL</span><span class="tag">Stackable</span></div>
+          <span class="gens-go">Open generator <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+        </div>
+      </a>
+    </div>
   </section>
 </main>
 
-<script type="module" src="assets/js/gridfinity.js?v=1"></script>
+<script type="module" src="assets/js/gridfinity.js?v=2"></script>
+<script>
+/* If the 3D module cannot start (very old browser, blocked script), say so instead of spinning forever. */
+setTimeout(function () {
+  var t = document.getElementById('gf-tabs'), s = document.getElementById('gf-status');
+  if (t && !t.children.length && s) {
+    s.textContent = 'The 3D generator could not start in this browser. Update it, or open this page in Chrome, Edge, Firefox or Safari.';
+    s.setAttribute('data-kind', 'bad');
+  }
+}, 12000);
+</script>
 </body>
 </html>

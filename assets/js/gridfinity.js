@@ -4,7 +4,7 @@
    ============================================================ */
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { fitDrawer, meshToSTL, meshesTo3MF, zip, SPEC } from './gridfinity-core.js?v=1';
+import { fitDrawer, meshToSTL, meshesTo3MF, zip, SPEC } from './gridfinity-core.js?v=2';
 
 const $ = (s, r = document) => r.querySelector(s);
 const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -475,7 +475,8 @@ function gridFor(w, d) {
 function showMesh(pos, idx, info) {
   if (meshObj) { scene.remove(meshObj); meshObj.geometry.dispose(); }
   const g = new THREE.BufferGeometry();
-  g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  // copy: rotating for display must not touch the data we export
+  g.setAttribute('position', new THREE.BufferAttribute(pos.slice(), 3));
   g.setIndex(new THREE.BufferAttribute(idx, 1));
   g.rotateX(-Math.PI / 2);            // Z-up (printer) → Y-up (three)
   g.computeVertexNormals();
@@ -494,6 +495,18 @@ function showMesh(pos, idx, info) {
     camera.near = dist / 100; camera.far = dist * 20; camera.updateProjectionMatrix();
   }
 }
+/* view tools: re-frame and full screen */
+$('#gf-fit').addEventListener('click', () => { lastFit = ''; if (current) showMesh(current.pos, current.idx, current.info); });
+const fsBtn = $('#gf-full');
+const fsEl = () => document.fullscreenElement || document.webkitFullscreenElement;
+if (!(document.fullscreenEnabled || document.webkitFullscreenEnabled)) fsBtn.hidden = true;
+fsBtn.addEventListener('click', () => {
+  if (fsEl()) (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+  else (stage.requestFullscreen || stage.webkitRequestFullscreen).call(stage);
+});
+const fsSync = () => { const on = !!fsEl(); fsBtn.setAttribute('aria-label', on ? 'Exit full screen' : 'Full screen'); fsBtn.title = on ? 'Exit full screen' : 'Full screen'; };
+document.addEventListener('fullscreenchange', fsSync); document.addEventListener('webkitfullscreenchange', fsSync);
+
 function resize() {
   const r = stage.getBoundingClientRect();
   renderer.setSize(r.width, r.height, false);
@@ -511,7 +524,7 @@ function getWorker() {
   if (worker && builds > 30 && !busy) { worker.terminate(); worker = null; }   // free WASM memory now and then
   if (!worker) {
     builds = 0;
-    worker = new Worker(new URL('./gridfinity-worker.js?v=1', import.meta.url), { type: 'module' });
+    worker = new Worker(new URL('./gridfinity-worker.js?v=2', import.meta.url), { type: 'module' });
     worker.onmessage = (e) => { const h = handlers.get(e.data.id); if (h) h(e.data); };
     worker.onerror = (e) => { setStatus('The geometry engine failed to load. Try reloading the page.', 'bad'); console.error(e); busy = false; };
   }

@@ -27,6 +27,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import vm from 'node:vm';
 import { fileURLToPath } from 'node:url';
+import crypto from 'node:crypto';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const OUT = path.join(ROOT, 'dist');
@@ -99,7 +100,8 @@ async function loadArticles() {
 }
 
 /* ---------------- HTML helpers ---------------- */
-const PAGES = ['index', 'news', 'troubleshoot', 'generator', 'gridfinity', 'tools', 'gear', 'about',
+const PAGES = ['index', 'news', 'troubleshoot', 'generator', 'generators', 'gridfinity', 'chain',
+  'storage-box', 'grid-organiser', 'cable-clip', 'spool-holder', 'wall-bracket', 'tools', 'gear', 'about',
   'login', 'admin', 'article', '404'];
 const clean = p => (p === 'index' ? '/' : `/${p}`);
 const jsonLd = obj => `<script type="application/ld+json">${JSON.stringify(obj).replace(/</g, '\\u003c')}</script>`;
@@ -260,11 +262,36 @@ for (const f of fs.readdirSync(OUT)) {
 // JS files carry links too (nav model, cards, admin redirects)
 for (const f of ['nav.js', 'site.js', 'render.js']) edit(path.join('assets/js', f), rewriteLinks);
 
+/* ---------------- cache busting ----------------
+   _headers caches /assets/* for a year, so every CSS/JS file a page links
+   gets ?v=<content hash>. Change a file and its URL changes with it.   */
+const hashOf = p => crypto.createHash('sha1').update(fs.readFileSync(p)).digest('hex').slice(0, 10);
+const assetHash = new Map();
+const htmlFiles = [];
+(function walk(d) {
+  for (const e of fs.readdirSync(d, { withFileTypes: true })) {
+    const p = path.join(d, e.name);
+    if (e.isDirectory()) walk(p); else if (e.name.endsWith('.html')) htmlFiles.push(p);
+  }
+})(OUT);
+for (const f of htmlFiles) {
+  const h = fs.readFileSync(f, 'utf8').replace(/(\/assets\/(?:css|js)\/[\w.-]+\.(?:css|js))(?:\?v=[\w.-]*)?(?=["'])/g, (_, a) => {
+    if (!assetHash.has(a)) {
+      const p = path.join(OUT, a);
+      assetHash.set(a, fs.existsSync(p) ? hashOf(p) : null);
+    }
+    return assetHash.get(a) ? `${a}?v=${assetHash.get(a)}` : a;
+  });
+  fs.writeFileSync(f, h);
+}
+log(`cache-busted ${assetHash.size} asset URL(s) across ${htmlFiles.length} pages`);
+
 /* ---------------- sitemap + robots ---------------- */
 const day = d => (iso(d) || '').slice(0, 10);
-const staticPages = ['index', 'news', 'troubleshoot', 'gridfinity', 'generator', 'tools', 'gear', 'about'];
+const staticPages = ['index', 'news', 'troubleshoot', 'generators', 'gridfinity', 'chain',
+  'storage-box', 'grid-organiser', 'cable-clip', 'spool-holder', 'wall-bracket', 'tools', 'gear', 'about'];
 const urls = [
-  ...staticPages.map(p => `  <url><loc>${BASE}${clean(p)}</loc><priority>${p === 'index' ? '1.0' : p === 'gridfinity' ? '0.9' : '0.8'}</priority></url>`),
+  ...staticPages.map(p => `  <url><loc>${BASE}${clean(p)}</loc><priority>${p === 'index' ? '1.0' : ['generators', 'gridfinity', 'chain'].includes(p) ? '0.9' : '0.8'}</priority></url>`),
   ...articles.map(a => `  <url><loc>${guideUrl(a)}</loc>${day(a.updated_at || a.published_at) ? `<lastmod>${day(a.updated_at || a.published_at)}</lastmod>` : ''}<priority>0.7</priority></url>`),
 ];
 fs.writeFileSync(path.join(OUT, 'sitemap.xml'),

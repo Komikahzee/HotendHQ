@@ -203,3 +203,33 @@
 
 /* home pillars: five across on wide screens */
 #pillars{grid-template-columns:repeat(auto-fit,minmax(min(100%,180px),1fr))}
+
+/* ---------- 3D model generators: hub cards, breadcrumbs, FAQ ---------- */
+.gens-hero{padding-bottom:18px}
+.gens-filter{margin-bottom:20px}
+.gens-grid{align-items:stretch}
+.gens-card{padding:0;display:flex!important;flex-direction:column}
+.gens-card[hidden]{display:none!important}
+.gens-card img{display:block;width:100%;height:auto;aspect-ratio:8/5;object-fit:cover;
+  background:radial-gradient(circle at 50% 35%,#062246,#00060f 72%);border-bottom:1px solid var(--border)}
+.gens-body{padding:18px 20px 20px;display:flex;flex-direction:column;gap:10px;flex:1}
+.gens-body h3{margin:0;font-size:1.08rem}
+.gens-body p{margin:0;font-size:.92rem}
+.gens-tags{display:flex;flex-wrap:wrap;gap:6px}
+.gens-go{margin-top:auto;padding-top:4px;display:inline-flex;align-items:center;gap:6px;font-weight:700;font-size:.9rem;color:var(--amber-300)}
+.gens-go svg{width:16px;height:16px;transition:transform .2s var(--ease)}
+.gens-card:hover .gens-go svg{transform:translateX(3px)}
+.crumbs{display:flex;gap:8px;flex-wrap:wrap;align-items:center;font-size:.82rem;color:var(--text-faint);margin-bottom:14px}
+.crumbs a{color:var(--blue-200)}
+.gens-faq{display:grid;gap:10px;max-width:860px}
+.gens-faq details{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:0 18px}
+.gens-faq summary{cursor:pointer;font-weight:700;padding:15px 0;list-style:none;display:flex;justify-content:space-between;gap:12px}
+.gens-faq summary::-webkit-details-marker{display:none}
+.gens-faq summary::after{content:'+';color:var(--amber-300);font-weight:800;font-size:1.2rem;line-height:1}
+.gens-faq details[open] summary::after{content:'–'}
+.gens-faq p{color:var(--text-dim);font-size:.94rem}
+#gens-grid{grid-template-columns:repeat(auto-fill,minmax(min(100%,250px),1fr))}
+.chip[aria-pressed=true] .faint{color:inherit;opacity:.8}
+/* phones: show the model first, then the sliders */
+@media (max-width:860px){ .gen-view{display:contents} .gen-stage{order:-1} .gen-view>.card,.gen-view>.note{order:1;margin-top:0!important} }
+@media (max-width:560px){ .gen-stage{aspect-ratio:4/3} }

@@ -151,7 +151,7 @@ mark{background:rgba(255,184,77,.22);color:var(--amber-200);border-radius:3px;pa
   color:var(--text);width:42px;height:42px;border-radius:11px;cursor:pointer;
   align-items:center;justify-content:center}
 .burger svg{width:20px;height:20px}
-@media (max-width:1020px){
+@media (max-width:1080px){
   .nav{position:fixed;inset:64px 0 auto;flex-direction:column;align-items:stretch;gap:4px;
     background:rgba(0,9,28,.98);backdrop-filter:blur(20px);padding:14px var(--gut) 22px;
     border-bottom:1px solid var(--border);transform:translateY(-130%);

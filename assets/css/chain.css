@@ -1,0 +1,38 @@
+/* ============================================================
+   HOTEND HQ — Chain generator (extends gridfinity.css layout)
+   theme.css tokens only.
+   ============================================================ */
+.ch-swatches{position:absolute;left:12px;bottom:12px;display:flex;gap:6px;z-index:2;
+  background:rgba(0,9,28,.72);border:1px solid var(--border);border-radius:99px;padding:5px}
+.ch-swatch{width:24px;height:24px;border-radius:50%;border:2px solid rgba(255,255,255,.18);cursor:pointer;padding:0}
+.ch-swatch[aria-pressed=true]{border-color:var(--amber-300);box-shadow:0 0 0 2px rgba(255,184,77,.35)}
+.ch-swatch:focus-visible{outline:2px solid var(--amber-300);outline-offset:2px}
+.ch-parts{margin:10px 2px 0}
+.ch-parts .chip{padding:6px 12px;font-size:.8rem}
+.ch-stats{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin:0 0 12px;padding:0}
+.ch-stats div{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:8px 10px;min-width:0}
+.ch-stats dt{font-size:.62rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--text-faint)}
+.ch-stats dd{margin:2px 0 0;font:600 .86rem var(--mono);color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ch-howto{margin-top:16px;padding:16px}
+.ch-howto h3{font-size:1rem;margin-bottom:8px}
+.ch-howto ul{margin:0;padding-left:1.1em;display:grid;gap:6px;font-size:.86rem;color:var(--text-dim)}
+.ch-howto strong{color:var(--text)}
+.ch-upload{display:grid;gap:8px}
+.ch-drop{border:1.5px dashed var(--border-strong);border-radius:var(--r);padding:14px;text-align:center;cursor:pointer;
+  color:var(--text-dim);font-size:.85rem;background:rgba(0,0,0,.2);transition:border-color .18s var(--ease)}
+.ch-drop:hover,.ch-drop.is-over{border-color:var(--amber-300);color:var(--text)}
+.ch-drop input{position:absolute;opacity:0;width:1px;height:1px}
+.ch-trace{display:flex;gap:10px;align-items:center}
+.ch-trace canvas{width:84px;height:84px;border-radius:10px;border:1px solid var(--border);background:#fff;image-rendering:pixelated}
+.ch-btn-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}
+#ch-kit{margin-bottom:14px}
+.ch-full[disabled]{opacity:.45}
+.ch-ro-extra{display:none}
+@media (max-width:900px){
+  .ch-stats{display:none}
+  .ch-ro-extra{display:inline}
+  .ch-full{display:none}
+  .ch-swatches{bottom:auto;top:56px;left:10px}
+}
+/* the chain page has a stats row and part chips under the stage: keep the download bar above the fold */
+@media (min-width:901px){ .gf-stage{height:calc(100vh - 318px);min-height:400px} }
