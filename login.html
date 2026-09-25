@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Sign in — Hotend HQ</title>
 <meta name="description" content="Sign in to Hotend HQ to publish articles and save generator presets.">
-<link rel="canonical" href="https://hotendhq.com/login.html">
+<link rel="canonical" href="https://hotendhq.com/login">
 <link rel="icon" href="assets/img/favicon-32.png" sizes="32x32">
 <link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png">
 <link rel="manifest" href="site.webmanifest">
@@ -72,9 +72,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       <p><strong>No backend connected yet.</strong> Add your Supabase project URL and anon key to
       <code>assets/js/config.js</code> and run <code>supabase/schema.sql</code> once. Until then the
       site serves its bundled articles and the editor saves drafts in this browser only —
-      <a href="admin.html">open the editor</a> to try it.</p></div>`;
+      <a href="/admin">open the editor</a> to try it.</p></div>`;
   }
-  if (HHQ_API.user){ location.replace('admin.html'); return; }
+  if (HHQ_API.user){ location.replace('/admin'); return; }
 
   $('#toggle-mode').onclick = () => {
     mode = mode === 'in' ? 'up' : 'in';
@@ -106,7 +106,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         HHQ.toast('Account created — check your email to confirm.');
       } else {
         await HHQ_API.signIn($('#em').value.trim(), $('#pw').value);
-        location.href = 'admin.html';
+        location.href = '/admin';
       }
     } catch (err) { HHQ.toast(err.message || 'That did not work.', 'bad'); }
     finally { btn.disabled = false; btn.textContent = label; }

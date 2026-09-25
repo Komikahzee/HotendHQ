@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>News &amp; Guides — Hotend HQ</title>
 <meta name="description" content="Every Hotend HQ article: 3D printing news, hardware guides, tuning walkthroughs, materials deep dives and troubleshooting explainers.">
-<link rel="canonical" href="https://hotendhq.com/news.html">
+<link rel="canonical" href="https://hotendhq.com/news">
 <link rel="icon" href="assets/img/favicon-32.png" sizes="32x32">
 <link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png">
 <link rel="manifest" href="site.webmanifest">
@@ -30,7 +30,7 @@
       <div style="flex:1;min-width:220px;position:relative">
         <input type="search" id="q" placeholder="Search articles…" aria-label="Search articles">
       </div>
-      <a class="btn btn-ghost btn-sm" href="login.html" id="write-link"></a>
+      <a class="btn btn-ghost btn-sm" href="/login" id="write-link"></a>
     </div>
     <div class="chips" id="cats"></div>
   </section>
@@ -48,7 +48,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   $('#write-link').innerHTML = icon('plus') + 'Write an article';
   window.addEventListener('hhq:auth', e => {
-    if (e.detail?.user) { $('#write-link').href = 'admin.html';
+    if (e.detail?.user) { $('#write-link').href = '/admin';
       $('#write-link').innerHTML = icon('edit') + 'Open the editor'; }
   });
 

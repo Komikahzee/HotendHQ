@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Editor — Hotend HQ</title>
 <meta name="description" content="Write and publish Hotend HQ articles.">
-<link rel="canonical" href="https://hotendhq.com/admin.html">
+<link rel="canonical" href="https://hotendhq.com/admin">
 <link rel="icon" href="assets/img/favicon-32.png" sizes="32x32">
 <link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png">
 <link rel="manifest" href="site.webmanifest">
@@ -144,7 +144,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       ? `<span class="tag">${HHQ.esc(HHQ_API.profile?.role || 'reader')}</span>
          <span class="faint">${HHQ.esc(u.email)}</span>
          <button class="btn btn-ghost btn-sm" id="out">Sign out</button>`
-      : `<a class="btn btn-ghost btn-sm" href="login.html">Sign in</a>`;
+      : `<a class="btn btn-ghost btn-sm" href="/login">Sign in</a>`;
     const out = $('#out');
     if (out) out.onclick = async () => { await HHQ_API.signOut(); location.href = './'; };
   }
@@ -159,7 +159,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       the editor works exactly the same way afterwards.</p></div>`;
   } else if (!HHQ_API.user){
     $('#mode-note').innerHTML = `<div class="note note--bad">${icon('warn')}
-      <p>You are signed out. <a href="login.html">Sign in</a> to publish.</p></div>`;
+      <p>You are signed out. <a href="/login">Sign in</a> to publish.</p></div>`;
   } else if (!HHQ_API.isStaff){
     $('#mode-note').innerHTML = `<div class="note note--warn">${icon('warn')}
       <p>Your account is a reader. An administrator can change your role to
@@ -253,7 +253,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       HHQ.toast(status === 'published' ? 'Published. The permanent page goes live in about a minute.' : 'Draft saved.');
       refresh();
       if (status === 'published')
-        setTimeout(() => { location.href = 'article.html?a=' + encodeURIComponent(slug); }, 700);
+        setTimeout(() => { location.href = '/article?a=' + encodeURIComponent(slug); }, 700);
     } catch (e) { HHQ.toast(e.message, 'bad'); }
   }
   function seoCount(){ $('#seo-t-n').textContent = $('#seo-t').value.length; $('#seo-d-n').textContent = $('#seo-d').value.length; }

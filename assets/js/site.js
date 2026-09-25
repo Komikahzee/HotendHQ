@@ -113,8 +113,8 @@
       return `<a href="${abs(n.href)}"${cur?' aria-current="page"':''}>${n.label}</a>`;
     }).join('');
     const cta = `<div class="head-cta">
-        <a class="btn btn-ghost btn-sm" href="/login.html" data-auth-chip>${icon('user')}<span>Sign in</span></a>
-        <a class="btn btn-primary btn-sm" href="/generators.html">${icon('cube')}Generate a part</a>
+        <a class="btn btn-ghost btn-sm" href="/login" data-auth-chip>${icon('user')}<span>Sign in</span></a>
+        <a class="btn btn-primary btn-sm" href="/generators">${icon('cube')}Generate a part</a>
       </div>`;
     return `<a class="skip" href="#main">Skip to content</a>
        <header class="site-head">
@@ -193,10 +193,10 @@
     if(!chip) return;
     const u = e.detail && e.detail.user;
     if(u){
-      chip.href = 'admin.html';
+      chip.href = '/admin';
       chip.innerHTML = icon('edit') + '<span>' + HHQ.esc((u.email||'account').split('@')[0]) + '</span>';
     } else {
-      chip.href = 'login.html';
+      chip.href = '/login';
       chip.innerHTML = icon('user') + '<span>Sign in</span>';
     }
   });
@@ -206,7 +206,7 @@
      Drafts and not-yet-built articles fall back to the live renderer.      */
   window.articleUrl = function (p) {
     const slug = encodeURIComponent(p.slug);
-    return p.status === 'draft' || p.local ? `/article.html?a=${slug}` : `/guides/${slug}/`;
+    return p.status === 'draft' || p.local ? `/article?a=${slug}` : `/guides/${slug}/`;
   };
   window.featureCard = function (lead) {
     return `<a class="card card--link feature" href="${articleUrl(lead)}">

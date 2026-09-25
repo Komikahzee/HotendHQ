@@ -103,7 +103,9 @@ async function loadArticles() {
 const PAGES = ['index', 'news', 'troubleshoot', 'generator', 'generators', 'gridfinity', 'chain',
   'storage-box', 'grid-organiser', 'cable-clip', 'spool-holder', 'wall-bracket', 'tools', 'gear', 'about',
   'login', 'admin', 'article', '404'];
-const clean = p => (p === 'index' ? '/' : `/${p}`);
+/* Every generator is served under /generators/<name>; /generators itself is the index page. */
+const GENERATORS = ['gridfinity', 'chain', 'storage-box', 'grid-organiser', 'cable-clip', 'spool-holder', 'wall-bracket'];
+const clean = p => (p === 'index' ? '/' : GENERATORS.includes(p) ? `/generators/${p}` : `/${p}`);
 const jsonLd = obj => `<script type="application/ld+json">${JSON.stringify(obj).replace(/</g, '\\u003c')}</script>`;
 const iso = d => { const x = new Date(d); return isNaN(x) ? undefined : x.toISOString(); };
 const guideUrl = a => `${BASE}/guides/${a.slug}/`;
@@ -257,7 +259,22 @@ edit('index.html', h => {
 for (const f of fs.readdirSync(OUT)) {
   if (!f.endsWith('.html')) continue;
   const name = f.replace(/\.html$/, '');
-  edit(f, h => finishPage(h, name === 'index' ? '/' : '/' + name));
+  edit(f, h => finishPage(h, clean(name)));
+}
+// move the generator pages to /generators/<name> (a file generators/x.html is served at /generators/x)
+fs.mkdirSync(path.join(OUT, 'generators'), { recursive: true });
+for (const g of GENERATORS) {
+  const from = path.join(OUT, g + '.html');
+  if (!fs.existsSync(from)) throw new Error(`generator page ${g}.html is missing`);
+  fs.renameSync(from, path.join(OUT, 'generators', g + '.html'));
+}
+// permanent redirects from the old addresses (kept after anything already in _redirects)
+{
+  const rp = path.join(OUT, '_redirects');
+  const had = fs.existsSync(rp) ? fs.readFileSync(rp, 'utf8').trim() : '';
+  const rules = GENERATORS.flatMap(g => [`/${g} /generators/${g} 301`, `/${g}.html /generators/${g} 301`]);
+  fs.writeFileSync(rp, (had ? had + '\n' : '') + rules.join('\n') + '\n');
+  log(`wrote ${rules.length} redirect(s) for the old generator addresses`);
 }
 // JS files carry links too (nav model, cards, admin redirects)
 for (const f of ['nav.js', 'site.js', 'render.js']) edit(path.join('assets/js', f), rewriteLinks);
@@ -288,11 +305,25 @@ log(`cache-busted ${assetHash.size} asset URL(s) across ${htmlFiles.length} page
 
 /* ---------------- sitemap + robots ---------------- */
 const day = d => (iso(d) || '').slice(0, 10);
-const staticPages = ['index', 'news', 'troubleshoot', 'generators', 'gridfinity', 'chain',
-  'storage-box', 'grid-organiser', 'cable-clip', 'spool-holder', 'wall-bracket', 'tools', 'gear', 'about'];
+const staticPages = ['index', 'news', 'troubleshoot', 'generators', ...GENERATORS, 'tools', 'gear', 'about'];
+const fileOf = p => (GENERATORS.includes(p) ? `generators/${p}.html` : `${p}.html`);
+/* A URL only goes in the sitemap if the page at that URL names itself as canonical.
+   Anything that doesn't is left out and logged, so the sitemap never sends mixed signals. */
+const canonicalOf = file => {
+  const m = fs.readFileSync(path.join(OUT, file), 'utf8').match(/<link rel="canonical" href="([^"]+)"/);
+  return m ? m[1] : null;
+};
+const selfCanonical = (loc, file) => {
+  const c = canonicalOf(file);
+  if (c === loc) return true;
+  log(`sitemap: left out ${loc} (its canonical is ${c || 'missing'})`);
+  return false;
+};
 const urls = [
-  ...staticPages.map(p => `  <url><loc>${BASE}${clean(p)}</loc><priority>${p === 'index' ? '1.0' : ['generators', 'gridfinity', 'chain'].includes(p) ? '0.9' : '0.8'}</priority></url>`),
-  ...articles.map(a => `  <url><loc>${guideUrl(a)}</loc>${day(a.updated_at || a.published_at) ? `<lastmod>${day(a.updated_at || a.published_at)}</lastmod>` : ''}<priority>0.7</priority></url>`),
+  ...staticPages.filter(p => selfCanonical(BASE + clean(p), fileOf(p)))
+    .map(p => `  <url><loc>${BASE}${clean(p)}</loc><priority>${p === 'index' ? '1.0' : ['generators', 'gridfinity', 'chain'].includes(p) ? '0.9' : '0.8'}</priority></url>`),
+  ...articles.filter(a => selfCanonical(guideUrl(a), path.join('guides', a.slug, 'index.html')))
+    .map(a => `  <url><loc>${guideUrl(a)}</loc>${day(a.updated_at || a.published_at) ? `<lastmod>${day(a.updated_at || a.published_at)}</lastmod>` : ''}<priority>0.7</priority></url>`),
 ];
 fs.writeFileSync(path.join(OUT, 'sitemap.xml'),
   `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.join('\n')}\n</urlset>\n`);

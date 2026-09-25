@@ -66,7 +66,7 @@
     const email = (window.HHQ_CONFIG && HHQ_CONFIG.social && HHQ_CONFIG.social.email) || '';
     return `
     <nav class="faint" aria-label="Breadcrumb" style="margin-bottom:16px">
-      <a href="/">Home</a> <span aria-hidden="true">/</span> <a href="/news.html">Guides</a>${
+      <a href="/">Home</a> <span aria-hidden="true">/</span> <a href="/news">Guides</a>${
         a.category && !/^guides?$/i.test(a.category) ? ` <span aria-hidden="true">/</span> <span>${esc(a.category)}</span>` : ''}
     </nav>
     <div class="article-head">
@@ -89,7 +89,7 @@
         <a href="mailto:${esc(email)}">${esc(email)}</a> — corrections get credited.</p></div>
       <div class="row" style="margin-top:20px">
         <button class="btn btn-ghost btn-sm" id="share" type="button">${icon('ext')}Share</button>
-        <a class="btn btn-ghost btn-sm" href="/troubleshoot.html">${icon('wrench')}Diagnose a problem</a>
+        <a class="btn btn-ghost btn-sm" href="/troubleshoot">${icon('wrench')}Diagnose a problem</a>
       </div>
     </div>`;
   }

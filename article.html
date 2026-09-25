@@ -7,7 +7,7 @@
 <meta name="description" content="A Hotend HQ article.">
 <!-- Live renderer for drafts and just-published articles. Built articles live at /guides/<slug>/ -->
 <meta name="robots" content="noindex">
-<link rel="canonical" href="https://hotendhq.com/article.html">
+<link rel="canonical" href="https://hotendhq.com/article">
 <link rel="icon" href="assets/img/favicon-32.png" sizes="32x32">
 <link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png">
 <link rel="manifest" href="site.webmanifest">
@@ -37,7 +37,7 @@
 document.addEventListener('DOMContentLoaded', async () => {
   const $ = s => document.querySelector(s);
   const slug = new URLSearchParams(location.search).get('a');
-  if (!slug) { location.replace('news.html'); return; }
+  if (!slug) { location.replace('/news'); return; }
 
   let a;
   try { a = await HHQ_API.getArticle(slug); } catch {}
@@ -45,7 +45,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     $('#art').innerHTML = `<div class="empty">${icon('search')}
       <h2>Article not found</h2>
       <p>It may have been unpublished or the link may be wrong.</p>
-      <a class="btn btn-ghost" href="news.html" style="margin-top:14px">Back to all articles</a></div>`;
+      <a class="btn btn-ghost" href="/news" style="margin-top:14px">Back to all articles</a></div>`;
     return;
   }
 
