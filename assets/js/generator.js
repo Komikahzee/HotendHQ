@@ -194,7 +194,7 @@ spool: {
 /* ---------------- 3. L BRACKET ---------------- */
 bracket: {
   label:'Wall bracket', icon:'wrench',
-  blurb:'A proper L-bracket: two plates, counterbored screw holes and an optional gusset.',
+  blurb:'A proper L-bracket: two plates, counterbored screw holes that clear the corner, and optional gussets.',
   params:[
     {k:'a',    l:'Vertical leg',   min:20, max:160, step:1,   v:60, u:'mm'},
     {k:'b',    l:'Horizontal leg', min:20, max:160, step:1,   v:60, u:'mm'},
@@ -203,37 +203,54 @@ bracket: {
     {k:'screw',l:'Screw hole Ø',   min:2,  max:12,  step:0.5, v:4.5,u:'mm'},
     {k:'holes',l:'Holes per leg',  min:1,  max:4,   step:1,   v:2,  u:''}
   ],
-  toggles:[{k:'gusset', l:'Triangular gusset', v:true}],
+  toggles:[
+    {k:'gusset', l:'Triangular gusset', v:true},
+    {k:'cbore',  l:'Counterbored holes (screw heads sit flush)', v:true}
+  ],
   build(p){
     const parts = [], notes = [];
-    const holePlate = (len, wid) => {
-      const s = roundedRect(len, wid, Math.min(5, wid/2 - 0.5));
-      const margin = Math.max(p.screw + 3, 8);
-      for (let i = 0; i < p.holes; i++){
-        const x = p.holes === 1 ? 0
-          : -len/2 + margin + i * ((len - margin*2) / (p.holes - 1));
-        s.holes.push(circlePath(p.screw/2, x, 0));
-      }
+    const cbD = p.screw * 1.9 + 0.4;                              // screw head clearance
+    const cb = p.cbore ? Math.min(p.t - 1.2, p.screw * 0.65) : 0;   // counterbore depth, leaving ≥ 1.2 mm under the head
+    const headR = cb > 0.3 ? cbD / 2 : p.screw / 2 + 1;
+    // gussets: two at the edges when there is room, so the holes stay reachable down the middle
+    const gl = Math.min(p.a, p.b) * 0.62, gw = Math.min(Math.max(3, p.t), p.w);
+    const sideG = p.gusset && p.w >= 2 * gw + 2 * headR + 3;
+    // the first hole sits clear of the other leg (and of a centre gusset) so a screwdriver can reach it
+    const near = (p.gusset && !sideG ? gl : p.t) + headR + 1, far = Math.max(p.screw + 3, headR + 2);
+    const xs = (len) => {
+      const lo = near, hi = len - far;
+      if (hi < lo) return [];
+      if (p.holes === 1) return [(lo + hi) / 2];
+      return Array.from({ length: p.holes }, (_, i) => lo + i * (hi - lo) / (p.holes - 1));
+    };
+    const plate = (len, r, pos) => {                               // leg outline along +X from 0 to len, width across Y
+      const s = roundedRect(len, p.w, Math.min(5, p.w/2 - 0.5));
+      for (const x of pos) s.holes.push(circlePath(r, x - len/2, 0));
       return s;
     };
-    // horizontal leg: lies flat, length along +X, width along Z, thickness Y 0..t
-    parts.push(solid(holePlate(p.b, p.w), p.t, { rx:-Math.PI/2, x:p.b/2, y:0 }));
-    // vertical leg: stands at x = 0, length along +Y, width along Z, thickness X 0..t
-    {
-      const g = new THREE.ExtrudeGeometry(holePlate(p.a, p.w),
-        { depth:p.t, bevelEnabled:false, curveSegments:CURVE });
-      g.rotateZ(Math.PI/2); g.rotateY(Math.PI/2); g.translate(0, p.a/2, 0);
-      parts.push(g);
-    }
+    const posB = xs(p.b), posA = xs(p.a);
+    if (posB.length < p.holes || posA.length < p.holes)
+      notes.push('A leg is too short for its holes to clear the corner' + (p.gusset && !sideG ? ' and the gusset' : '') + ': lengthen it, use fewer holes or a smaller screw');
+    // horizontal leg: lies flat, length along +X, thickness Y 0..t, counterbore on the top (inside) face
+    const layerH = (r, depth, y) => solid(plate(p.b, r, posB), depth, { rx:-Math.PI/2, x:p.b/2, y });
+    if (cb > 0.3) { parts.push(layerH(p.screw/2, p.t - cb, 0)); parts.push(layerH(cbD/2, cb, p.t - cb)); }
+    else parts.push(layerH(p.screw/2, p.t, 0));
+    // vertical leg: stands at x = 0, length along +Y, thickness X 0..t, counterbore on the inside face (x = t)
+    const layerV = (r, depth, x0) => {
+      const g = new THREE.ExtrudeGeometry(plate(p.a, r, posA), { depth, bevelEnabled:false, curveSegments:CURVE });
+      g.rotateZ(Math.PI/2); g.rotateY(Math.PI/2); g.translate(x0, p.a/2, 0);
+      return g;
+    };
+    if (cb > 0.3) { parts.push(layerV(p.screw/2, p.t - cb, 0)); parts.push(layerV(cbD/2, cb, p.t - cb)); }
+    else parts.push(layerV(p.screw/2, p.t, 0));
     if (p.gusset){
-      const g = Math.min(p.a, p.b) * 0.62;
-      const gw = Math.min(Math.max(3, p.t), p.w);
-      // triangle in the X-Y plane filling the inner corner, centred across the width
-      parts.push(tri([p.t,p.t], [g,p.t], [p.t,g], gw).translate(0, 0, -gw/2));
-      notes.push('Gusset roughly triples load capacity at the corner');
+      // triangle in the X-Y plane filling the inner corner
+      const zs = sideG ? [-(p.w/2 - gw/2), p.w/2 - gw/2] : [0];
+      for (const z of zs) parts.push(tri([p.t,p.t], [gl,p.t], [p.t,gl], gw).translate(0, 0, z - gw/2));
+      notes.push(sideG ? 'Two edge gussets stiffen the corner and leave the holes clear' : 'Centre gusset: the holes start past it so every screw can be reached');
     }
     notes.push('Print standing on the horizontal leg — the corner is self-supporting');
-    notes.push(`${p.holes} hole${p.holes>1?'s':''} per leg for M${Math.round(p.screw-0.5)} hardware`);
+    notes.push(`${p.holes} hole${p.holes>1?'s':''} per leg for M${Math.round(p.screw-0.5)} hardware` + (cb > 0.3 ? `, counterbored ${cbD.toFixed(1)} mm × ${cb.toFixed(1)} mm deep` : ''));
     return { parts, notes };
   }
 },
@@ -259,15 +276,23 @@ tray: {
     const parts = [], notes = [];
     const pitch = p.cell + p.wall;
     const W = p.cols * pitch + p.wall, D = p.rows * pitch + p.wall;
-    // one extruded slab with a hole per cell = all the walls at once
-    const outer = roundedRect(W, D, p.skirt ? p.r + p.wall : p.r);
-    for (let c = 0; c < p.cols; c++)
-      for (let r = 0; r < p.rows; r++){
-        const cx = -W/2 + p.wall + pitch*c + p.cell/2;
-        const cy = -D/2 + p.wall + pitch*r + p.cell/2;
-        outer.holes.push(rectPath(p.cell, p.cell, p.r, cx, cy));
-      }
-    parts.push(solid(outer, p.h, { rx:-Math.PI/2, y:p.base }));
+    if (p.skirt){
+      // one extruded slab with a hole per cell = all the walls at once
+      const outer = roundedRect(W, D, p.r + p.wall);
+      for (let c = 0; c < p.cols; c++)
+        for (let r = 0; r < p.rows; r++){
+          const cx = -W/2 + p.wall + pitch*c + p.cell/2;
+          const cy = -D/2 + p.wall + pitch*r + p.cell/2;
+          outer.holes.push(rectPath(p.cell, p.cell, p.r, cx, cy));
+        }
+      parts.push(solid(outer, p.h, { rx:-Math.PI/2, y:p.base }));
+    } else {
+      // dividers only: the inner walls stand on the base, the outside stays open
+      for (let c = 1; c < p.cols; c++) parts.push(box(p.wall, p.h, D, -W/2 + p.wall/2 + pitch*c, p.base + p.h/2, 0));
+      for (let r = 1; r < p.rows; r++) parts.push(box(W, p.h, p.wall, 0, p.base + p.h/2, -D/2 + p.wall/2 + pitch*r));
+      if (p.cols === 1 && p.rows === 1) notes.push('With one cell and no skirt this is just a base plate');
+      else notes.push('Dividers only: slide it into a drawer or box that forms the outside');
+    }
     parts.push(solid(roundedRect(W, D, p.r + p.wall), p.base, { rx:-Math.PI/2, y:0 }));
     if (p.feet){
       [[-1,-1],[1,-1],[-1,1],[1,1]].forEach(([sx,sy]) =>

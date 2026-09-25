@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Retraction Settings: Fix 3D Print Stringing in 20 Minutes</title>
+<meta name="description" content="Stringing is a pressure problem, not a distance problem. Dry the spool, run a temperature tower, then tune retraction in the right order and it disappears.">
+<link rel="canonical" href="https://hotendhq.com/guides/retraction-tuning-that-works/">
+<meta name="theme-color" content="#00091c">
+<meta property="og:site_name" content="Hotend HQ">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Retraction Settings: Fix 3D Print Stringing in 20 Minutes">
+<meta property="og:description" content="Stringing is a pressure problem, not a distance problem. Dry the spool, run a temperature tower, then tune retraction in the right order and it disappears.">
+<meta property="og:url" content="https://hotendhq.com/guides/retraction-tuning-that-works/">
+<meta property="og:image" content="https://hotendhq.com/assets/img/og-image.png">
+<meta property="article:published_time" content="2026-09-02T00:00:00.000Z">
+<meta property="article:modified_time" content="2026-09-02T00:00:00.000Z">
+<meta property="article:section" content="Tuning">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/assets/img/favicon-32.png" sizes="32x32">
+<link rel="apple-touch-icon" href="/assets/img/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest">
+<link rel="stylesheet" href="/assets/css/fonts.css?v=1f7e92bbba">
+<link rel="stylesheet" href="/assets/css/theme.css?v=fed608d70e">
+<link rel="stylesheet" href="/assets/css/pages.css?v=2d53d9dee9">
+<script src="/assets/js/config.js?v=a00c59ebda" defer></script>
+<script src="/assets/js/nav.js?v=60d1eef206" defer></script>
+<script src="/assets/js/site.js?v=c010faf67d" defer></script>
+<script src="/assets/js/api.js?v=097762e5df" defer></script>
+<script type="application/ld+json">[{"@context":"https://schema.org","@type":"Article","headline":"Why Your Retraction Settings Are Wrong (And the 20-Minute Fix)","description":"Stringing is a pressure problem, not a distance problem. Dry the spool, run a temperature tower, then tune retraction in the right order and it disappears.","image":["https://hotendhq.com/assets/img/og-image.png"],"datePublished":"2026-09-02T00:00:00.000Z","dateModified":"2026-09-02T00:00:00.000Z","author":{"@type":"Organization","name":"Hotend HQ","url":"https://hotendhq.com/"},"publisher":{"@type":"Organization","name":"Hotend HQ","logo":{"@type":"ImageObject","url":"https://hotendhq.com/assets/img/icon-512.png"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://hotendhq.com/guides/retraction-tuning-that-works/"},"articleSection":"Tuning","keywords":"stringing, retraction, calibration"},{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://hotendhq.com/"},{"@type":"ListItem","position":2,"name":"Guides","item":"https://hotendhq.com/news"},{"@type":"ListItem","position":3,"name":"Why Your Retraction Settings Are Wrong (And the 20-Minute Fix)","item":"https://hotendhq.com/guides/retraction-tuning-that-works/"}]}]</script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+       <header class="site-head">
+        <div class="wrap head-in">
+          <a class="brand" href="/" aria-label="Hotend HQ home">
+            <img src="/assets/img/icon-192.png" alt="" width="38" height="38">
+            <span class="brand-txt">
+              <span class="brand-name"><span class="h">Hotend</span> <span class="q">HQ</span></span>
+              <span class="brand-tag">Everything 3D Printing</span>
+            </span>
+          </a>
+          <button class="burger" id="burger" aria-label="Menu" aria-expanded="false" aria-controls="nav">
+            <svg class="" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"
+      aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+          </button>
+          <nav class="nav" id="nav"><a href="/news" aria-current="page">News</a><a href="/troubleshoot">Troubleshoot</a><a href="/generators">Generators</a><a href="/tools">Tools</a><a href="/gear">Gear</a><div class="head-cta">
+        <a class="btn btn-ghost btn-sm" href="/admin" data-auth-chip hidden><svg class="" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"
+      aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg><span>Editor</span></a>
+        <a class="btn btn-primary btn-sm" href="/generators"><svg class="" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"
+      aria-hidden="true"><path d="M12 2l9 5v10l-9 5-9-5V7z"/><path d="M3 7l9 5 9-5M12 12v10"/></svg>Generate a model</a>
+      </div></nav>
+        </div>
+       </header>
+<main id="main">
+  <article class="wrap section--tight" id="art">
+    <nav class="faint" aria-label="Breadcrumb" style="margin-bottom:16px">
+      <a href="/">Home</a> <span aria-hidden="true">/</span> <a href="/news">Guides</a> <span aria-hidden="true">/</span> <span>Tuning</span>
+    </nav>
+    <div class="article-head">
+      <div><span class="tag tag--flame">Tuning</span>
+        </div>
+      <h1 style="margin:14px 0 12px">Why Your Retraction Settings Are Wrong (And the 20-Minute Fix)</h1>
+      <p class="lede" style="margin-inline:auto">Stringing is a pressure problem, not a distance problem. Tune in the right order and it disappears.</p>
+      <div class="post-meta" style="justify-content:center;margin-top:16px">
+        <span>Hotend HQ</span><span>·</span>
+        <time datetime="2026-09-02">Sep 2, 2026</time><span>·</span>
+        <span>2 min read</span>
+      </div>
+    </div>
+    
+    <div class="prose"><p>Almost everyone tunes retraction first and temperature last. That is backwards, and it is why people end up with 8 mm retractions on a direct drive extruder, grinding filament flat and calling it solved.</p>
+<p>Stringing happens when molten plastic under pressure leaks from the nozzle during a travel move. Retraction relieves that pressure. But three things set the pressure in the first place, and retraction is the least important of them.</p>
+<h2>Order of operations</h2>
+<p><strong>1. Dry the filament.</strong> Wet filament boils in the melt zone and pushes material out regardless of retraction. PETG and nylon are the worst offenders. If you see steam, hear popping, or the strings look foamy and rough rather than fine and glassy, stop tuning and dry the spool. Four hours at 50 °C for PLA, 65 °C for PETG and nylon.</p>
+<p><strong>2. Run a temperature tower.</strong> Every 10 °C above where you need to be roughly doubles ooze. Print a tower from 230 °C down to 195 °C for PLA and pick the lowest band that still shows good layer adhesion and no under-extrusion. This single step removes most stringing for most people.</p>
+<p><strong>3. Now tune retraction distance.</strong> Start from the geometry, not from a forum post:</p>
+<ul>
+<li>Direct drive: start at 0.8 mm, test 0.4–2 mm.</li>
+<li>Bowden: start at 4 mm, test 2–7 mm.</li>
+</ul>
+<p>Print a retraction tower and take the lowest value that is clean. More is not safer — excess retraction pulls molten plastic back into the heat break where it cools, swells, and causes the clog you will be diagnosing next week.</p>
+<p><strong>4. Then retraction speed.</strong> 35–45 mm/s is a good window for direct drive, 25–35 mm/s for Bowden. Too fast and the drive gear shaves a flat into the filament; you will see the shavings collecting in the extruder body.</p>
+<p><strong>5. Only now touch travel settings.</strong> Raise travel speed so the nozzle spends less time over open air. Enable combing or &quot;avoid crossing perimeters&quot; so travels stay inside the part where a string cannot be seen.</p>
+<h2>The settings people reach for too early</h2>
+<p><strong>Coasting</strong> stops extrusion before the end of a line. It hides stringing by under-filling the end of every perimeter. Use it last, in small amounts, and only if you like the trade.</p>
+<p><strong>Z-hop</strong> helps with knocked-over parts, not with stringing. It slightly increases stringing by adding travel time. Turn it on for a reason, not by default.</p>
+<p><strong>Extra restart distance</strong> compensates for oozing during long travels. If you need a lot of it, your retraction is too high.</p>
+<h2>A note on flow-dependent ooze</h2>
+<p>High-flow hot ends have long melt zones holding more molten plastic, so they hold more pressure and take longer to relieve it. If you upgraded your hot end and stringing got worse, that is expected and normal — re-run the tower rather than assuming the new hardware is faulty.</p>
+<h2>What good looks like</h2>
+<p>Fine, glassy strings that break when you touch them are cosmetic and take seconds to clean. Thick, rough strands that take a knife are a real problem. Chase the second. Living with the first is a reasonable choice.</p></div>
+    <div class="prose" style="margin-top:38px">
+      <div class="note note--info"><svg class="" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"
+      aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 7.5v.5"/></svg>
+        <p>Spotted something wrong, or have a fix that works better? Tell us at
+        <a href="mailto:cobornassets@gmail.com">cobornassets@gmail.com</a> — corrections get credited.</p></div>
+      <div class="row" style="margin-top:20px">
+        <button class="btn btn-ghost btn-sm" id="share" type="button"><svg class="" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"
+      aria-hidden="true"><path d="M14 4h6v6"/><path d="M20 4l-9 9"/><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>Share</button>
+        <a class="btn btn-ghost btn-sm" href="/troubleshoot"><svg class="" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"
+      aria-hidden="true"><path d="M14.5 6a3.5 3.5 0 0 0 4.6 4.6L21 12.5 12.5 21 4 12.5 12.5 4z"/></svg>Diagnose a problem</a>
+      </div>
+    </div>
+  </article>
+  <section class="wrap section" id="related-wrap">
+    <div class="sec-head"><span class="eyebrow">Keep reading</span><h2>Related</h2></div>
+    <div class="grid g3" id="related"><a class="card card--link post" href="/guides/layer-height-line-width-nozzle/">
+      <div class="post-cover"><span class="ph"><svg class="" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"
+      aria-hidden="true"><path d="M12 2s5 5.5 5 10a5 5 0 0 1-10 0c0-2 1-3.5 1-3.5S9.5 11 11 12c1.5-2-1-5 1-10z"/></svg></span></div>
+      <span class="tag">Tuning</span>
+      <h3>Layer Height, Line Width and Nozzle Size: Picking the Right Combination</h3>
+      <p class="excerpt">Three numbers decide how strong, fast and detailed your prints are. Here are the rules of thumb, why they work, and how to design parts around them.</p>
+      <div class="post-meta"><span>Sep 18, 2026</span><span>·</span>
+        <span>3 min read</span></div>
+    </a><a class="card card--link post" href="/guides/free-3d-model-generators/">
+      <div class="post-cover"><img src="/assets/img/articles/generators-spotlight.webp" alt="" loading="lazy"></div>
+      <span class="tag">News</span>
+      <h3>Seventeen Free 3D Model Generators, Now Live on Hotend HQ</h3>
+      <p class="excerpt">Gridfinity, print-in-place chains, dice, signs, stencils, drone frames, mic clips and more. Set your sizes, pick your printer, download a file that is ready to slice.</p>
+      <div class="post-meta"><span>Sep 25, 2026</span><span>·</span>
+        <span>6 min read</span></div>
+    </a><a class="card card--link post" href="/guides/first-layer-that-sticks/">
+      <div class="post-cover"><span class="ph"><svg class="" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"
+      aria-hidden="true"><path d="M12 2s5 5.5 5 10a5 5 0 0 1-10 0c0-2 1-3.5 1-3.5S9.5 11 11 12c1.5-2-1-5 1-10z"/></svg></span></div>
+      <span class="tag">Troubleshooting</span>
+      <h3>A First Layer That Sticks: Z-Offset, Surfaces and the Ten-Minute Fix</h3>
+      <p class="excerpt">The first layer tells you exactly what is wrong if you know how to read it. Here is how to read it, and the four fixes that solve nearly every adhesion problem.</p>
+      <div class="post-meta"><span>Sep 23, 2026</span><span>·</span>
+        <span>3 min read</span></div>
+    </a></div>
+  </section>
+</main>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const b = document.getElementById('share'); if (!b) return;
+  b.addEventListener('click', async () => {
+    const url = location.href, title = "Why Your Retraction Settings Are Wrong (And the 20-Minute Fix)";
+    if (navigator.share) { try { await navigator.share({ title, url }); return; } catch {} }
+    try { await navigator.clipboard.writeText(url); HHQ.toast('Link copied.'); }
+    catch { HHQ.toast('Copy the address bar link.', 'warn'); }
+  });
+});
+</script>
+
+      <footer class="site-foot">
+        <div class="wrap">
+          <div class="foot-grid">
+            <div class="foot-col">
+              <a class="brand" href="/" style="margin-bottom:14px">
+                <img src="/assets/img/icon-192.png" alt="" width="38" height="38">
+                <span class="brand-txt">
+                  <span class="brand-name"><span class="h">Hotend</span> <span class="q">HQ</span></span>
+                  <span class="brand-tag">Everything 3D Printing</span>
+                </span>
+              </a>
+              <p class="disclosure" id="disclosure">Hotend HQ is reader-supported. When you buy through links on this site we may earn an affiliate commission at no extra cost to you. We only recommend hardware we would run on our own machines.</p>
+              <div class="row" style="margin-top:14px;gap:16px;font-size:.88rem"><a href="https://www.tiktok.com/@hotendhq" rel="noopener">TikTok</a><a href="mailto:cobornassets@gmail.com">Email</a></div>
+            </div>
+            
+      <div class="foot-col"><h4>Explore</h4><ul><li><a href="/news">News & Articles</a></li><li><a href="/troubleshoot">Troubleshooting</a></li><li><a href="/generators">3D Model Generators</a></li><li><a href="/tools">Calculators</a></li><li><a href="/gear">Gear Picks</a></li></ul></div>
+      <div class="foot-col"><h4>Site</h4><ul><li><a href="/about">About</a></li><li><a href="/about#contact">Contact</a></li><li><a href="/about#disclosure">Affiliate Disclosure</a></li><li><a href="/about#privacy">Privacy</a></li></ul></div>
+          </div>
+          <div class="foot-bottom">
+            <span>© 2026 Hotend HQ. All rights reserved.</span>
+            <span>Built for makers who fix things themselves.</span>
+          </div>
+        </div>
+      </footer>
+</body>
+</html>

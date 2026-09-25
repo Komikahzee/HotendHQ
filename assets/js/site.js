@@ -199,11 +199,17 @@
 
   /* ---------- article URLs & cards (shared by home, news, related lists) ----------
      Published articles live at /guides/<slug>/ when the site was built with
-     build/build.mjs (it sets HHQ_BUILT). Otherwise, and for drafts, links go
-     to the live renderer, so they never point at a page that doesn't exist.  */
+     build/build.mjs (it sets HHQ_BUILT), and the bundled ones always do. Otherwise,
+     and for drafts, links go to the live renderer, so they never point at a page
+     that doesn't exist.  */
+  /* the bundled articles also ship as static pages in /guides/ (build/build.mjs --source), so they
+     have a real, indexable address even when the site is served straight from the repo */
+  window.hasGuidePage = function (slug) {
+    return !!window.HHQ_BUILT || (window.HHQ_SEED_ARTICLES || []).some(x => x.slug === slug);
+  };
   window.articleUrl = function (p) {
     const slug = encodeURIComponent(p.slug);
-    return !window.HHQ_BUILT || p.status === 'draft' || p.local ? `/article?a=${slug}` : `/guides/${slug}/`;
+    return !hasGuidePage(p.slug) || p.status === 'draft' || p.local ? `/article?a=${slug}` : `/guides/${slug}/`;
   };
   window.featureCard = function (lead) {
     return `<a class="card card--link feature" href="${articleUrl(lead)}">

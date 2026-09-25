@@ -98,6 +98,27 @@ const SHAPES = {
     for (let i = 0; i < 6; i++) { const a = i * Math.PI / 3; p.push([Math.cos(a), Math.sin(a)]); }
     return fitBox(chaikin(p, 3), L, W);
   },
+  teardrop(L, W) {        // round end at −X, point at +X
+    const p = [];
+    for (let i = 0; i < 120; i++) { const t = (i / 120) * TAU; p.push([Math.cos(t), Math.sin(t) * Math.pow(Math.abs(Math.sin(t / 2)), 0.9)]); }
+    return fitBox(chaikin(p, 2), L, W);
+  },
+  marquise(L, W) {        // pointed oval (two arcs), tips on the chain axis
+    const p = [];
+    for (let i = 0; i <= 40; i++) { const x = -1 + 2 * i / 40; p.push([x, Math.sqrt(Math.max(0, 1 - x * x)) ** 0.85]); }
+    for (let i = 39; i > 0; i--) { const x = -1 + 2 * i / 40; p.push([x, -(Math.sqrt(Math.max(0, 1 - x * x)) ** 0.85)]); }
+    return fitBox(chaikin(p, 3), L, W);
+  },
+  triangle(L, W) {        // rounded triangle, one corner forward
+    const p = [];
+    for (let i = 0; i < 3; i++) { const a = i * TAU / 3; p.push([Math.cos(a), Math.sin(a)]); }
+    return fitBox(chaikin(p, 5), L, W);
+  },
+  flower(L, W) {          // four round petals, two of them on the chain axis
+    const p = [];
+    for (let i = 0; i < 160; i++) { const t = (i / 160) * TAU, r = 1 + 0.3 * Math.cos(4 * t); p.push([r * Math.cos(t), r * Math.sin(t)]); }
+    return fitBox(chaikin(p, 1), L, W);
+  },
 };
 function fitBox(p, L, W) {
   let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;

@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Layered Sign Generator: Multicolour 3D Printed Signs — Hotend HQ</title>
+<meta name="description" content="Design a multicolour 3D printed sign in layers: base, border, outline and raised or inlaid letters, 11 shapes, icons or your own logo, and keyhole, magnet or stand mounting. Free STL and 3MF.">
+<link rel="canonical" href="https://hotendhq.com/generators/layered-signs">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Hotend HQ">
+<meta property="og:title" content="Layered Sign Generator: Multicolour 3D Printed Signs">
+<meta property="og:description" content="Design a multicolour 3D printed sign in layers: base, border, outline and raised or inlaid letters, 11 shapes, icons or your own logo, and keyhole, magnet or stand mounting. Free STL and 3MF.">
+<meta property="og:url" content="https://hotendhq.com/generators/layered-signs">
+<meta property="og:image" content="https://hotendhq.com/assets/img/generators/layered-signs.webp">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#00091c">
+<link rel="icon" href="/assets/img/favicon-32.png" sizes="32x32">
+<link rel="apple-touch-icon" href="/assets/img/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest">
+<link rel="stylesheet" href="/assets/css/fonts.css?v=1f7e92bbba">
+<link rel="stylesheet" href="/assets/css/theme.css?v=fed608d70e">
+<link rel="stylesheet" href="/assets/css/pages.css?v=2d53d9dee9">
+<link rel="stylesheet" href="/assets/css/gridfinity.css?v=5e3a6426ad">
+<link rel="stylesheet" href="/assets/css/make.css?v=afc58a6ecc">
+<link rel="preload" href="/assets/vendor/manifold/manifold.wasm" as="fetch" type="application/wasm" crossorigin>
+<script type="importmap">
+{"imports":{
+  "three":"/assets/vendor/three/three.module.js",
+  "three/addons/":"/assets/vendor/three/addons/"
+}}
+</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Hotend HQ Layered sign generator","url":"https://hotendhq.com/generators/layered-signs","image":"https://hotendhq.com/assets/img/generators/layered-signs.webp","applicationCategory":"DesignApplication","operatingSystem":"Any (runs in the browser)","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"description":"Design a multicolour 3D printed sign in layers: base, border, outline and raised or inlaid letters, 11 shapes, icons or your own logo, and keyhole, magnet or stand mounting. Free STL and 3MF.","featureList":["11 sign shapes","Up to four colours","Filament-change heights worked out","Raised or inlaid letters","Icons or your own logo","Keyhole, screw, magnet and desk-stand mounting"]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"HowTo","name":"How to make a multicolour layered sign","step":[{"@type":"HowToStep","position":1,"name":"Write the text","text":"A main line and an optional second line, each with its own font and size."},{"@type":"HowToStep","position":2,"name":"Pick the shape","text":"Eleven shapes, from rounded rectangles, ovals and shields to a banner or an outline cut to the letters."},{"@type":"HowToStep","position":3,"name":"Stack the layers","text":"Add a border, an outline around the letters, an icon or your own logo, and choose a colour for each layer."},{"@type":"HowToStep","position":4,"name":"Print it","text":"For a single-nozzle printer the generator lists the heights to change filament. For AMS or MMU, download the 3MF with a part per colour."}]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Do I need a multicolour printer?","acceptedAnswer":{"@type":"Answer","text":"No. Stacked mode puts each colour on its own layer, so one nozzle and a few filament changes are all you need."}},{"@type":"Question","name":"Can I use my own logo?","acceptedAnswer":{"@type":"Answer","text":"Yes. Upload a black and white image as the icon and it is traced into the sign on the letters or outline layer."}},{"@type":"Question","name":"What sizes can I make?","acceptedAnswer":{"@type":"Answer","text":"The sign can fit around the text or be a fixed width and height. The generator warns you if it is bigger than your printer."}},{"@type":"Question","name":"How do I mount it?","acceptedAnswer":{"@type":"Answer","text":"Pick keyhole slots, screw holes, hanging holes, magnet pockets or a separate desk stand at the angle you want."}}]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://hotendhq.com/"},{"@type":"ListItem","position":2,"name":"3D model generators","item":"https://hotendhq.com/generators"},{"@type":"ListItem","position":3,"name":"Layered signs","item":"https://hotendhq.com/generators/layered-signs"}]}</script>
+<script src="/assets/js/config.js?v=a00c59ebda" defer></script>
+<script src="/assets/js/nav.js?v=60d1eef206" defer></script>
+<script src="/assets/js/site.js?v=c010faf67d" defer></script>
+<script src="/assets/js/api.js?v=097762e5df" defer></script>
+</head>
+<body data-gen="layered-signs">
+<main id="main" class="gf-page">
+  <section class="wrap gf-hero">
+    <nav class="crumbs" aria-label="Breadcrumb"><a href="/generators">3D model generators</a><span aria-hidden="true">/</span><span>Layered signs</span></nav>
+    <h1>Layered sign generator</h1>
+    <p class="lede">Type your text and build the sign in coloured layers. Print it with filament changes on any printer, or in full colour on an AMS or MMU.</p>
+  </section>
+
+  <section class="wrap gf-wrap" aria-label="Generator">
+    <div class="gf">
+      <div class="gf-panel">
+        <div class="gf-tabs mk-tabs" id="mk-tabs" role="group" aria-label="What to make"></div>
+        <h2 id="mk-title" class="gf-h"></h2>
+        <p id="mk-blurb" class="faint gf-blurb"></p>
+        <div class="gf-presets chips" id="mk-presets"></div>
+        <ul id="mk-warn" class="gf-warn hidden" aria-live="polite"></ul>
+        <div id="mk-controls"></div>
+      </div>
+      <div class="gf-view">
+        <div class="gf-stage" id="mk-stage">
+          <span class="gen-badge">Drag to orbit · scroll or pinch to zoom</span>
+          <div class="gf-tools">
+            <button type="button" class="gf-tool" id="mk-fit" aria-label="Reset the view" title="Reset the view">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg></button>
+            <button type="button" class="gf-tool" id="mk-full" aria-label="Full screen" title="Full screen">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
+          </div>
+          <div class="gen-readout" id="mk-readout"></div>
+          <div class="gf-busy" aria-hidden="true"><span class="spin"></span></div>
+        </div>
+        <div class="ch-parts chips hidden" id="mk-parts" role="group" aria-label="Parts (tap to show or hide)"></div>
+        <p id="mk-status" class="gf-status" role="status" aria-live="polite">Loading…</p>
+        <div class="gf-bar">
+          <div class="gf-actions">
+            <button class="btn btn-primary" id="mk-stl" type="button">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M7 11l5 5 5-5"/><path d="M4 20h16"/></svg>Download STL</button>
+            <button class="btn btn-ghost" id="mk-3mf" type="button">3MF</button>
+            <button class="btn btn-ghost" id="mk-link" type="button" aria-label="Copy a link to this design">Copy link</button>
+            <button class="btn btn-ghost" id="mk-reset" type="button">Reset</button>
+          </div>
+        </div>
+        <div class="card mk-info hidden"><h3>Printing this model</h3><ul id="mk-info"></ul></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="wrap section">
+    <div class="sec-head"><span class="eyebrow">How it works</span><h2>A sign in four steps</h2></div>
+    <div class="card mk-howto"><ol>
+      <li><strong>Write the text.</strong> A main line and an optional second line, each with its own font and size.</li>
+      <li><strong>Pick the shape.</strong> Eleven shapes, from rounded rectangles, ovals and shields to a banner or an outline cut to the letters.</li>
+      <li><strong>Stack the layers.</strong> Add a border, an outline around the letters, an icon or your own logo, and choose a colour for each layer.</li>
+      <li><strong>Print it.</strong> For a single-nozzle printer the generator lists the heights to change filament. For AMS or MMU, download the 3MF with a part per colour.</li>
+    </ol></div>
+  </section>
+
+  <section class="wrap section--tight">
+    <div class="sec-head"><span class="eyebrow">Printing it</span><h2>Settings that work</h2></div>
+    <div class="grid g3">
+      <div class="card"><h3>Colour changes</h3><p class="muted gf-card-p">In stacked mode each colour starts at its own height. Add an M600 or pause at each height shown under the preview and swap filament.</p></div>
+      <div class="card"><h3>Crisp letters</h3><p class="muted gf-card-p">Use a 0.4 mm nozzle with 0.16–0.2 mm layers. Letters taller than 1 mm stand out better from across a room.</p></div>
+      <div class="card"><h3>Hanging it</h3><p class="muted gf-card-p">Keyhole slots hide the screws and let the sign sit flat on the wall. Magnet pockets are sized to the magnets you enter.</p></div>
+    </div>
+  </section>
+
+  <section class="wrap section--tight">
+    <div class="sec-head"><span class="eyebrow">Questions</span><h2>Layered signs FAQ</h2></div>
+    <div class="gens-faq">
+      <details><summary>Do I need a multicolour printer?</summary><p>No. Stacked mode puts each colour on its own layer, so one nozzle and a few filament changes are all you need.</p></details>
+      <details><summary>Can I use my own logo?</summary><p>Yes. Upload a black and white image as the icon and it is traced into the sign on the letters or outline layer.</p></details>
+      <details><summary>What sizes can I make?</summary><p>The sign can fit around the text or be a fixed width and height. The generator warns you if it is bigger than your printer.</p></details>
+      <details><summary>How do I mount it?</summary><p>Pick keyhole slots, screw holes, hanging holes, magnet pockets or a separate desk stand at the angle you want.</p></details>
+    </div>
+  </section>
+
+  <section class="wrap section--tight" id="more-generators">
+    <div class="sec-head between"><div><span class="eyebrow">More generators</span><h2>Make something else</h2></div>
+      <a class="btn btn-ghost btn-sm" href="/generators">All 17 generators</a></div>
+    <div class="grid g3 gens-grid">
+      <a class="card card--link gens-card" href="/generators/stencils" data-cat="crafts">
+        <img src="/assets/img/generators/stencils.webp" alt="Stencil generator preview" width="800" height="500" loading="lazy" decoding="async">
+        <div class="gens-body">
+          <h3>Stencil generator</h3>
+          <p class="muted">Text and image stencils with bridges added automatically so the middles of O, A and B stay in.</p>
+          <div class="gens-tags"><span class="tag">STL</span><span class="tag">Auto bridges</span></div>
+          <span class="gens-go">Open generator <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+        </div>
+      </a>
+      <a class="card card--link gens-card" href="/generators/lettering" data-cat="crafts">
+        <img src="/assets/img/generators/lettering.webp" alt="Lettering &amp; calligraphy generator preview" width="800" height="500" loading="lazy" decoding="async">
+        <div class="gens-body">
+          <h3>Lettering &amp; calligraphy generator</h3>
+          <p class="muted">Name tracing templates, mirrored letter stamps and calligraphy guide rulers with your slant and x-height.</p>
+          <div class="gens-tags"><span class="tag">STL</span><span class="tag">Stamps</span><span class="tag">Guides</span></div>
+          <span class="gens-go">Open generator <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+        </div>
+      </a>
+      <a class="card card--link gens-card" href="/generators/plant-markers" data-cat="crafts">
+        <img src="/assets/img/generators/plant-markers.webp" alt="Plant marker generator preview" width="800" height="500" loading="lazy" decoding="async">
+        <div class="gens-body">
+          <h3>Plant marker generator</h3>
+          <p class="muted">A whole set of garden markers from a list of names, with stakes, pot-rim clips or hanging tags.</p>
+          <div class="gens-tags"><span class="tag">STL</span><span class="tag">3MF</span><span class="tag">Batch</span></div>
+          <span class="gens-go">Open generator <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+        </div>
+      </a>
+    </div>
+  </section>
+</main>
+<script type="module" src="/assets/js/make/ui.js?v=682c3de21a"></script>
+<script>
+setTimeout(function () {
+  var t = document.getElementById('mk-controls'), s = document.getElementById('mk-status');
+  if (t && !t.children.length && s) { s.textContent = 'The 3D generator could not start in this browser. Update it, or open this page in Chrome, Edge, Firefox or Safari.'; s.setAttribute('data-kind', 'bad'); }
+}, 12000);
+</script>
+</body>
+</html>

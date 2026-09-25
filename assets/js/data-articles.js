@@ -7,12 +7,12 @@
 window.HHQ_SEED_ARTICLES = [
 {
   slug:'free-3d-model-generators',
-  seo_title:'Free 3D Model Generators: Gridfinity, Chains, Boxes and More',
-  meta_description:'Seven free generators that run in your browser: Gridfinity bins and baseplates, print-in-place necklace chains, storage boxes, drawer trays, cable clips, spool holders and wall brackets.',
-  title:'Seven Free 3D Model Generators, Now Live on Hotend HQ',
+  seo_title:'17 Free 3D Model Generators: Gridfinity, Chains, Dice, Signs and More',
+  meta_description:'Seventeen free generators that run in your browser: Gridfinity, print-in-place chains, custom dice, layered signs, stencils, plant markers, drone frames, mic clips, fidget spinners, board game pieces and more.',
+  title:'Seventeen Free 3D Model Generators, Now Live on Hotend HQ',
   category:'News',
   tags:['generators','gridfinity','jewelry','free tools'],
-  excerpt:'Gridfinity, print-in-place chains, boxes, trays, clips, spool holders and brackets. Set your sizes, pick your printer, download a file that is ready to slice.',
+  excerpt:'Gridfinity, print-in-place chains, dice, signs, stencils, drone frames, mic clips and more. Set your sizes, pick your printer, download a file that is ready to slice.',
   published_at:'2026-09-25',
   author_name:'Hotend HQ',
   featured:true,
@@ -20,13 +20,13 @@ window.HHQ_SEED_ARTICLES = [
   body:`
 Most of what we print at home is not art. It is a box the right size, a bracket for one awkward shelf, a tray for one drawer. Downloading someone else's file and scaling it never quite works, because scaling stretches the walls, the screw holes and the clearances along with everything else.
 
-So we built generators. You type in the sizes you need, the model is built from scratch to those sizes, and you download a file that is ready for your slicer. All seven are free and live now at [hotendhq.com/generators](/generators).
+So we built generators. You type in the sizes you need, the model is built from scratch to those sizes, and you download a file that is ready for your slicer. All seventeen are free and live now at [hotendhq.com/generators](/generators).
 
 ## What every generator does
 
 - **Sized to your printer.** Pick your machine from a list of more than 40 printers from Bambu Lab, Prusa, Creality, Elegoo, Anycubic, Sovol, QIDI, Voron and more, or type in a custom bed. Every generator tells you whether the model fits, and the choice is remembered on your device for next time.
 - **Nothing to install, nothing uploaded.** The model is built on your own computer or phone, in the browser. There is no account and no queue.
-- **Real files.** STL for every generator, and 3MF on Gridfinity and the chain generator.
+- **Real files.** STL for every generator, and 3MF with a separate object per colour or part on most of them.
 - **Share links.** Copy a link and anyone who opens it gets the same design.
 - **Yours to keep.** Print what you make, change it, give it away or sell it.
 
@@ -42,7 +42,7 @@ So we built generators. You type in the sizes you need, the model is built from 
 - **Baseplates** in five styles: minimal, magnetic, weighted, skeleton and screw-down.
 - **Drawer fitter.** Enter the inside of your drawer and it fills it edge to edge, then splits the baseplate into pieces that fit your bed and clip together.
 
-The settings panel now shows how many nozzle lines your walls print as, the weight and cost in your filament, and it keeps your last design so you can pick up where you left off.
+The settings panel shows how many nozzle lines your walls print as and the weight in your filament, and it keeps your last design so you can pick up where you left off.
 
 ## Chain generator
 
@@ -50,7 +50,7 @@ The settings panel now shows how many nozzle lines your walls print as, the weig
 
 The [chain generator](/generators/chain) makes necklace chains that come off the bed already linked. Neighbouring links lean at about 45° in opposite directions and thread through each other with a gap all the way round, so nothing needs supports and nothing needs assembling.
 
-- **26 styles**, from cable, rolo and paperclip to curb, Cuban, figaro, rope, box, snake, name chains and three hand-assembled kits.
+- **34 styles**, from cable, rolo, belcher and paperclip to curb, Cuban, figaro, marquise, flat mariner, bar & link, rosary, rope, box, snake, name chains and three hand-assembled kits, in sizes from fine to extra chunky.
 - **Endless loops.** A chain with no clasp prints as one closed circle that slips straight over your head.
 - **Clasps and extras.** Plain end loops, a built-in toggle clasp, an extender tail and matching jump rings.
 - **Looks.** Graduated links, two-tone chains exported as separate 3MF objects, station beads, and your own link shape from an uploaded SVG or image.
@@ -86,9 +86,69 @@ The [spool holder generator](/generators/spool-holder) makes a wall-mounted arm 
 
 The [wall bracket generator](/generators/wall-bracket) makes an L-bracket with legs up to 160 mm, one to four counterbored screw holes per leg and an optional gusset. Print it standing on its horizontal leg and the corner supports itself.
 
+## Custom dice generator
+
+![Set of custom dice](/assets/img/generators/dice.webp)
+
+The [dice generator](/generators/dice) makes d4, d6, d8, d10, d12, d20 and percentile d100, or all seven as a set. Faces can carry numbers, your own words or symbols, or pips on a d6, and opposite faces add up like real dice. Round the edges, pick a font and fill the engraving in a second colour.
+
+## Layered sign generator
+
+![Layered workshop sign](/assets/img/generators/layered-signs.webp)
+
+The [layered sign generator](/generators/layered-signs) builds a multicolour sign in layers: base, border, an outline around the letters and the letters themselves, with icons or your own logo. On a single-nozzle printer it lists the heights to change filament; on an AMS or MMU the 3MF has an object per colour.
+
+## Stencil generator
+
+![Text stencil with bridges](/assets/img/generators/stencils.webp)
+
+The [stencil generator](/generators/stencils) cuts text, shapes or your own image into a stencil plate and adds bridges automatically, so the middles of letters like O, A and B stay in. It also makes whole letter sets.
+
+## Plant marker generator
+
+![Garden plant markers](/assets/img/generators/plant-markers.webp)
+
+The [plant marker generator](/generators/plant-markers) turns a list of plant names into a full set of markers: stakes, pot-rim clips or hanging tags, with raised, inlaid or engraved text.
+
+## Lettering & calligraphy generator
+
+![Name tracing template](/assets/img/generators/lettering.webp)
+
+The [lettering generator](/generators/lettering) makes name tracing templates, mirrored letter stamps with a handle, and calligraphy guide rulers set to your x-height, nib width and slant angle.
+
+## Pen grip & cutter adapter generator
+
+![Pen adapter for a cutting machine](/assets/img/generators/pen-grips.webp)
+
+The [pen grip generator](/generators/pen-grips) makes adapters that hold your own pens and markers in a Cricut, Silhouette or Brother cutter, with fit-test rings to dial in the fit, plus chunky comfort grips for pens, pencils and craft knives.
+
+## Board game pieces generator
+
+![Numbered game tokens](/assets/img/generators/board-game-pieces.webp)
+
+The [board game pieces generator](/generators/board-game-pieces) makes numbered tokens and coins, pawns, meeples and figures, resource cubes and gems, and card stands, as whole sets with a colour per player.
+
+## Fidget spinner generator
+
+![Tri-lobe fidget spinner](/assets/img/generators/fidget-spinners.webp)
+
+The [fidget spinner generator](/generators/fidget-spinners) makes classic spinners for 608, 688, R188, 626 and 6000 bearings with coin, nut or bearing weights, print-in-place spinners with no bearing at all, and spinning rings in your ring size.
+
+## Drone frame generator
+
+![FPV quad frame](/assets/img/generators/drone-frame.webp)
+
+The [drone frame generator](/generators/drone-frame) makes FPV quad frames from 65 mm whoops to 7-inch long range: true X, stretched X, H, deadcat or ducted whoop, with your motor pattern, flight stack, camera mount and strap slots. It checks that your props clear each other.
+
+## Mic clip & stand accessory generator
+
+![Mic clip and hinged stand mount](/assets/img/generators/mic-accessories.webp)
+
+The [mic accessory generator](/generators/mic-accessories) makes mic clips, shock mounts, thread adapters, stand cable clips, pop filters and phone mounts, with real 5/8″-27, 3/8″-16 and 1/4″-20 threads and a hinge to set the angle.
+
 ## What's next
 
-More generators are on the way, starting with clasps and medallions to go with the chains. If there is a part you keep having to design from scratch, [tell us about it](/about#contact).
+More generators are on the way. If there is a part you keep having to design from scratch, [tell us about it](/about#contact).
 `
 },
 {

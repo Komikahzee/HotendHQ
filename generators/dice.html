@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Custom Dice Generator: d4 to d20 with Your Own Faces — Hotend HQ</title>
+<meta name="description" content="Make 3D printable dice from d4 to d20 plus d10 and percentile d100, with engraved numbers, your own words or symbols, pips, rounded edges and two-colour fills. Opposite faces add up like real dice. Free STL and 3MF.">
+<link rel="canonical" href="https://hotendhq.com/generators/dice">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Hotend HQ">
+<meta property="og:title" content="Custom Dice Generator: d4 to d20 with Your Own Faces">
+<meta property="og:description" content="Make 3D printable dice from d4 to d20 plus d10 and percentile d100, with engraved numbers, your own words or symbols, pips, rounded edges and two-colour fills. Opposite faces add up like real dice. Free STL and 3MF.">
+<meta property="og:url" content="https://hotendhq.com/generators/dice">
+<meta property="og:image" content="https://hotendhq.com/assets/img/generators/dice.webp">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#00091c">
+<link rel="icon" href="/assets/img/favicon-32.png" sizes="32x32">
+<link rel="apple-touch-icon" href="/assets/img/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest">
+<link rel="stylesheet" href="/assets/css/fonts.css?v=1f7e92bbba">
+<link rel="stylesheet" href="/assets/css/theme.css?v=fed608d70e">
+<link rel="stylesheet" href="/assets/css/pages.css?v=2d53d9dee9">
+<link rel="stylesheet" href="/assets/css/gridfinity.css?v=5e3a6426ad">
+<link rel="stylesheet" href="/assets/css/make.css?v=afc58a6ecc">
+<link rel="preload" href="/assets/vendor/manifold/manifold.wasm" as="fetch" type="application/wasm" crossorigin>
+<script type="importmap">
+{"imports":{
+  "three":"/assets/vendor/three/three.module.js",
+  "three/addons/":"/assets/vendor/three/addons/"
+}}
+</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Hotend HQ Dice generator","url":"https://hotendhq.com/generators/dice","image":"https://hotendhq.com/assets/img/generators/dice.webp","applicationCategory":"DesignApplication","operatingSystem":"Any (runs in the browser)","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"description":"Make 3D printable dice from d4 to d20 plus d10 and percentile d100, with engraved numbers, your own words or symbols, pips, rounded edges and two-colour fills. Opposite faces add up like real dice. Free STL and 3MF.","featureList":["d4, d6, d8, d10, d12, d20 and d100","Full RPG set in one go","Custom text on every face","Pips for d6","Rounded edges","Two-colour fill"]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"HowTo","name":"How to make custom 3D printed dice","step":[{"@type":"HowToStep","position":1,"name":"Choose the die","text":"d4, d6, d8, d10, d100, d12, d20, or all seven as a set."},{"@type":"HowToStep","position":2,"name":"Set the faces","text":"Numbers, your own words or symbols (one per face), pips on a d6, or blank faces."},{"@type":"HowToStep","position":3,"name":"Style it","text":"Size, rounded edges, font, text size, how 6 and 9 are marked and how deep the faces are engraved."},{"@type":"HowToStep","position":4,"name":"Print and fill","text":"Print the die, then fill the engraving with paint, or print the second colour object from the 3MF."}]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Do opposite faces add up like real dice?","acceptedAnswer":{"@type":"Answer","text":"Yes. Opposite faces add up to one more than the number of faces (7 on a d6, 21 on a d20). The d10 sums to 9 because it counts 0–9."}},{"@type":"Question","name":"Can I put words or emoji-like symbols on the faces?","acceptedAnswer":{"@type":"Answer","text":"Words and letters from the fonts, yes. Type one entry per face and the text is shrunk to fit."}},{"@type":"Question","name":"How is a d4 read?","acceptedAnswer":{"@type":"Answer","text":"Choose numbers read at the top point (the modern style) or along the bottom edge."}},{"@type":"Question","name":"Which way up do I print them?","acceptedAnswer":{"@type":"Answer","text":"The die is placed resting on a face, so it prints without supports."}}]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://hotendhq.com/"},{"@type":"ListItem","position":2,"name":"3D model generators","item":"https://hotendhq.com/generators"},{"@type":"ListItem","position":3,"name":"Custom dice","item":"https://hotendhq.com/generators/dice"}]}</script>
+<script src="/assets/js/config.js?v=a00c59ebda" defer></script>
+<script src="/assets/js/nav.js?v=60d1eef206" defer></script>
+<script src="/assets/js/site.js?v=c010faf67d" defer></script>
+<script src="/assets/js/api.js?v=097762e5df" defer></script>
+</head>
+<body data-gen="dice">
+<main id="main" class="gf-page">
+  <section class="wrap gf-hero">
+    <nav class="crumbs" aria-label="Breadcrumb"><a href="/generators">3D model generators</a><span aria-hidden="true">/</span><span>Custom dice</span></nav>
+    <h1>Custom dice generator</h1>
+    <p class="lede">Pick a die, or the full seven-piece set, and put your own numbers, words or pips on every face. Numbers are laid out so opposite faces add up like a real die.</p>
+  </section>
+
+  <section class="wrap gf-wrap" aria-label="Generator">
+    <div class="gf">
+      <div class="gf-panel">
+        <div class="gf-tabs mk-tabs" id="mk-tabs" role="group" aria-label="What to make"></div>
+        <h2 id="mk-title" class="gf-h"></h2>
+        <p id="mk-blurb" class="faint gf-blurb"></p>
+        <div class="gf-presets chips" id="mk-presets"></div>
+        <ul id="mk-warn" class="gf-warn hidden" aria-live="polite"></ul>
+        <div id="mk-controls"></div>
+      </div>
+      <div class="gf-view">
+        <div class="gf-stage" id="mk-stage">
+          <span class="gen-badge">Drag to orbit · scroll or pinch to zoom</span>
+          <div class="gf-tools">
+            <button type="button" class="gf-tool" id="mk-fit" aria-label="Reset the view" title="Reset the view">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg></button>
+            <button type="button" class="gf-tool" id="mk-full" aria-label="Full screen" title="Full screen">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
+          </div>
+          <div class="gen-readout" id="mk-readout"></div>
+          <div class="gf-busy" aria-hidden="true"><span class="spin"></span></div>
+        </div>
+        <div class="ch-parts chips hidden" id="mk-parts" role="group" aria-label="Parts (tap to show or hide)"></div>
+        <p id="mk-status" class="gf-status" role="status" aria-live="polite">Loading…</p>
+        <div class="gf-bar">
+          <div class="gf-actions">
+            <button class="btn btn-primary" id="mk-stl" type="button">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M7 11l5 5 5-5"/><path d="M4 20h16"/></svg>Download STL</button>
+            <button class="btn btn-ghost" id="mk-3mf" type="button">3MF</button>
+            <button class="btn btn-ghost" id="mk-link" type="button" aria-label="Copy a link to this design">Copy link</button>
+            <button class="btn btn-ghost" id="mk-reset" type="button">Reset</button>
+          </div>
+        </div>
+        <div class="card mk-info hidden"><h3>Printing this model</h3><ul id="mk-info"></ul></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="wrap section">
+    <div class="sec-head"><span class="eyebrow">How it works</span><h2>Your own dice in four steps</h2></div>
+    <div class="card mk-howto"><ol>
+      <li><strong>Choose the die.</strong> d4, d6, d8, d10, d100, d12, d20, or all seven as a set.</li>
+      <li><strong>Set the faces.</strong> Numbers, your own words or symbols (one per face), pips on a d6, or blank faces.</li>
+      <li><strong>Style it.</strong> Size, rounded edges, font, text size, how 6 and 9 are marked and how deep the faces are engraved.</li>
+      <li><strong>Print and fill.</strong> Print the die, then fill the engraving with paint, or print the second colour object from the 3MF.</li>
+    </ol></div>
+  </section>
+
+  <section class="wrap section--tight">
+    <div class="sec-head"><span class="eyebrow">Printing it</span><h2>Settings that work</h2></div>
+    <div class="grid g3">
+      <div class="card"><h3>Fair rolls</h3><p class="muted gf-card-p">Print with 100% infill or at least 4 walls and 40% infill so the weight is even. Keep the rounding the same on every die in a set.</p></div>
+      <div class="card"><h3>Sharp numbers</h3><p class="muted gf-card-p">Use 0.12–0.16 mm layers so the engraved numbers stay crisp, and print a set one at a time if your slicer allows it.</p></div>
+      <div class="card"><h3>Filling the numbers</h3><p class="muted gf-card-p">Wipe acrylic paint into the engraving and scrape off the excess with a card, or print the fill object in a second colour.</p></div>
+    </div>
+  </section>
+
+  <section class="wrap section--tight">
+    <div class="sec-head"><span class="eyebrow">Questions</span><h2>Custom dice FAQ</h2></div>
+    <div class="gens-faq">
+      <details><summary>Do opposite faces add up like real dice?</summary><p>Yes. Opposite faces add up to one more than the number of faces (7 on a d6, 21 on a d20). The d10 sums to 9 because it counts 0–9.</p></details>
+      <details><summary>Can I put words or emoji-like symbols on the faces?</summary><p>Words and letters from the fonts, yes. Type one entry per face and the text is shrunk to fit.</p></details>
+      <details><summary>How is a d4 read?</summary><p>Choose numbers read at the top point (the modern style) or along the bottom edge.</p></details>
+      <details><summary>Which way up do I print them?</summary><p>The die is placed resting on a face, so it prints without supports.</p></details>
+    </div>
+  </section>
+
+  <section class="wrap section--tight" id="more-generators">
+    <div class="sec-head between"><div><span class="eyebrow">More generators</span><h2>Make something else</h2></div>
+      <a class="btn btn-ghost btn-sm" href="/generators">All 17 generators</a></div>
+    <div class="grid g3 gens-grid">
+      <a class="card card--link gens-card" href="/generators/board-game-pieces" data-cat="games">
+        <img src="/assets/img/generators/board-game-pieces.webp" alt="Board game pieces generator preview" width="800" height="500" loading="lazy" decoding="async">
+        <div class="gens-body">
+          <h3>Board game pieces generator</h3>
+          <p class="muted">Numbered tokens and coins, pawns, meeples, resource cubes and card stands, made as whole sets.</p>
+          <div class="gens-tags"><span class="tag">STL</span><span class="tag">3MF</span><span class="tag">Sets</span></div>
+          <span class="gens-go">Open generator <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+        </div>
+      </a>
+      <a class="card card--link gens-card" href="/generators/fidget-spinners" data-cat="games">
+        <img src="/assets/img/generators/fidget-spinners.webp" alt="Fidget spinner generator preview" width="800" height="500" loading="lazy" decoding="async">
+        <div class="gens-body">
+          <h3>Fidget spinner generator</h3>
+          <p class="muted">Spinners for 608, 688 and R188 bearings or with no bearing at all, plus spinning rings.</p>
+          <div class="gens-tags"><span class="tag">STL</span><span class="tag">Bearing or print-in-place</span></div>
+          <span class="gens-go">Open generator <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+        </div>
+      </a>
+      <a class="card card--link gens-card" href="/generators/layered-signs" data-cat="crafts">
+        <img src="/assets/img/generators/layered-signs.webp" alt="Layered sign generator preview" width="800" height="500" loading="lazy" decoding="async">
+        <div class="gens-body">
+          <h3>Layered sign generator</h3>
+          <p class="muted">Multicolour signs with raised or inlaid text, borders and mounting, with the colour-change heights worked out.</p>
+          <div class="gens-tags"><span class="tag">3MF</span><span class="tag">Multicolour</span></div>
+          <span class="gens-go">Open generator <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+        </div>
+      </a>
+    </div>
+  </section>
+</main>
+<script type="module" src="/assets/js/make/ui.js?v=682c3de21a"></script>
+<script>
+setTimeout(function () {
+  var t = document.getElementById('mk-controls'), s = document.getElementById('mk-status');
+  if (t && !t.children.length && s) { s.textContent = 'The 3D generator could not start in this browser. Update it, or open this page in Chrome, Edge, Firefox or Safari.'; s.setAttribute('data-kind', 'bad'); }
+}, 12000);
+</script>
+</body>
+</html>

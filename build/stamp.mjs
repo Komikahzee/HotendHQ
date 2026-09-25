@@ -16,13 +16,14 @@ const JS = path.join(ROOT, 'assets/js');
 const hash = (p) => crypto.createHash('sha1').update(fs.readFileSync(p)).digest('hex').slice(0, 10);
 
 // 1. JS files that import each other: stamp until nothing changes (a file's hash includes its imports' hashes)
-const jsFiles = fs.readdirSync(JS).filter(f => f.endsWith('.js'));
-const IMPORT = /(['"])\.\/([\w.-]+\.js)(?:\?v=[\w.-]*)?\1/g;
-for (let pass = 0; pass < 8; pass++) {
+const jsFiles = [];
+(function walkJs(d) { for (const e of fs.readdirSync(d, { withFileTypes: true })) { const p = path.join(d, e.name); if (e.isDirectory()) walkJs(p); else if (e.name.endsWith('.js')) jsFiles.push(p); } })(JS);
+const IMPORT = /(['"])(\.\.?\/[\w./-]+\.js)(?:\?v=[\w.-]*)?\1/g;
+for (let pass = 0; pass < 12; pass++) {
   let changed = 0;
-  for (const f of jsFiles) {
-    const p = path.join(JS, f), src = fs.readFileSync(p, 'utf8');
-    const out = src.replace(IMPORT, (m, q, dep) => fs.existsSync(path.join(JS, dep)) ? `${q}./${dep}?v=${hash(path.join(JS, dep))}${q}` : m);
+  for (const p of jsFiles) {
+    const src = fs.readFileSync(p, 'utf8');
+    const out = src.replace(IMPORT, (m, q, dep) => { const f = path.resolve(path.dirname(p), dep); return fs.existsSync(f) ? `${q}${dep}?v=${hash(f)}${q}` : m; });
     if (out !== src) { fs.writeFileSync(p, out); changed++; }
   }
   if (!changed) break;
@@ -40,7 +41,7 @@ const pages = [];
 let refs = 0;
 for (const p of pages) {
   const src = fs.readFileSync(p, 'utf8');
-  const out = src.replace(/(\/assets\/(?:css|js)\/[\w.-]+\.(?:css|js))(?:\?v=[\w.-]*)?(?=["'])/g, (m, a) => {
+  const out = src.replace(/(\/assets\/(?:css|js)\/[\w./-]+\.(?:css|js))(?:\?v=[\w.-]*)?(?=["'])/g, (m, a) => {
     const f = path.join(ROOT, a);
     if (!fs.existsSync(f)) return m;
     refs++;

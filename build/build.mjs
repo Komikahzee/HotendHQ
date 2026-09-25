@@ -28,8 +28,13 @@ import path from 'node:path';
 import vm from 'node:vm';
 import { fileURLToPath } from 'node:url';
 import crypto from 'node:crypto';
+import { GENERATORS as SITE_GENERATORS } from './site-generators.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+/* --source: write the bundled articles as static /guides/<slug>/ pages and a sitemap into the
+   repo itself, so they are real, indexable pages even when Cloudflare serves the repo unbuilt.
+   Run it after adding or editing an article in data-articles.js (then node build/stamp.mjs). */
+const SOURCE = process.argv.includes('--source');
 const OUT = path.join(ROOT, 'dist');
 const t0 = Date.now();
 const log = (...a) => console.log('[build]', ...a);
@@ -46,10 +51,12 @@ function copyDir(src, dst) {
     else if (e.isFile()) fs.copyFileSync(s, d);
   }
 }
-fs.rmSync(OUT, { recursive: true, force: true });
-copyDir(ROOT, OUT);
-// mark the output as built: article links and canonicals then point at /guides/<slug>/
-fs.appendFileSync(path.join(OUT, 'assets/js/config.js'), '\nwindow.HHQ_BUILT = true;\n');
+if (!SOURCE) {
+  fs.rmSync(OUT, { recursive: true, force: true });
+  copyDir(ROOT, OUT);
+  // mark the output as built: article links and canonicals then point at /guides/<slug>/
+  fs.appendFileSync(path.join(OUT, 'assets/js/config.js'), '\nwindow.HHQ_BUILT = true;\n');
+}
 
 /* ---------------- 2. load the browser data in a sandbox ---------------- */
 const noop = () => {};
@@ -107,7 +114,7 @@ const PAGES = ['index', 'news', 'troubleshoot', 'generator', 'generators', 'grid
   'storage-box', 'grid-organiser', 'cable-clip', 'spool-holder', 'wall-bracket', 'tools', 'gear', 'about',
   'login', 'admin', 'article', '404'];
 /* Every generator is served under /generators/<name>; /generators itself is the index page. */
-const GENERATORS = ['gridfinity', 'chain', 'storage-box', 'grid-organiser', 'cable-clip', 'spool-holder', 'wall-bracket'];
+const GENERATORS = SITE_GENERATORS.map(g => g.slug);
 const clean = p => (p === 'index' ? '/' : GENERATORS.includes(p) ? `/generators/${p}` : `/${p}`);
 const jsonLd = obj => `<script type="application/ld+json">${JSON.stringify(obj).replace(/</g, '\\u003c')}</script>`;
 const iso = d => { const x = new Date(d); return isNaN(x) ? undefined : x.toISOString(); };
@@ -228,6 +235,27 @@ document.addEventListener('DOMContentLoaded', () => {
 }
 
 /* ---------------- main ---------------- */
+if (SOURCE) {
+  // bundled articles only: those are the ones every copy of the site links to /guides/ (site.js hasGuidePage)
+  const seed = (W.HHQ_SEED_ARTICLES || []).map(a => ({ status: 'published', tags: [], featured: false, ...a }))
+    .filter(a => a.status === 'published' && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(a.slug || ''))
+    .sort((a, b) => new Date(b.published_at || 0) - new Date(a.published_at || 0));
+  const gdir = path.join(ROOT, 'guides');
+  fs.rmSync(gdir, { recursive: true, force: true });
+  for (const a of seed) {
+    fs.mkdirSync(path.join(gdir, a.slug), { recursive: true });
+    fs.writeFileSync(path.join(gdir, a.slug, 'index.html'), finishPage(guidePage(a, seed), `/guides/${a.slug}/`));
+  }
+  const day = d => (iso(d) || '').slice(0, 10), today = new Date().toISOString().slice(0, 10);
+  const pages = ['index', 'news', 'troubleshoot', 'generators', ...GENERATORS, 'tools', 'gear', 'about'];
+  const urls = [
+    ...pages.map(p => `  <url><loc>${BASE}${clean(p)}</loc><lastmod>${today}</lastmod><priority>${p === 'index' ? '1.0' : ['generators', 'gridfinity', 'chain'].includes(p) ? '0.9' : '0.8'}</priority></url>`),
+    ...seed.map(a => `  <url><loc>${guideUrl(a)}</loc>${day(a.updated_at || a.published_at) ? `<lastmod>${day(a.updated_at || a.published_at)}</lastmod>` : ''}<priority>0.7</priority></url>`),
+  ];
+  fs.writeFileSync(path.join(ROOT, 'sitemap.xml'), `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.join('\n')}\n</urlset>\n`);
+  log(`source: wrote ${seed.length} guide page(s) to guides/ and ${urls.length} URLs to sitemap.xml`);
+  process.exit(0);
+}
 const articles = await loadArticles();
 for (const a of articles) {
   const dir = path.join(OUT, 'guides', a.slug);
@@ -269,7 +297,7 @@ for (const f of fs.readdirSync(OUT)) {
 // here _redirects sends those addresses on with a 301, so the stubs are dropped.
 for (const g of GENERATORS) {
   const f = path.join('generators', g + '.html');
-  if (!fs.existsSync(path.join(OUT, f))) throw new Error(`generator page ${f} is missing`);
+  if (!fs.existsSync(path.join(OUT, f))) { log(`WARNING: generator page ${f} is missing`); continue; }
   edit(f, h => finishPage(h, clean(g)));
   fs.rmSync(path.join(OUT, g + '.html'), { force: true });
 }
@@ -289,7 +317,7 @@ const htmlFiles = [];
   }
 })(OUT);
 for (const f of htmlFiles) {
-  const h = fs.readFileSync(f, 'utf8').replace(/(\/assets\/(?:css|js)\/[\w.-]+\.(?:css|js))(?:\?v=[\w.-]*)?(?=["'])/g, (_, a) => {
+  const h = fs.readFileSync(f, 'utf8').replace(/(\/assets\/(?:css|js)\/[\w./-]+\.(?:css|js))(?:\?v=[\w.-]*)?(?=["'])/g, (_, a) => {
     if (!assetHash.has(a)) {
       const p = path.join(OUT, a);
       assetHash.set(a, fs.existsSync(p) ? hashOf(p) : null);
@@ -307,6 +335,7 @@ const fileOf = p => (GENERATORS.includes(p) ? `generators/${p}.html` : `${p}.htm
 /* A URL only goes in the sitemap if the page at that URL names itself as canonical.
    Anything that doesn't is left out and logged, so the sitemap never sends mixed signals. */
 const canonicalOf = file => {
+  if (!fs.existsSync(path.join(OUT, file))) return null;
   const m = fs.readFileSync(path.join(OUT, file), 'utf8').match(/<link rel="canonical" href="([^"]+)"/);
   return m ? m[1] : null;
 };

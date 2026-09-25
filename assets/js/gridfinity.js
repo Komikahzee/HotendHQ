@@ -271,9 +271,9 @@ const G = (() => {
   let g = {};
   try { g = JSON.parse(localStorage.getItem(GKEY) || '{}') || {}; } catch { /* storage blocked */ }
   return { nozzle: ['0.2', '0.4', '0.6', '0.8'].includes(g.nozzle) ? g.nozzle : '0.4', material: MATERIALS[g.material] ? g.material : 'pla',
-    price: +g.price > 0 ? +g.price : 20, printer: loadPrinter() };
+    printer: loadPrinter() };
 })();
-const saveG = () => { try { localStorage.setItem(GKEY, JSON.stringify({ nozzle: G.nozzle, material: G.material, price: G.price })); } catch {} savePrinter(G.printer); };
+const saveG = () => { try { localStorage.setItem(GKEY, JSON.stringify({ nozzle: G.nozzle, material: G.material })); } catch {} savePrinter(G.printer); };
 const vol = () => volumeOf(G.printer);
 function linesText(t) {
   const n = +G.nozzle, lines = t / n, whole = Math.abs(lines - Math.round(lines)) < 0.08;
@@ -392,10 +392,8 @@ function setupHTML() {
         <div class="gf-row"><label for="${id}-nz">Nozzle</label><select id="${id}-nz">
           ${[['0.2', '0.2 mm (fine detail)'], ['0.4', '0.4 mm (standard)'], ['0.6', '0.6 mm (fast, strong)'], ['0.8', '0.8 mm (very fast)']].map(([v, l]) => `<option value="${v}"${v === G.nozzle ? ' selected' : ''}>${l}</option>`).join('')}
           </select><p class="hint">Wall and divider thickness show how many lines they print as.</p></div>
-        <div class="gf-row gf-2col">
-          <div><label for="${id}-mat">Filament</label><select id="${id}-mat">${Object.entries(MATERIALS).map(([k, [l]]) => `<option value="${k}"${k === G.material ? ' selected' : ''}>${l}</option>`).join('')}</select></div>
-          <div><label for="${id}-pr2">Price per kg</label><span class="gf-num"><input type="number" id="${id}-pr2" min="1" max="500" step="1" value="${G.price}" inputmode="decimal"><span class="gf-unit">$</span></span></div>
-        </div>
+        <div class="gf-row"><label for="${id}-mat">Filament</label><select id="${id}-mat">${Object.entries(MATERIALS).map(([k, [l]]) => `<option value="${k}"${k === G.material ? ' selected' : ''}>${l}</option>`).join('')}</select>
+          <p class="hint">Used for the weight shown under the preview.</p></div>
       </div>
     </details>`;
 }
@@ -416,7 +414,6 @@ function bindSetup() {
   }));
   $(`#${id}-nz`).addEventListener('change', e => { G.nozzle = e.target.value; after(); if (mode !== 'drawer') showNozzleNotes(); });
   $(`#${id}-mat`).addEventListener('change', e => { G.material = e.target.value; after(); });
-  $(`#${id}-pr2`).addEventListener('change', e => { G.price = Math.max(1, +e.target.value || 20); e.target.value = G.price; after(); });
 }
 /* groups whose settings differ from the defaults get a "changed" mark and their own reset */
 function isChanged(g, s, d) { return g.items.some(c => c.k && (!c.show || c.show(s)) && s[c.k] !== d[c.k]); }
@@ -632,7 +629,7 @@ function getWorker() {
   if (worker && builds > 30 && !busy) { worker.terminate(); worker = null; }   // free WASM memory now and then
   if (!worker) {
     builds = 0;
-    worker = new Worker(new URL('./gridfinity-worker.js?v=67dcb60052', import.meta.url), { type: 'module' });
+    worker = new Worker(new URL('./gridfinity-worker.js?v=2d0510644e', import.meta.url), { type: 'module' });
     worker.onmessage = (e) => { const h = handlers.get(e.data.id); if (h) h(e.data); };
     // a crashed worker must never leave the page stuck: fail the waiting build and start fresh next time
     worker.onerror = (e) => {
@@ -701,9 +698,9 @@ function nozzleNotes() {
 }
 function showNozzleNotes() { if (current) showInfo(current); }
 function showInfo(p) {
-  const i = p.info, [matName, dens] = MATERIALS[G.material], grams = p.volume / 1000 * dens, cost = grams / 1000 * G.price;
+  const i = p.info, [matName, dens] = MATERIALS[G.material], grams = p.volume / 1000 * dens;
   const inch = (v) => fmt(v / 25.4, 2);
-  readEl.innerHTML = `${fmt(i.W, 1)} × ${fmt(i.D, 1)} × ${fmt(i.H, 2)} mm<br><span class="gf-in">${inch(i.W)} × ${inch(i.D)} × ${inch(i.H)} in</span><br>≈ ${fmt(grams, grams < 10 ? 1 : 0)} g ${matName} · $${cost.toFixed(2)}`;
+  readEl.innerHTML = `${fmt(i.W, 1)} × ${fmt(i.D, 1)} × ${fmt(i.H, 2)} mm<br><span class="gf-in">${inch(i.W)} × ${inch(i.D)} × ${inch(i.H)} in</span><br>≈ ${fmt(grams, grams < 10 ? 1 : 0)} g ${matName}`;
   const facts = [];
   if (i.compartments > 1) facts.push(`${i.compartments} compartments`);
   if (i.cutCount) facts.push(`${i.cutCount} pockets`);

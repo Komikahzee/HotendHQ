@@ -1,6 +1,6 @@
 /* Hotend HQ — Gridfinity build worker.
    Runs Manifold (WASM) off the main thread so sliders stay smooth on phones. */
-import Module from '../vendor/manifold/manifold.js';
+import Module from '../vendor/manifold/manifold.js?v=26779a4e84';
 import { createGridfinity } from './gridfinity-core.js?v=cd2b8dee8c';
 
 const ready = Module().then(w => { w.setup(); return w; });

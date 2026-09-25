@@ -1,0 +1,28 @@
+Font outlines used by the Hotend HQ model generators
+=====================================================
+
+Each .json file here holds glyph outlines (Latin letters, digits and common
+punctuation) converted from the font named below, so text can be turned into
+3D geometry in the browser. The fonts belong to their authors and are used
+under their open licences, which allow embedding and redistribution. Models
+you make with them are yours; the licences do not restrict printed output.
+
+File            Font                        Licence       Source
+inter.json      Inter ExtraBold             SIL OFL 1.1   https://github.com/rsms/inter
+bebas.json      Bebas Neue                  SIL OFL 1.1   https://fonts.google.com/specimen/Bebas+Neue
+slab.json       Roboto Slab Bold            Apache 2.0    https://fonts.google.com/specimen/Roboto+Slab
+fredoka.json    Fredoka SemiBold            SIL OFL 1.1   https://fonts.google.com/specimen/Fredoka
+pacifico.json   Pacifico                    SIL OFL 1.1   https://fonts.google.com/specimen/Pacifico
+greatvibes.json Great Vibes                 SIL OFL 1.1   https://fonts.google.com/specimen/Great+Vibes
+dancing.json    Dancing Script Bold         SIL OFL 1.1   https://fonts.google.com/specimen/Dancing+Script
+lobster.json    Lobster                     SIL OFL 1.1   https://fonts.google.com/specimen/Lobster
+stencil.json    Allerta Stencil             SIL OFL 1.1   https://fonts.google.com/specimen/Allerta+Stencil
+blackops.json   Black Ops One               SIL OFL 1.1   https://fonts.google.com/specimen/Black+Ops+One
+mono.json       JetBrains Mono SemiBold     SIL OFL 1.1   https://github.com/JetBrains/JetBrainsMono
+
+SIL Open Font License 1.1: https://openfontlicense.org
+Apache License 2.0:        https://www.apache.org/licenses/LICENSE-2.0
+
+The converted files were made from the fontsource packages (https://fontsource.org)
+and keep the original font names. Under the OFL, a modified version may not use a
+Reserved Font Name; these files are format conversions of the unmodified glyphs.

@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>First Layer Not Sticking? Fix Z-Offset, Bed Surface and Speed</title>
+<meta name="description" content="Most first-layer failures come down to three things: nozzle height, a dirty or mismatched bed surface, and printing it too fast. How to read the layer and fix each one.">
+<link rel="canonical" href="https://hotendhq.com/guides/first-layer-that-sticks/">
+<meta name="theme-color" content="#00091c">
+<meta property="og:site_name" content="Hotend HQ">
+<meta property="og:type" content="article">
+<meta property="og:title" content="First Layer Not Sticking? Fix Z-Offset, Bed Surface and Speed">
+<meta property="og:description" content="Most first-layer failures come down to three things: nozzle height, a dirty or mismatched bed surface, and printing it too fast. How to read the layer and fix each one.">
+<meta property="og:url" content="https://hotendhq.com/guides/first-layer-that-sticks/">
+<meta property="og:image" content="https://hotendhq.com/assets/img/og-image.png">
+<meta property="article:published_time" content="2026-09-23T00:00:00.000Z">
+<meta property="article:modified_time" content="2026-09-23T00:00:00.000Z">
+<meta property="article:section" content="Troubleshooting">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/assets/img/favicon-32.png" sizes="32x32">
+<link rel="apple-touch-icon" href="/assets/img/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest">
+<link rel="stylesheet" href="/assets/css/fonts.css?v=1f7e92bbba">
+<link rel="stylesheet" href="/assets/css/theme.css?v=fed608d70e">
+<link rel="stylesheet" href="/assets/css/pages.css?v=2d53d9dee9">
+<script src="/assets/js/config.js?v=a00c59ebda" defer></script>
+<script src="/assets/js/nav.js?v=60d1eef206" defer></script>
+<script src="/assets/js/site.js?v=c010faf67d" defer></script>
+<script src="/assets/js/api.js?v=097762e5df" defer></script>
+<script type="application/ld+json">[{"@context":"https://schema.org","@type":"Article","headline":"A First Layer That Sticks: Z-Offset, Surfaces and the Ten-Minute Fix","description":"Most first-layer failures come down to three things: nozzle height, a dirty or mismatched bed surface, and printing it too fast. How to read the layer and fix each one.","image":["https://hotendhq.com/assets/img/og-image.png"],"datePublished":"2026-09-23T00:00:00.000Z","dateModified":"2026-09-23T00:00:00.000Z","author":{"@type":"Organization","name":"Hotend HQ","url":"https://hotendhq.com/"},"publisher":{"@type":"Organization","name":"Hotend HQ","logo":{"@type":"ImageObject","url":"https://hotendhq.com/assets/img/icon-512.png"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://hotendhq.com/guides/first-layer-that-sticks/"},"articleSection":"Troubleshooting","keywords":"first layer, bed adhesion, beginner"},{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://hotendhq.com/"},{"@type":"ListItem","position":2,"name":"Guides","item":"https://hotendhq.com/news"},{"@type":"ListItem","position":3,"name":"A First Layer That Sticks: Z-Offset, Surfaces and the Ten-Minute Fix","item":"https://hotendhq.com/guides/first-layer-that-sticks/"}]}]</script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+       <header class="site-head">
+        <div class="wrap head-in">
+          <a class="brand" href="/" aria-label="Hotend HQ home">
+            <img src="/assets/img/icon-192.png" alt="" width="38" height="38">
+            <span class="brand-txt">
+              <span class="brand-name"><span class="h">Hotend</span> <span class="q">HQ</span></span>
+              <span class="brand-tag">Everything 3D Printing</span>
+            </span>
+          </a>
+          <button class="burger" id="burger" aria-label="Menu" aria-expanded="false" aria-controls="nav">
+            <svg class="" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"
+      aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+          </button>
+          <nav class="nav" id="nav"><a href="/news" aria-current="page">News</a><a href="/troubleshoot">Troubleshoot</a><a href="/generators">Generators</a><a href="/tools">Tools</a><a href="/gear">Gear</a><div class="head-cta">
+        <a class="btn btn-ghost btn-sm" href="/admin" data-auth-chip hidden><svg class="" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"
+      aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg><span>Editor</span></a>
+        <a class="btn btn-primary btn-sm" href="/generators"><svg class="" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"
+      aria-hidden="true"><path d="M12 2l9 5v10l-9 5-9-5V7z"/><path d="M3 7l9 5 9-5M12 12v10"/></svg>Generate a model</a>
+      </div></nav>
+        </div>
+       </header>
+<main id="main">
+  <article class="wrap section--tight" id="art">
+    <nav class="faint" aria-label="Breadcrumb" style="margin-bottom:16px">
+      <a href="/">Home</a> <span aria-hidden="true">/</span> <a href="/news">Guides</a> <span aria-hidden="true">/</span> <span>Troubleshooting</span>
+    </nav>
+    <div class="article-head">
+      <div><span class="tag tag--flame">Troubleshooting</span>
+        </div>
+      <h1 style="margin:14px 0 12px">A First Layer That Sticks: Z-Offset, Surfaces and the Ten-Minute Fix</h1>
+      <p class="lede" style="margin-inline:auto">The first layer tells you exactly what is wrong if you know how to read it. Here is how to read it, and the four fixes that solve nearly every adhesion problem.</p>
+      <div class="post-meta" style="justify-content:center;margin-top:16px">
+        <span>Hotend HQ</span><span>·</span>
+        <time datetime="2026-09-23">Sep 23, 2026</time><span>·</span>
+        <span>3 min read</span>
+      </div>
+    </div>
+    
+    <div class="prose"><p>Most failed prints fail in the first two minutes. A corner lifts, a line drags, and forty minutes later you have a nest of spaghetti. The good news is that the first layer is also the easiest layer to diagnose, because everything that goes wrong with it leaves a visible mark.</p>
+<h2>Read the layer before you change anything</h2>
+<p>Print a single large square one layer thick, then look at it closely.</p>
+<ul>
+<li><strong>Round lines with gaps between them</strong> that peel up as one piece: the nozzle is too high. The plastic is being laid on the bed, not pressed into it.</li>
+<li><strong>Rough, ridged or see-through lines</strong>, or plastic building up around the nozzle: the nozzle is too low. It is scraping through its own extrusion.</li>
+<li><strong>Flat lines that just touch each other</strong> with a smooth, even top: that is the target.</li>
+<li><strong>Good in the middle, bad in one corner or along one edge</strong>: this is a bed-mesh or levelling problem, not a nozzle-height problem. Changing the Z-offset will make one area better and another worse.</li>
+</ul>
+<h2>Fix 1: Clean the plate properly</h2>
+<p>This is the fix people skip, and the one that solves the most problems. Fingerprints leave skin oil on the build surface, and PLA will not stick to oil.</p>
+<p>Isopropyl alcohol is fine for a quick wipe between prints, but it mostly spreads oil around. Every so often, take the plate to the sink and wash it with warm water and a drop of dish soap, rinse it, and dry it with a clean paper towel. Then handle it by the edges only.</p>
+<h2>Fix 2: Set the Z-offset while it prints</h2>
+<p>Start a large first-layer test and adjust the Z-offset live, 0.02 mm at a time, while you watch the lines go down. Stop when the lines are flat and just touching.</p>
+<p>If your printer calibrates its own first layer, and many recent machines do, run that calibration again after you change the nozzle or swap plates, before you touch any offsets by hand.</p>
+<h2>Fix 3: Match the surface to the material</h2>
+<p>Different plastics want different surfaces and temperatures. As a starting point:</p>
+<ul>
+<li><strong>PLA:</strong> smooth or textured PEI, bed at 55–65 °C.</li>
+<li><strong>PETG:</strong> textured PEI, bed at 70–85 °C. On smooth PEI, PETG can bond so well that it pulls the coating off when you remove the part. A thin layer of glue stick acts as a release layer.</li>
+<li><strong>ABS and ASA:</strong> PEI at 90–110 °C, ideally in an enclosure so the part cools evenly.</li>
+<li><strong>TPU:</strong> textured PEI or a glue-stick layer, bed at about 40–60 °C. The problem with TPU is usually getting it off, not keeping it on.</li>
+<li><strong>Nylon:</strong> garolite or a glue-stick layer, and dry filament (see our guide to drying filament).</li>
+</ul>
+<p>Always check the recommended temperatures on the spool; brands vary.</p>
+<h2>Fix 4: Slow the first layer down</h2>
+<p>The first layer should be the slowest layer of the print. Settings that help:</p>
+<ul>
+<li><strong>First-layer speed of 20–50 mm/s</strong>, even on a fast printer.</li>
+<li><strong>Part-cooling fan off</strong> for the first layer or two, so the plastic stays soft long enough to grip.</li>
+<li><strong>A wider first-layer line</strong>, around 120 % of the nozzle size, for more contact area.</li>
+</ul>
+<h2>When the bed itself is the problem</h2>
+<p>If one area is always wrong, check the bed mesh. Re-run the printer&#39;s bed levelling with the bed at printing temperature, because plates change shape as they heat. On large beds, give the bed five to ten minutes to heat through before printing; the edges lag behind the centre.</p>
+<p>A plate that is visibly warped or has a worn patch in the middle (usually from printing the same part in the same spot) needs replacing. No setting fixes a damaged surface.</p>
+<h2>Big flat parts lift at the corners</h2>
+<p>Wide, flat parts such as Gridfinity baseplates pull their corners up as they cool and shrink. A brim, or small round &quot;mouse ears&quot; at each corner, helps. So does keeping draughts away from the printer.</p>
+<p>The other fix is not to print one huge part at all. The <strong>Drawer fitter</strong> in our <a href="/generators/gridfinity">Gridfinity generator</a> splits a drawer-sized baseplate into smaller pieces that fit your bed and clip together, and smaller pieces lift far less.</p></div>
+    <div class="prose" style="margin-top:38px">
+      <div class="note note--info"><svg class="" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"
+      aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 7.5v.5"/></svg>
+        <p>Spotted something wrong, or have a fix that works better? Tell us at
+        <a href="mailto:cobornassets@gmail.com">cobornassets@gmail.com</a> — corrections get credited.</p></div>
+      <div class="row" style="margin-top:20px">
+        <button class="btn btn-ghost btn-sm" id="share" type="button"><svg class="" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"
+      aria-hidden="true"><path d="M14 4h6v6"/><path d="M20 4l-9 9"/><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>Share</button>
+        <a class="btn btn-ghost btn-sm" href="/troubleshoot"><svg class="" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"
+      aria-hidden="true"><path d="M14.5 6a3.5 3.5 0 0 0 4.6 4.6L21 12.5 12.5 21 4 12.5 12.5 4z"/></svg>Diagnose a problem</a>
+      </div>
+    </div>
+  </article>
+  <section class="wrap section" id="related-wrap">
+    <div class="sec-head"><span class="eyebrow">Keep reading</span><h2>Related</h2></div>
+    <div class="grid g3" id="related"><a class="card card--link post" href="/guides/clogged-nozzle-five-minute-diagnostic/">
+      <div class="post-cover"><span class="ph"><svg class="" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"
+      aria-hidden="true"><path d="M12 2s5 5.5 5 10a5 5 0 0 1-10 0c0-2 1-3.5 1-3.5S9.5 11 11 12c1.5-2-1-5 1-10z"/></svg></span></div>
+      <span class="tag">Troubleshooting</span>
+      <h3>Fix a Clogged Nozzle for Good: The Five-Minute Diagnostic</h3>
+      <p class="excerpt">Most &quot;clogs&quot; are not clogs. Work through this order and you will find the real fault instead of replacing a nozzle that was fine.</p>
+      <div class="post-meta"><span>Sep 10, 2026</span><span>·</span>
+        <span>3 min read</span></div>
+    </a><a class="card card--link post" href="/guides/all-metal-vs-ptfe-hotends/">
+      <div class="post-cover"><span class="ph"><svg class="" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"
+      aria-hidden="true"><path d="M12 2s5 5.5 5 10a5 5 0 0 1-10 0c0-2 1-3.5 1-3.5S9.5 11 11 12c1.5-2-1-5 1-10z"/></svg></span></div>
+      <span class="tag">Guides</span>
+      <h3>All-Metal vs PTFE-Lined Hot Ends: What Actually Changes</h3>
+      <p class="excerpt">The upgrade everyone recommends, explained honestly — including the three cases where a PTFE-lined hot end is still the better call.</p>
+      <div class="post-meta"><span>Sep 14, 2026</span><span>·</span>
+        <span>3 min read</span></div>
+    </a><a class="card card--link post" href="/guides/free-3d-model-generators/">
+      <div class="post-cover"><img src="/assets/img/articles/generators-spotlight.webp" alt="" loading="lazy"></div>
+      <span class="tag">News</span>
+      <h3>Seventeen Free 3D Model Generators, Now Live on Hotend HQ</h3>
+      <p class="excerpt">Gridfinity, print-in-place chains, dice, signs, stencils, drone frames, mic clips and more. Set your sizes, pick your printer, download a file that is ready to slice.</p>
+      <div class="post-meta"><span>Sep 25, 2026</span><span>·</span>
+        <span>6 min read</span></div>
+    </a></div>
+  </section>
+</main>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const b = document.getElementById('share'); if (!b) return;
+  b.addEventListener('click', async () => {
+    const url = location.href, title = "A First Layer That Sticks: Z-Offset, Surfaces and the Ten-Minute Fix";
+    if (navigator.share) { try { await navigator.share({ title, url }); return; } catch {} }
+    try { await navigator.clipboard.writeText(url); HHQ.toast('Link copied.'); }
+    catch { HHQ.toast('Copy the address bar link.', 'warn'); }
+  });
+});
+</script>
+
+      <footer class="site-foot">
+        <div class="wrap">
+          <div class="foot-grid">
+            <div class="foot-col">
+              <a class="brand" href="/" style="margin-bottom:14px">
+                <img src="/assets/img/icon-192.png" alt="" width="38" height="38">
+                <span class="brand-txt">
+                  <span class="brand-name"><span class="h">Hotend</span> <span class="q">HQ</span></span>
+                  <span class="brand-tag">Everything 3D Printing</span>
+                </span>
+              </a>
+              <p class="disclosure" id="disclosure">Hotend HQ is reader-supported. When you buy through links on this site we may earn an affiliate commission at no extra cost to you. We only recommend hardware we would run on our own machines.</p>
+              <div class="row" style="margin-top:14px;gap:16px;font-size:.88rem"><a href="https://www.tiktok.com/@hotendhq" rel="noopener">TikTok</a><a href="mailto:cobornassets@gmail.com">Email</a></div>
+            </div>
+            
+      <div class="foot-col"><h4>Explore</h4><ul><li><a href="/news">News & Articles</a></li><li><a href="/troubleshoot">Troubleshooting</a></li><li><a href="/generators">3D Model Generators</a></li><li><a href="/tools">Calculators</a></li><li><a href="/gear">Gear Picks</a></li></ul></div>
+      <div class="foot-col"><h4>Site</h4><ul><li><a href="/about">About</a></li><li><a href="/about#contact">Contact</a></li><li><a href="/about#disclosure">Affiliate Disclosure</a></li><li><a href="/about#privacy">Privacy</a></li></ul></div>
+          </div>
+          <div class="foot-bottom">
+            <span>© 2026 Hotend HQ. All rights reserved.</span>
+            <span>Built for makers who fix things themselves.</span>
+          </div>
+        </div>
+      </footer>
+</body>
+</html>

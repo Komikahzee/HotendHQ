@@ -5,7 +5,7 @@
    ============================================================ */
 import {
   createChainEngine, NOZZLE, mMul, mRx, mRz, mT, mApply, meshVolume, transformMesh, meshBounds, clean, clamp, TAU, D2R,
-} from './chain-core.js?v=86943a3a24';
+} from './chain-core.js?v=340287afd0';
 
 const Q = Math.PI / 4, H = Math.PI / 2;
 const IN = 25.4;
@@ -37,12 +37,23 @@ export const STYLES = {
   ball:        { name: 'Ball / bead',          group: 'Medium', kind: 'ball', d: { linkL: 8, linkW: 6, wire: 1.2 } },
   bike:        { name: 'Bike / roller chain',  group: 'Medium', kind: 'bike', d: { linkL: 12, linkW: 7, wire: 1.6 } },
   rope:        { name: 'Rope',                 group: 'Hard',   kind: 'ring', shape: 'stadium', ratio: 1.5, twist: 62, flat: true, rope: true, d: { linkL: 8, linkW: 5.4, wire: 1.2 } },
-  snake:       { name: 'Articulated snake',    group: 'Hard',   kind: 'snake', d: { linkL: 6, linkW: 5.5, wire: 1.2 } },
-  herringbone: { name: 'Herringbone (hinged)', group: 'Hard',   kind: 'snake', flatSeg: true, d: { linkL: 6, linkW: 7, wire: 1.2 } },
+  snake:       { name: 'Articulated snake',    group: 'Hard',   kind: 'snake', d: { linkL: 4.4, linkW: 5.5, wire: 1.2 } },
+  herringbone: { name: 'Herringbone (hinged)', group: 'Hard',   kind: 'snake', flatSeg: true, d: { linkL: 5.6, linkW: 7, wire: 1.2 } },
   kitbyz:      { name: 'Byzantine (kit)'     , group: 'Hand-assembled', kind: 'kit', kit: 'byzantine', d: { linkL: 6, linkW: 6, wire: 1.6 } },
   singapore:   { name: 'Singapore (kit)',      group: 'Hand-assembled', kind: 'kit', kit: 'singapore', d: { linkL: 6, linkW: 6, wire: 1.6 } },
   wheat:       { name: 'Wheat / spiga (kit)',  group: 'Hand-assembled', kind: 'kit', kit: 'wheat', d: { linkL: 6, linkW: 6, wire: 1.6 } },
 };
+// newer styles (object order sets the menu order within each group)
+Object.assign(STYLES, {
+  belcher:     { name: 'Belcher (wide band)',  group: 'Easy',   kind: 'ring', shape: 'circle', ratio: 1, profile: 'flat', d: { linkL: 8, linkW: 8, wire: 1.6 } },
+  circles:     { name: 'Big & small circles',  group: 'Easy',   kind: 'ring', shape: 'circle', ratio: 1, unit: [{ rolo: true, sMul: 1.35 }, { rolo: true }], d: { linkL: 7.4, linkW: 7.4, wire: 1.5 } },
+  teardrop:    { name: 'Teardrop',             group: 'Easy',   kind: 'ring', shape: 'teardrop', ratio: 1.6, d: { linkL: 12, linkW: 7.4, wire: 1.4 } },
+  triangle:    { name: 'Triangle links',       group: 'Easy',   kind: 'ring', shape: 'triangle', ratio: 1.1, d: { linkL: 10, linkW: 10, wire: 1.4 } },
+  rosary:      { name: 'Rosary / bead & link', group: 'Easy',   kind: 'ring', shape: 'stadium', ratio: 1.6, beadEvery: 1, d: { linkL: 8, linkW: 5.6, wire: 1.3 } },
+  barlink:     { name: 'Bar & link',           group: 'Medium', kind: 'ring', shape: 'stadium', ratio: 3, profile: 'flat', unit: [{ lenMul: 1 }, { rolo: true, sMul: 1.3, profile: 'round' }], d: { linkL: 14, linkW: 5.6, wire: 1.4 } },
+  marquise:    { name: 'Marquise',             group: 'Medium', kind: 'ring', shape: 'marquise', ratio: 1.8, twist: 45, flat: true, d: { linkL: 11, linkW: 6.4, wire: 1.5 } },
+  flatmariner: { name: 'Flat mariner / Gucci', group: 'Medium', kind: 'ring', shape: 'stadium', ratio: 1.5, bar: true, profile: 'flat', twist: 45, flat: true, d: { linkL: 12, linkW: 8, wire: 1.6 } },
+});
 
 export const DEFAULTS = {
   style: 'oval', shape: 'heart', lengthMM: 18 * IN, wire: 1.6, linkL: 10, linkW: 6, profile: 'round',
@@ -116,12 +127,20 @@ function buildRingChain(E, font, p, c, warn, st, polys) {
       for (let i = 0; i < Math.min(n, 12); i++) unit.push(v === 'rolo' ? { rolo: true } : { lenMul: v / 1.6 });
     }
     if (!unit.length) unit = [{ lenMul: 1 }];
-  } else if (st.pattern) unit = st.pattern.map(m => ({ lenMul: m / Math.max(...st.pattern) }));
+  } else if (st.unit) unit = st.unit;
+  else if (st.pattern) unit = st.pattern.map(m => ({ lenMul: m / Math.max(...st.pattern) }));
   else unit = [{ lenMul: 1 }];
 
   const specFor = (u, scale) => {
-    if (u.rolo) { const s = ringSpec(p, st, scale); s.L = s.W; s.shape = 'stadium'; return s; }
-    const s = ringSpec(p, st, scale, u.lenMul || 1);
+    const sc = scale * (u.sMul || 1);
+    if (u.rolo) {
+      const s = ringSpec(p, st, sc); s.L = s.W; s.shape = 'stadium';
+      delete s.rc; delete s.twist; delete s.bar;
+      if (u.profile) s.profile = u.profile;
+      return s;
+    }
+    const s = ringSpec(p, st, sc, u.lenMul || 1);
+    if (u.profile) s.profile = u.profile;
     if (s.L < s.W && s.shape === 'stadium') s.L = s.W;      // never shorter than wide
     return s;
   };
@@ -147,7 +166,9 @@ function buildRingChain(E, font, p, c, warn, st, polys) {
     const q20 = (v) => Math.round(v * 10) / 10;
     for (let i = 0; i < n; i++) {
       const u = unit[i % unit.length];
-      items.push({ type: 'ring', spec: specFor(u, q20(scaleAt(i, n))), color: 0 });
+      // rosary: every link threads the lugs of the beads either side, so it is a connector link
+      if (st.beadEvery) items.push({ type: 'ring', spec: connSpec, conn: true, color: 0 });
+      else items.push({ type: 'ring', spec: specFor(u, q20(scaleAt(i, n))), color: 0 });
     }
 
     /* --- plates: letters / custom shape / station beads ---
@@ -180,7 +201,10 @@ function buildRingChain(E, font, p, c, warn, st, polys) {
       const mid = Math.floor((items.length - remove) / 2);
       items.splice(mid, remove, ...plateItems.map(pl => ({ type: 'plate', body: pl.body, color: 0 })));
     }
-    if (p.stations > 0 && !st.letters && !st.customPlate) {
+    if (st.beadEvery) {
+      const bead = beadPlate(E, p, plateOpts);
+      for (let i = 1; i < items.length; i += st.beadEvery + 1) items.splice(i, 0, { type: 'plate', body: bead.body, color: 1 });
+    } else if (p.stations > 0 && !st.letters && !st.customPlate) {
       const bead = beadPlate(E, p, plateOpts);
       const every = Math.max(3, Math.round((p.stations * 10) / avgPitch));
       for (let i = every; i < items.length - 3; i += every + 1) items.splice(i, 0, { type: 'plate', body: bead.body, color: 1 });
@@ -212,7 +236,7 @@ function buildRingChain(E, font, p, c, warn, st, polys) {
     for (let i = 0; i < items.length; i++) {
       const it = items[i], prev = seq[seq.length - 1];
       if (it.type === 'plate' && prev && !(prev.type === 'ring' && prev.conn)) seq.push({ type: 'ring', spec: connSpec, conn: true, color: it.color });
-      if (it.type === 'ring' && prev && prev.type === 'plate') seq.push({ type: 'ring', spec: connSpec, conn: true, color: prev.color });
+      if (it.type === 'ring' && !it.conn && prev && prev.type === 'plate') seq.push({ type: 'ring', spec: connSpec, conn: true, color: prev.color });
       if (!(it.type === 'ring' && prev && prev.type === 'plate' && false)) seq.push(it);
     }
     // a plate at either end still needs a link on its open side only if it has a lug there (bead drop / toggle bar have one lug)
@@ -862,7 +886,7 @@ function buildBall(E, p, c, warn) {
 /* Articulated snake / hinged herringbone: segments joined by ball-and-socket, flat bottoms, printed in place. */
 function buildSnake(E, p, c, warn, st) {
   if (!E.MF) return emptyOut();
-  const W = Math.max(p.linkW, 4.2), Lseg = Math.max(p.linkL * 0.55, W * 0.8, 3.2);
+  const W = Math.max(p.linkW, 4.2), Lseg = Math.max(p.linkL, W * 0.6, 3.2);
   const flat = !!st.flatSeg;
   const Rb = W * (flat ? 0.3 : 0.34), Rc = Rb + c, zc = Rc + 0.55;                  // socket centre height
   const Hbody = flat ? zc + Rc + 0.8 : zc + Math.max(Rc + 0.8, W / 2);
@@ -980,7 +1004,7 @@ function buildKit(E, p, c, warn, st) {
     const cUsed = Math.min(cols, cnt), rUsed = Math.ceil(cnt / cols);
     for (let i = 0; i < cnt; i++) {
       const cx = i % cols, cy = Math.floor(i / cols);
-      inst.push({ body: key, color: 0, m: mT((cx - (cUsed - 1) / 2) * sx, (cy - (rUsed - 1) / 2) * sy, 0) });
+      inst.push({ body: key, color: p.twoTone ? (pl * perPlate + i) % 2 : 0, m: mT((cx - (cUsed - 1) / 2) * sx, (cy - (rUsed - 1) / 2) * sy, 0) });
     }
     out.parts.push({ name: `${st.kit}-kit-${pl + 1}`, label: plates > 1 ? `Plate ${pl + 1} of ${plates}` : 'Kit', instances: inst });
   }

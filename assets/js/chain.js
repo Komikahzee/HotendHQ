@@ -8,7 +8,7 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { toCreasedNormals } from 'three/addons/utils/BufferGeometryUtils.js';
 import { meshToSTL, meshesTo3MF, zip } from './gridfinity-core.js?v=cd2b8dee8c';
 import { PRINTERS, printerOptions, printerById, printerForBed, loadPrinter, savePrinter } from './printers.js?v=ff3522465e';
-import { STYLES, DEFAULTS } from './chain-build.js?v=289509d433';
+import { STYLES, DEFAULTS } from './chain-build.js?v=cef34e2a53';
 
 const $ = (s, r = document) => r.querySelector(s);
 const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -29,6 +29,9 @@ const styleOptions = () => {
   return groups;
 };
 const kindOf = (s) => (STYLES[s.style] || {}).kind;
+const beads = (s) => !!(STYLES[s.style] || {}).beadEvery;
+const roundLinks = (s) => (STYLES[s.style] || {}).shape === 'circle' || s.style === 'box';
+const SIZES = [['0.7', 'Fine (70%)'], ['1', 'Standard'], ['1.4', 'Bold (140%)'], ['1.8', 'Chunky (180%)'], ['2.4', 'Extra chunky (240%)'], ['3', 'Huge (300%)']];
 const isRing = (s) => kindOf(s) === 'ring';
 const LENGTHS = [['356', '14 in (choker)'], ['406', '16 in'], ['457', '18 in (most common)'], ['508', '20 in'], ['559', '22 in'], ['610', '24 in'], ['762', '30 in'], ['exact', 'Exact length…']];
 const MYP = loadPrinter();          // the printer picked on any generator, remembered on this device
@@ -36,7 +39,7 @@ const MYP = loadPrinter();          // the printer picked on any generator, reme
 const GROUPS = [
   { title: 'Chain style', open: true, items: [
     S('style', 'Style', null, 'oval', { grouped: true }),
-    S('shape', 'Link shape', [['heart', 'Heart'], ['star', 'Star'], ['diamond', 'Diamond'], ['hexagon', 'Hexagon']], 'heart', { show: s => s.style === 'shaped' }),
+    S('shape', 'Link shape', [['heart', 'Heart'], ['star', 'Star'], ['diamond', 'Diamond'], ['hexagon', 'Hexagon'], ['flower', 'Flower']], 'heart', { show: s => s.style === 'shaped' }),
     X('name', 'Name', 'MAYA', { show: s => s.style === 'name', max: 16, placeholder: 'e.g. MAYA', hint: 'Up to 16 letters or numbers.' }),
     R('letterH', 'Letter / shape height', 5, 20, 0.5, 9, 'mm', { show: s => s.style === 'name' || s.style === 'custom' }),
     R('plateT', 'Letter / shape thickness', 1, 3, 0.1, 1.6, 'mm', { show: s => s.style === 'name' || s.style === 'custom' }),
@@ -47,11 +50,12 @@ const GROUPS = [
   { title: '1. Sizing', open: true, items: [
     S('lengthSel', 'Length', LENGTHS, '457'),
     R('lengthMM', 'Exact length', 40, 1200, 1, 457, 'mm', { show: s => s.lengthSel === 'exact' }),
-    R('wire', 'Wire thickness', 0.6, 4, 0.05, 1.5, 'mm'),
-    R('linkL', 'Link length', 3, 30, 0.1, 10, 'mm', { labelFn: s => kindOf(s) === 'bike' ? 'Link length (pitch)' : kindOf(s) === 'snake' ? 'Segment length' : 'Link length', show: s => s.style !== 'rolo' && s.style !== 'box' && kindOf(s) !== 'kit' && kindOf(s) !== 'ball' }),
-    R('linkW', 'Link width', 3, 24, 0.1, 6, 'mm', { labelFn: s => kindOf(s) === 'ball' ? 'Bead diameter' : s.style === 'rolo' || s.style === 'box' ? 'Link size' : kindOf(s) === 'bike' ? 'Plate height' : 'Link width', show: s => kindOf(s) !== 'kit' }),
+    S('size', 'Chain size', SIZES, '1', { hint: 'Scales the wire and the links together. Fine-tune them below.' }),
+    R('wire', 'Wire thickness', 0.6, 6, 0.05, 1.5, 'mm', { hint: 'Thicker wire makes a heavier, stronger chain. Links grow to fit it if needed.' }),
+    R('linkL', 'Link length', 3, 45, 0.1, 10, 'mm', { labelFn: s => kindOf(s) === 'bike' ? 'Link length (pitch)' : kindOf(s) === 'snake' ? 'Segment length' : 'Link length', show: s => !roundLinks(s) && kindOf(s) !== 'kit' && kindOf(s) !== 'ball' }),
+    R('linkW', 'Link width', 3, 36, 0.1, 6, 'mm', { labelFn: s => kindOf(s) === 'ball' ? 'Bead diameter' : roundLinks(s) ? 'Link size' : kindOf(s) === 'bike' ? 'Plate height' : 'Link width', show: s => kindOf(s) !== 'kit' }),
     S('profile', 'Wire profile', [['round', 'Round'], ['square', 'Square'], ['flat', 'Flat'], ['faceted', 'Faceted (diamond-cut)']], 'round',
-      { show: s => isRing(s) && !STYLES[s.style].profile }),
+      { show: s => isRing(s) && !STYLES[s.style].profile && !beads(s) }),
   ] },
   { title: '2. Printer fit', open: true, items: [
     S('nozzle', 'Nozzle', [['0.2', '0.2 mm (fine detail)'], ['0.4', '0.4 mm (standard)'], ['0.6', '0.6 mm (chunky)']], '0.4',
@@ -59,24 +63,23 @@ const GROUPS = [
     S('bed', 'Your printer', null, MYP.id, { printers: true, hint: 'The chain folds back and forth to fit your bed, and splits into parts if it has to.' }),
     R('bedX', 'Bed X', 100, 600, 1, MYP.id === 'custom' ? MYP.x : 256, 'mm', { show: s => s.bed === 'custom' }),
     R('bedY', 'Bed Y', 100, 600, 1, MYP.id === 'custom' ? MYP.y : 256, 'mm', { show: s => s.bed === 'custom' }),
-    R('clearance', 'Gap between links', 0.15, 0.8, 0.01, 0.35, 'mm', { hint: 'Too tight and links fuse; too loose and the chain rattles.' }),
+    R('clearance', 'Gap between links', 0.15, 0.8, 0.01, 0.35, 'mm', { show: s => kindOf(s) !== 'kit', hint: 'Too tight and links fuse; too loose and the chain rattles.' }),
     { k: 'strip', type: 'button', label: 'Download test strip', hint: 'Three short chains at your gap and 0.1 mm either side, labelled.' },
   ] },
   { title: '3. Ends and fit', items: [
     S('ends', 'Chain ends', [['loops', 'Plain end loops (add any clasp)'], ['toggle', 'Built-in toggle clasp'], ['endless', 'Endless loop (no clasp, slips over your head)'], ['none', 'Open (no end links)']], 'loops',
       { show: s => isRing(s), hint: 'Endless prints as one closed loop, ready to wear. Use 24 in or longer so it fits over your head.' }),
     B('extender', 'Extender tail (2 in of smaller links)', false, { show: s => isRing(s) && s.ends !== 'toggle' && s.ends !== 'endless', hint: 'Lets a clasp hook in anywhere for adjustable length.' }),
-    B('jumpRings', 'Include jump rings', true, { hint: 'Two open rings sized to the chain, for a pendant or clasp. Split chains get extra rings to join the parts.' }),
+    B('jumpRings', 'Include jump rings', true, { show: s => kindOf(s) !== 'kit', hint: 'Two open rings sized to the chain, for a pendant or clasp. Split chains get extra rings to join the parts.' }),
   ] },
   { title: '4. Looks', items: [
-    R('graduated', 'Graduated (bigger toward the middle)', 0, 100, 5, 0, '%', { show: s => isRing(s) && s.style !== 'name' && s.style !== 'custom' }),
+    R('graduated', 'Graduated (bigger toward the middle)', 0, 100, 5, 0, '%', { show: s => isRing(s) && !beads(s) && s.style !== 'name' && s.style !== 'custom' }),
     B('twoTone', 'Two-tone (alternate colors)', false, { hint: 'Exported as two color objects in the 3MF for AMS and multi-material printers.' }),
-    S('stations', 'Station beads', [['0', 'None'], ['3', 'Every 3 cm'], ['5', 'Every 5 cm'], ['8', 'Every 8 cm']], '0', { show: s => isRing(s) && s.style !== 'name' && s.style !== 'custom' }),
-    R('beadD', 'Bead size', 4, 14, 0.5, 7, 'mm', { show: s => isRing(s) && s.stations !== '0' && s.style !== 'name' && s.style !== 'custom' }),
+    S('stations', 'Station beads', [['0', 'None'], ['3', 'Every 3 cm'], ['5', 'Every 5 cm'], ['8', 'Every 8 cm']], '0', { show: s => isRing(s) && !beads(s) && s.style !== 'name' && s.style !== 'custom' }),
+    R('beadD', 'Bead size', 4, 14, 0.5, 7, 'mm', { show: s => isRing(s) && (beads(s) || (s.stations !== '0' && s.style !== 'name' && s.style !== 'custom')) }),
   ] },
-  { title: '5. Cost & weight', items: [
-    S('material', 'Material', [['petg', 'PETG'], ['silk', 'Silk PLA'], ['pla', 'PLA'], ['tpu', 'TPU'], ['abs', 'ABS'], ['asa', 'ASA']], 'petg'),
-    R('pricePerKg', 'Filament price', 5, 80, 1, 20, '$/kg'),
+  { title: '5. Weight', items: [
+    S('material', 'Material', [['petg', 'PETG'], ['silk', 'Silk PLA'], ['pla', 'PLA'], ['tpu', 'TPU'], ['abs', 'ABS'], ['asa', 'ASA']], 'petg', { hint: 'Used for the weight shown under the preview.' }),
   ] },
 ];
 const COLORS = [['silver', 'Silk silver', 0xc9ced6, 0.75, 0.28], ['gold', 'Silk gold', 0xe0b04a, 0.8, 0.26], ['black', 'Black', 0x24282e, 0.2, 0.45],
@@ -95,7 +98,10 @@ const PRESETS = [
    ============================================================ */
 const allItems = GROUPS.flatMap(g => g.items).filter(c => c.k && c.type !== 'upload' && c.type !== 'button');
 const defaults = () => { const d = { color: 'silver', color2: 'flame' }; for (const c of allItems) d[c.k] = c.def; Object.assign(d, styleDims('oval')); return d; };
-function styleDims(style) { const d = (STYLES[style] || {}).d || {}; return { linkL: d.linkL ?? 10, linkW: d.linkW ?? 6, wire: d.wire ?? 1.5 }; }
+function styleDims(style, size = 1) {
+  const d = (STYLES[style] || {}).d || {}, k = +size || 1, r1 = (v) => Math.round(v * 10) / 10;
+  return { linkL: Math.min(45, r1((d.linkL ?? 10) * k)), linkW: Math.min(36, r1((d.linkW ?? 6) * k)), wire: Math.min(6, Math.round((d.wire ?? 1.5) * k * 20) / 20) };
+}
 let state = defaults();
 let polys = null;           // traced custom shape
 
@@ -128,9 +134,9 @@ function params() {
     nozzle: +state.nozzle, bedX: bx, bedY: by, clearance: state.clearance,
     ends: state.ends, extender: state.extender && state.ends !== 'toggle' && state.ends !== 'endless', jumpRings: state.jumpRings,
     graduated: state.graduated, twoTone: state.twoTone, stations: +state.stations, beadD: state.beadD,
-    material: state.material, pricePerKg: state.pricePerKg,
+    material: state.material,
   };
-  if (state.style === 'rolo' || state.style === 'box') p.linkL = p.linkW;
+  if (roundLinks(state)) p.linkL = p.linkW;
   return p;
 }
 
@@ -196,7 +202,7 @@ function bind(row, c) {
 }
 function changed(c) {
   $('#ch-presets').querySelectorAll('.chip').forEach(x => x.setAttribute('aria-pressed', 'false'));
-  if (c.k === 'style') { Object.assign(state, styleDims(state.style)); render(); }
+  if (c.k === 'style' || c.k === 'size') { Object.assign(state, styleDims(state.style, state.size)); render(); }
   else { visibility(); relabel(); }
   if (c.k === 'bed' || ((c.k === 'bedX' || c.k === 'bedY') && state.bed === 'custom'))   // remember the printer for every generator
     savePrinter({ id: state.bed, x: state.bedX, y: state.bedY, z: (printerById(state.bed) || MYP).z || 250 });
@@ -232,7 +238,7 @@ function surprise() {
     color: COLORS[Math.floor(Math.random() * COLORS.length)][0], color2: COLORS[Math.floor(Math.random() * COLORS.length)][0],
     twoTone: Math.random() < 0.3, graduated: Math.random() < 0.2 ? 40 : 0,
     lengthSel: ['406', '457', '508', '559'][Math.floor(Math.random() * 4)],
-    shape: ['heart', 'star', 'diamond', 'hexagon'][Math.floor(Math.random() * 4)],
+    shape: ['heart', 'star', 'diamond', 'hexagon', 'flower'][Math.floor(Math.random() * 5)],
   };
   if (state.color2 === state.color) state.color2 = state.color === 'flame' ? 'silver' : 'flame';
   render(); swatches(); requestBuild(true);
@@ -437,7 +443,7 @@ function getWorker() {
   if (worker && builds > 25 && !busy) { worker.terminate(); worker = null; }
   if (!worker) {
     builds = 0;
-    worker = new Worker(new URL('./chain-worker.js?v=f143cb4d9c', import.meta.url), { type: 'module' });
+    worker = new Worker(new URL('./chain-worker.js?v=ad869a09a1', import.meta.url), { type: 'module' });
     worker.onmessage = (e) => { const h = handlers.get(e.data.id); if (h) { handlers.delete(e.data.id); h(e.data); } };
     // a crashed worker (out of memory on a phone, a failed download) must never leave the page stuck:
     // answer every waiting build with an error and start a fresh worker next time
@@ -495,11 +501,8 @@ function showInfo() {
   const s = current.stats || {}, p = params();
   const len = s.lengthMM || 0;
   $('#ch-readout').innerHTML = `${fmt(len / IN, 1)} in · ${fmt(len, 0)} mm<br>≈ ${fmt(s.grams, s.grams < 10 ? 1 : 0)} g ${esc(({ petg: 'PETG', silk: 'silk PLA', pla: 'PLA', tpu: 'TPU', abs: 'ABS', asa: 'ASA' })[p.material] || '')}`;
-  const hrs = s.minutes / 60;
-  $('#ch-readout').innerHTML += `<span class="ch-ro-extra"><br>$${(s.cost || 0).toFixed(2)} · ${hrs >= 1 ? `≈ ${fmt(hrs, 1)} h` : `≈ ${fmt(s.minutes, 0)} min`}</span>`;
   $('#ch-stats').innerHTML = [
-    ['Links', fmt(s.links, 0)], ['Length', `${fmt(len / IN, 1)} in`], ['Weight', `${fmt(s.grams, 1)} g`],
-    ['Filament', `$${(s.cost || 0).toFixed(2)}`], ['Print time', hrs >= 1 ? `≈ ${fmt(hrs, 1)} h` : `≈ ${fmt(s.minutes, 0)} min`],
+    ['Links', fmt(s.links, 0)], ['Length', `${fmt(len / IN, 1)} in`], ['Weight', `${fmt(s.grams, 1)} g`], ['Wire', `${fmt(p.wire, 2)} mm`],
   ].map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join('');
   const nChain = current.parts.filter(q => q.name !== 'jump-rings').length;
   setStatus(`${fmt(s.links, 0)} links · ${nChain > 1 ? nChain + ' parts · ' : ''}built in ${current.ms} ms`, 'ok');
@@ -591,8 +594,12 @@ const LOOK = {
   ball: 'Beads joined by short bars', bike: 'Mechanical side-plate links with pins', rope: 'Links spiraled to look twisted',
   snake: 'Hinged segments that fake a smooth snake chain', herringbone: 'Flat overlapping scales on hinges',
   kitbyz: 'Woven rings you close by hand', singapore: 'Twisted links you close by hand', wheat: 'Folded ovals you stack by hand',
+  belcher: 'Round links in a wide, flat band', circles: 'Big round rings joined by small ones', teardrop: 'Pear-shaped links, one round end',
+  triangle: 'Rounded triangle links', rosary: 'A bead between every link', barlink: 'Long flat bars joined by round rings',
+  marquise: 'Pointed-oval links twisted to lie flat', flatmariner: 'Flat, wide anchor links with a centre bar',
 };
-$('#ch-style-table').innerHTML = Object.entries(STYLES).map(([k, s]) => `<tr><td><a href="#style=${k}" data-style="${k}">${esc(s.name)}</a></td><td>${esc(LOOK[k] || '')}</td><td>${esc(s.group === 'Hand-assembled' ? 'Printed open, closed by hand' : 'In place, ' + s.group.toLowerCase())}</td></tr>`).join('');
+const GROUP_ORDER = ['Easy', 'Medium', 'Hard', 'Hand-assembled'];
+$('#ch-style-table').innerHTML = Object.entries(STYLES).sort((a, b) => GROUP_ORDER.indexOf(a[1].group) - GROUP_ORDER.indexOf(b[1].group)).map(([k, s]) => `<tr><td><a href="#style=${k}" data-style="${k}">${esc(s.name)}</a></td><td>${esc(LOOK[k] || '')}</td><td>${esc(s.group === 'Hand-assembled' ? 'Printed open, closed by hand' : 'In place, ' + s.group.toLowerCase())}</td></tr>`).join('');
 $('#ch-style-table').addEventListener('click', e => {
   const a = e.target.closest('[data-style]'); if (!a) return;
   e.preventDefault(); state = { ...defaults(), ...styleDims(a.dataset.style), style: a.dataset.style };

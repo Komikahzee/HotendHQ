@@ -1,0 +1,29 @@
+# Hotend HQ
+
+> Hotend HQ is a free 3D printing reference: step-by-step troubleshooting, 17 browser-based 3D model generators that export STL and 3MF, calculators, a filament database, guides and tested gear picks. Nothing to install and no account needed.
+
+## Model generators
+- [Gridfinity generator](https://hotendhq.com/generators/gridfinity): Bins with dividers, scoops, labels and magnets, plus baseplates, lids, tool holders and a drawer fitter.
+- [Chain generator](https://hotendhq.com/generators/chain): Print-in-place necklace chains in 34 styles, sized to your nozzle and bed, with clasps or as an endless loop.
+- [Layered sign generator](https://hotendhq.com/generators/layered-signs): Multicolour signs with raised or inlaid text, borders and mounting, with the colour-change heights worked out.
+- [Dice generator](https://hotendhq.com/generators/dice): d4, d6, d8, d10, d12, d20 and d100 with your own numbers, words or pips on every face.
+- [Stencil generator](https://hotendhq.com/generators/stencils): Text and image stencils with bridges added automatically so the middles of O, A and B stay in.
+- [Plant marker generator](https://hotendhq.com/generators/plant-markers): A whole set of garden markers from a list of names, with stakes, pot-rim clips or hanging tags.
+- [Lettering & calligraphy generator](https://hotendhq.com/generators/lettering): Name tracing templates, mirrored letter stamps and calligraphy guide rulers with your slant and x-height.
+- [Pen grip & cutter adapter generator](https://hotendhq.com/generators/pen-grips): Adapters that fit any pen into Cricut, Silhouette and Brother cutters, plus comfort grips for pens and craft knives.
+- [Board game pieces generator](https://hotendhq.com/generators/board-game-pieces): Numbered tokens and coins, pawns, meeples, resource cubes and card stands, made as whole sets.
+- [Fidget spinner generator](https://hotendhq.com/generators/fidget-spinners): Spinners for 608, 688 and R188 bearings or with no bearing at all, plus spinning rings.
+- [Drone frame generator](https://hotendhq.com/generators/drone-frame): FPV quad frames from 65 mm whoops to 7-inch, with your motor pattern, stack size and camera mount.
+- [Mic clip & stand accessory generator](https://hotendhq.com/generators/mic-accessories): Mic clips, shock mounts, thread adapters, stand cable clips, pop filters and phone mounts with real stand threads.
+- [Storage box generator](https://hotendhq.com/generators/storage-box): A box to your exact size, with dividers, a snap-on lid and screw-down mounting ears.
+- [Grid organiser generator](https://hotendhq.com/generators/grid-organiser): A drawer tray with a grid of cells sized to what you store, with optional stacking feet.
+- [Cable clip generator](https://hotendhq.com/generators/cable-clip): Screw-down clips for any cable or bundle from 2 to 40 mm, printed as a set.
+- [Spool holder generator](https://hotendhq.com/generators/spool-holder): A wall-mounted filament spool arm sized to the bore of the spools you own.
+- [Wall bracket generator](https://hotendhq.com/generators/wall-bracket): An L-bracket with counterbored screw holes and an optional gusset, sized to the job.
+
+## Everything else
+- [Troubleshooting](https://hotendhq.com/troubleshoot): answer a few questions about a print problem and get the likely cause, the check that confirms it and the fix.
+- [Calculators & filament database](https://hotendhq.com/tools): flow rate and max speed, filament cost, e-steps, shrinkage, spool remaining, and properties of common filaments.
+- [News & guides](https://hotendhq.com/news): hands-on 3D printing guides.
+- [Gear](https://hotendhq.com/gear): hardware we recommend.
+- [All generators](https://hotendhq.com/generators)

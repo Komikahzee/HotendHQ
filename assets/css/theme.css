@@ -146,6 +146,9 @@ mark{background:rgba(255,184,77,.22);color:var(--amber-200);border-radius:3px;pa
 .nav a{padding:8px 12px;border-radius:9px;font-size:.9rem;font-weight:600;color:var(--text-dim)}
 .nav a:hover{color:var(--text);background:var(--surface-2)}
 .nav a[aria-current=page]{color:var(--amber-300);background:rgba(243,102,46,.1)}
+/* buttons inside the nav keep their own colours (the plain nav-link rules above are more specific) */
+.nav a.btn-primary,.nav a.btn-primary:hover,.nav a.btn-primary[aria-current=page]{color:#1a0800;background:linear-gradient(135deg,var(--flame-600),var(--amber-400))}
+.nav a.btn-ghost,.nav a.btn-ghost:hover{color:var(--text);background:var(--surface-2)}
 .head-cta{display:flex;gap:8px;align-items:center;margin-left:8px}
 .burger{display:none;margin-left:auto;background:var(--surface-2);border:1px solid var(--border);
   color:var(--text);width:42px;height:42px;border-radius:11px;cursor:pointer;

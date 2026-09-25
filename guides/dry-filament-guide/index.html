@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>How to Dry Filament: Temperatures and Times for PLA, PETG, TPU and Nylon</title>
+<meta name="description" content="Wet filament pops, strings and prints weak. The signs to look for, drying temperatures and times for each material, and how to keep spools dry afterwards.">
+<link rel="canonical" href="https://hotendhq.com/guides/dry-filament-guide/">
+<meta name="theme-color" content="#00091c">
+<meta property="og:site_name" content="Hotend HQ">
+<meta property="og:type" content="article">
+<meta property="og:title" content="How to Dry Filament: Temperatures and Times for PLA, PETG, TPU and Nylon">
+<meta property="og:description" content="Wet filament pops, strings and prints weak. The signs to look for, drying temperatures and times for each material, and how to keep spools dry afterwards.">
+<meta property="og:url" content="https://hotendhq.com/guides/dry-filament-guide/">
+<meta property="og:image" content="https://hotendhq.com/assets/img/og-image.png">
+<meta property="article:published_time" content="2026-09-21T00:00:00.000Z">
+<meta property="article:modified_time" content="2026-09-21T00:00:00.000Z">
+<meta property="article:section" content="Materials">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/assets/img/favicon-32.png" sizes="32x32">
+<link rel="apple-touch-icon" href="/assets/img/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest">
+<link rel="stylesheet" href="/assets/css/fonts.css?v=1f7e92bbba">
+<link rel="stylesheet" href="/assets/css/theme.css?v=fed608d70e">
+<link rel="stylesheet" href="/assets/css/pages.css?v=2d53d9dee9">
+<script src="/assets/js/config.js?v=a00c59ebda" defer></script>
+<script src="/assets/js/nav.js?v=60d1eef206" defer></script>
+<script src="/assets/js/site.js?v=c010faf67d" defer></script>
+<script src="/assets/js/api.js?v=097762e5df" defer></script>
+<script type="application/ld+json">[{"@context":"https://schema.org","@type":"Article","headline":"Wet Filament: How to Tell, and How to Dry It Properly","description":"Wet filament pops, strings and prints weak. The signs to look for, drying temperatures and times for each material, and how to keep spools dry afterwards.","image":["https://hotendhq.com/assets/img/og-image.png"],"datePublished":"2026-09-21T00:00:00.000Z","dateModified":"2026-09-21T00:00:00.000Z","author":{"@type":"Organization","name":"Hotend HQ","url":"https://hotendhq.com/"},"publisher":{"@type":"Organization","name":"Hotend HQ","logo":{"@type":"ImageObject","url":"https://hotendhq.com/assets/img/icon-512.png"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://hotendhq.com/guides/dry-filament-guide/"},"articleSection":"Materials","keywords":"filament, moisture, PETG, nylon"},{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://hotendhq.com/"},{"@type":"ListItem","position":2,"name":"Guides","item":"https://hotendhq.com/news"},{"@type":"ListItem","position":3,"name":"Wet Filament: How to Tell, and How to Dry It Properly","item":"https://hotendhq.com/guides/dry-filament-guide/"}]}]</script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+       <header class="site-head">
+        <div class="wrap head-in">
+          <a class="brand" href="/" aria-label="Hotend HQ home">
+            <img src="/assets/img/icon-192.png" alt="" width="38" height="38">
+            <span class="brand-txt">
+              <span class="brand-name"><span class="h">Hotend</span> <span class="q">HQ</span></span>
+              <span class="brand-tag">Everything 3D Printing</span>
+            </span>
+          </a>
+          <button class="burger" id="burger" aria-label="Menu" aria-expanded="false" aria-controls="nav">
+            <svg class="" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"
+      aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+          </button>
+          <nav class="nav" id="nav"><a href="/news" aria-current="page">News</a><a href="/troubleshoot">Troubleshoot</a><a href="/generators">Generators</a><a href="/tools">Tools</a><a href="/gear">Gear</a><div class="head-cta">
+        <a class="btn btn-ghost btn-sm" href="/admin" data-auth-chip hidden><svg class="" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"
+      aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg><span>Editor</span></a>
+        <a class="btn btn-primary btn-sm" href="/generators"><svg class="" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"
+      aria-hidden="true"><path d="M12 2l9 5v10l-9 5-9-5V7z"/><path d="M3 7l9 5 9-5M12 12v10"/></svg>Generate a model</a>
+      </div></nav>
+        </div>
+       </header>
+<main id="main">
+  <article class="wrap section--tight" id="art">
+    <nav class="faint" aria-label="Breadcrumb" style="margin-bottom:16px">
+      <a href="/">Home</a> <span aria-hidden="true">/</span> <a href="/news">Guides</a> <span aria-hidden="true">/</span> <span>Materials</span>
+    </nav>
+    <div class="article-head">
+      <div><span class="tag tag--flame">Materials</span>
+        </div>
+      <h1 style="margin:14px 0 12px">Wet Filament: How to Tell, and How to Dry It Properly</h1>
+      <p class="lede" style="margin-inline:auto">Popping at the nozzle, stringing that tuning will not fix, weak layers. It is often water in the filament. How to spot it, dry it and keep it dry.</p>
+      <div class="post-meta" style="justify-content:center;margin-top:16px">
+        <span>Hotend HQ</span><span>·</span>
+        <time datetime="2026-09-21">Sep 21, 2026</time><span>·</span>
+        <span>3 min read</span>
+      </div>
+    </div>
+    
+    <div class="prose"><p>Most filaments absorb water from the air. Some take weeks to get bad and some take a day. When damp filament reaches the hot end, that water turns to steam inside the melt, and the steam is what ruins the print.</p>
+<h2>The signs</h2>
+<ul>
+<li><strong>Popping or hissing</strong> at the nozzle while it prints.</li>
+<li><strong>Tiny bubbles</strong> or a rough, pitted surface on walls that should be smooth.</li>
+<li><strong>Stringing that retraction tuning will not fix.</strong> Steam pushes plastic out of the nozzle during travel moves.</li>
+<li><strong>Weak, brittle parts</strong> that snap along layer lines.</li>
+<li><strong>Filament that snaps</strong> on the spool (common with damp PLA).</li>
+</ul>
+<p>A quick test: print a small part, then dry the same spool and print it again. If the second print is clearly better, moisture was the problem.</p>
+<h2>How much each material cares</h2>
+<ul>
+<li><strong>Nylon</strong> absorbs water fastest. It can be noticeably wet within a day in a humid room.</li>
+<li><strong>TPU and PETG</strong> get wet within days to weeks and print badly when they do.</li>
+<li><strong>PC, ABS and ASA</strong> absorb moisture more slowly, but still print better dry.</li>
+<li><strong>PLA</strong> is the most forgiving, but an old spool left out for months will still string and snap.</li>
+</ul>
+<p>Filled filaments (carbon fibre, glass fibre) behave like the plastic underneath.</p>
+<h2>Drying temperatures and times</h2>
+<p>These are common starting points. Always check the spool label or the manufacturer&#39;s page first; brands differ.</p>
+<ul>
+<li><strong>PLA:</strong> 45–50 °C for 4–6 hours. Do not go hotter: PLA softens at around 55–60 °C and the spool can fuse into a solid lump.</li>
+<li><strong>PETG:</strong> 60–65 °C for 4–6 hours.</li>
+<li><strong>TPU:</strong> 45–55 °C for 4–8 hours.</li>
+<li><strong>ABS and ASA:</strong> 70–80 °C for about 4 hours.</li>
+<li><strong>Nylon:</strong> 70–80 °C for 8–12 hours, then print straight from the dryer.</li>
+<li><strong>PC:</strong> 70–80 °C for 6–8 hours.</li>
+</ul>
+<p>The spool matters too. Some plastic spools soften at the higher temperatures, so check that the spool can take the heat, or rewind onto one that can.</p>
+<h2>What to dry it in</h2>
+<ul>
+<li><strong>A filament dryer</strong> is the easiest option. Most hold a set temperature, and many let you print straight from the box.</li>
+<li><strong>A food dehydrator</strong> works well if it reaches the temperature you need. Check it with a separate thermometer; many run hotter or cooler than their dial says.</li>
+<li><strong>Your printer&#39;s bed</strong>, with the spool covered by a box, works in a pinch, and some printers have a drying mode built in.</li>
+<li><strong>A kitchen oven</strong> is the riskiest choice. Many ovens overshoot at low settings, and a few degrees too hot will ruin a spool of PLA. If you use one, check it with a thermometer first and never leave it unattended.</li>
+</ul>
+<p>To check that drying worked, weigh the spool before and after. The weight it loses is the water that came out.</p>
+<h2>Keep it dry afterwards</h2>
+<p>Drying only helps if the spool stays dry. Store spools in an airtight box or bag with a few packets of silica gel and a cheap humidity card or hygrometer. Aim to keep the humidity inside under about 20 %. When the silica gel changes colour, dry it out and reuse it.</p>
+<p>For nylon and TPU, print from a dry box or dryer so the filament never sits in room air during a long print.</p>
+<p>Our <a href="/tools#filaments">filament database</a> lists typical printing temperatures and properties for each material, so you can plan prints and drying together.</p></div>
+    <div class="prose" style="margin-top:38px">
+      <div class="note note--info"><svg class="" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"
+      aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 7.5v.5"/></svg>
+        <p>Spotted something wrong, or have a fix that works better? Tell us at
+        <a href="mailto:cobornassets@gmail.com">cobornassets@gmail.com</a> — corrections get credited.</p></div>
+      <div class="row" style="margin-top:20px">
+        <button class="btn btn-ghost btn-sm" id="share" type="button"><svg class="" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"
+      aria-hidden="true"><path d="M14 4h6v6"/><path d="M20 4l-9 9"/><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>Share</button>
+        <a class="btn btn-ghost btn-sm" href="/troubleshoot"><svg class="" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"
+      aria-hidden="true"><path d="M14.5 6a3.5 3.5 0 0 0 4.6 4.6L21 12.5 12.5 21 4 12.5 12.5 4z"/></svg>Diagnose a problem</a>
+      </div>
+    </div>
+  </article>
+  <section class="wrap section" id="related-wrap">
+    <div class="sec-head"><span class="eyebrow">Keep reading</span><h2>Related</h2></div>
+    <div class="grid g3" id="related"><a class="card card--link post" href="/guides/nozzle-materials-decoded/">
+      <div class="post-cover"><span class="ph"><svg class="" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"
+      aria-hidden="true"><path d="M12 2s5 5.5 5 10a5 5 0 0 1-10 0c0-2 1-3.5 1-3.5S9.5 11 11 12c1.5-2-1-5 1-10z"/></svg></span></div>
+      <span class="tag">Materials</span>
+      <h3>Nozzle Materials Decoded: Brass, Steel, Hardened Steel, Tungsten Carbide, Ruby</h3>
+      <p class="excerpt">Thermal conductivity versus wear resistance is the whole story. Here is which one belongs in your machine.</p>
+      <div class="post-meta"><span>Sep 6, 2026</span><span>·</span>
+        <span>2 min read</span></div>
+    </a><a class="card card--link post" href="/guides/free-3d-model-generators/">
+      <div class="post-cover"><img src="/assets/img/articles/generators-spotlight.webp" alt="" loading="lazy"></div>
+      <span class="tag">News</span>
+      <h3>Seventeen Free 3D Model Generators, Now Live on Hotend HQ</h3>
+      <p class="excerpt">Gridfinity, print-in-place chains, dice, signs, stencils, drone frames, mic clips and more. Set your sizes, pick your printer, download a file that is ready to slice.</p>
+      <div class="post-meta"><span>Sep 25, 2026</span><span>·</span>
+        <span>6 min read</span></div>
+    </a><a class="card card--link post" href="/guides/first-layer-that-sticks/">
+      <div class="post-cover"><span class="ph"><svg class="" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"
+      aria-hidden="true"><path d="M12 2s5 5.5 5 10a5 5 0 0 1-10 0c0-2 1-3.5 1-3.5S9.5 11 11 12c1.5-2-1-5 1-10z"/></svg></span></div>
+      <span class="tag">Troubleshooting</span>
+      <h3>A First Layer That Sticks: Z-Offset, Surfaces and the Ten-Minute Fix</h3>
+      <p class="excerpt">The first layer tells you exactly what is wrong if you know how to read it. Here is how to read it, and the four fixes that solve nearly every adhesion problem.</p>
+      <div class="post-meta"><span>Sep 23, 2026</span><span>·</span>
+        <span>3 min read</span></div>
+    </a></div>
+  </section>
+</main>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const b = document.getElementById('share'); if (!b) return;
+  b.addEventListener('click', async () => {
+    const url = location.href, title = "Wet Filament: How to Tell, and How to Dry It Properly";
+    if (navigator.share) { try { await navigator.share({ title, url }); return; } catch {} }
+    try { await navigator.clipboard.writeText(url); HHQ.toast('Link copied.'); }
+    catch { HHQ.toast('Copy the address bar link.', 'warn'); }
+  });
+});
+</script>
+
+      <footer class="site-foot">
+        <div class="wrap">
+          <div class="foot-grid">
+            <div class="foot-col">
+              <a class="brand" href="/" style="margin-bottom:14px">
+                <img src="/assets/img/icon-192.png" alt="" width="38" height="38">
+                <span class="brand-txt">
+                  <span class="brand-name"><span class="h">Hotend</span> <span class="q">HQ</span></span>
+                  <span class="brand-tag">Everything 3D Printing</span>
+                </span>
+              </a>
+              <p class="disclosure" id="disclosure">Hotend HQ is reader-supported. When you buy through links on this site we may earn an affiliate commission at no extra cost to you. We only recommend hardware we would run on our own machines.</p>
+              <div class="row" style="margin-top:14px;gap:16px;font-size:.88rem"><a href="https://www.tiktok.com/@hotendhq" rel="noopener">TikTok</a><a href="mailto:cobornassets@gmail.com">Email</a></div>
+            </div>
+            
+      <div class="foot-col"><h4>Explore</h4><ul><li><a href="/news">News & Articles</a></li><li><a href="/troubleshoot">Troubleshooting</a></li><li><a href="/generators">3D Model Generators</a></li><li><a href="/tools">Calculators</a></li><li><a href="/gear">Gear Picks</a></li></ul></div>
+      <div class="foot-col"><h4>Site</h4><ul><li><a href="/about">About</a></li><li><a href="/about#contact">Contact</a></li><li><a href="/about#disclosure">Affiliate Disclosure</a></li><li><a href="/about#privacy">Privacy</a></li></ul></div>
+          </div>
+          <div class="foot-bottom">
+            <span>© 2026 Hotend HQ. All rights reserved.</span>
+            <span>Built for makers who fix things themselves.</span>
+          </div>
+        </div>
+      </footer>
+</body>
+</html>

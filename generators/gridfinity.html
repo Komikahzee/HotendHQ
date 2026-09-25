@@ -5,17 +5,29 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Gridfinity Generator: Bins, Baseplates &amp; Drawer Fitter — Hotend HQ</title>
 <meta name="description" content="Free Gridfinity generator in your browser. Custom bins with dividers, scoops, label text and magnets; baseplates; lids; tool holders; and a drawer fitter that splits baseplates to fit your printer bed. STL and 3MF.">
+<!-- seo -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Hotend HQ">
+<meta property="og:title" content="Gridfinity Generator: Bins, Baseplates &amp; Drawer Fitter">
+<meta property="og:description" content="Free Gridfinity generator in your browser. Custom bins with dividers, scoops, label text and magnets; baseplates; lids; tool holders; and a drawer fitter that splits baseplates to fit your printer bed. STL and 3MF.">
+<meta property="og:url" content="https://hotendhq.com/generators/gridfinity">
+<meta property="og:image" content="https://hotendhq.com/assets/img/generators/gridfinity.webp">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#00091c">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Will these fit bins and baseplates from other generators?","acceptedAnswer":{"@type":"Answer","text":"Yes. The grid, base profile and magnet positions follow Zack Freedman’s Gridfinity spec, so these bins sit in any standard baseplate and standard bins sit in these plates. If your printer runs tight, raise Clearance per side under Advanced."}},{"@type":"Question","name":"Why are the STLs “watertight”, and why should I care?","acceptedAnswer":{"@type":"Answer","text":"Every model is built with real boolean geometry (the Manifold engine), so each file is one closed, valid solid. Slicers never have to guess, repair tools find nothing to fix, and label text and magnet holes come out exactly as drawn."}},{"@type":"Question","name":"How do I make a baseplate bigger than my print bed?","acceptedAnswer":{"@type":"Answer","text":"Open the Drawer fitter tab, enter the drawer’s inside size and pick your printer. It works out the grid, spreads the leftover space as padding, splits the plate into pieces that fit your bed, and adds bow-tie clips to lock them together. You get every piece in one zip."}},{"@type":"Question","name":"What do the half units do?","acceptedAnswer":{"@type":"Answer","text":"A half unit is 21 mm. Use it to fill the last gap in a drawer, or for narrow bins. Half-grid feet let a bin sit at a half-cell offset on a half-grid baseplate."}},{"@type":"Question","name":"Can I sell what I print?","acceptedAnswer":{"@type":"Answer","text":"Yes. Files you generate here are yours to print, modify and sell. Gridfinity itself is an open standard created by Zack Freedman. Please credit it."}}]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://hotendhq.com/"},{"@type":"ListItem","position":2,"name":"3D model generators","item":"https://hotendhq.com/generators"},{"@type":"ListItem","position":3,"name":"Gridfinity","item":"https://hotendhq.com/generators/gridfinity"}]}</script>
+<!-- /seo -->
 <link rel="canonical" href="https://hotendhq.com/generators/gridfinity">
 <link rel="icon" href="/assets/img/favicon-32.png" sizes="32x32">
 <link rel="apple-touch-icon" href="/assets/img/apple-touch-icon.png">
 <link rel="manifest" href="/site.webmanifest">
 <link rel="stylesheet" href="/assets/css/fonts.css?v=1f7e92bbba">
-<link rel="stylesheet" href="/assets/css/theme.css?v=d21bba40c2">
+<link rel="stylesheet" href="/assets/css/theme.css?v=fed608d70e">
 <link rel="stylesheet" href="/assets/css/pages.css?v=2d53d9dee9">
 <link rel="stylesheet" href="/assets/css/gridfinity.css?v=5e3a6426ad">
 <script src="/assets/js/config.js?v=a00c59ebda" defer></script>
 <script src="/assets/js/nav.js?v=60d1eef206" defer></script>
-<script src="/assets/js/site.js?v=f47d228153" defer></script>
+<script src="/assets/js/site.js?v=c010faf67d" defer></script>
 <script src="/assets/js/api.js?v=097762e5df" defer></script>
 <script type="importmap">
 {"imports":{
@@ -142,19 +154,10 @@
     </div>
   </section>
 
-  <section class="wrap section--tight">
+  <section class="wrap section--tight" id="more-generators">
     <div class="sec-head between"><div><span class="eyebrow">More generators</span><h2>Make something else</h2></div>
-      <a class="btn btn-ghost btn-sm" href="/generators">All 3D model generators</a></div>
+      <a class="btn btn-ghost btn-sm" href="/generators">All 17 generators</a></div>
     <div class="grid g3 gens-grid">
-      <a class="card card--link gens-card" href="/generators/chain" data-cat="jewelry">
-        <img src="/assets/img/generators/chain.webp" alt="Chain generator preview" width="800" height="500" loading="lazy" decoding="async">
-        <div class="gens-body">
-          <h3>Chain generator</h3>
-          <p class="muted">Print-in-place necklace chains in 26 styles, sized to your nozzle and bed, with clasps and an extender.</p>
-          <div class="gens-tags"><span class="tag">STL</span><span class="tag">3MF</span><span class="tag">Print-in-place</span></div>
-          <span class="gens-go">Open generator <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
-        </div>
-      </a>
       <a class="card card--link gens-card" href="/generators/storage-box" data-cat="organize">
         <img src="/assets/img/generators/storage-box.webp" alt="Storage box generator preview" width="800" height="500" loading="lazy" decoding="async">
         <div class="gens-body">
@@ -173,11 +176,20 @@
           <span class="gens-go">Open generator <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
         </div>
       </a>
+      <a class="card card--link gens-card" href="/generators/plant-markers" data-cat="crafts">
+        <img src="/assets/img/generators/plant-markers.webp" alt="Plant marker generator preview" width="800" height="500" loading="lazy" decoding="async">
+        <div class="gens-body">
+          <h3>Plant marker generator</h3>
+          <p class="muted">A whole set of garden markers from a list of names, with stakes, pot-rim clips or hanging tags.</p>
+          <div class="gens-tags"><span class="tag">STL</span><span class="tag">3MF</span><span class="tag">Batch</span></div>
+          <span class="gens-go">Open generator <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+        </div>
+      </a>
     </div>
   </section>
 </main>
 
-<script type="module" src="/assets/js/gridfinity.js?v=e40429e38c"></script>
+<script type="module" src="/assets/js/gridfinity.js?v=967d3dc74a"></script>
 <script>
 /* If the 3D module cannot start (very old browser, blocked script), say so instead of spinning forever. */
 setTimeout(function () {
