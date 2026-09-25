@@ -202,11 +202,12 @@
   });
 
   /* ---------- article URLs & cards (shared by home, news, related lists) ----------
-     Published articles live at /guides/<slug>/ (built by build/build.mjs).
-     Drafts and not-yet-built articles fall back to the live renderer.      */
+     Published articles live at /guides/<slug>/ when the site was built with
+     build/build.mjs (it sets HHQ_BUILT). Otherwise, and for drafts, links go
+     to the live renderer, so they never point at a page that doesn't exist.  */
   window.articleUrl = function (p) {
     const slug = encodeURIComponent(p.slug);
-    return p.status === 'draft' || p.local ? `/article?a=${slug}` : `/guides/${slug}/`;
+    return !window.HHQ_BUILT || p.status === 'draft' || p.local ? `/article?a=${slug}` : `/guides/${slug}/`;
   };
   window.featureCard = function (lead) {
     return `<a class="card card--link feature" href="${articleUrl(lead)}">

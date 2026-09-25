@@ -2,6 +2,5 @@ User-agent: *
 Allow: /
 Disallow: /admin
 Disallow: /login
-Disallow: /article
 
 Sitemap: https://hotendhq.com/sitemap.xml

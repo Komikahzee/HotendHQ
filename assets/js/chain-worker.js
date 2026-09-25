@@ -1,6 +1,6 @@
 /* Hotend HQ — chain build worker (Manifold WASM + link engine off the main thread) */
 import Module from '../vendor/manifold/manifold.js';
-import { buildChain, buildTestStrip, STYLES } from './chain-build.js?v=1';
+import { buildChain, buildTestStrip, STYLES } from './chain-build.js?v=289509d433';
 
 const ready = Module().then(w => { w.setup(); return w; });
 let fontP = null;

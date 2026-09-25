@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Gridfinity Generator: Bins, Baseplates &amp; Drawer Fitter — Hotend HQ</title>
+<meta name="description" content="Free Gridfinity generator in your browser. Custom bins with dividers, scoops, label text and magnets; baseplates; lids; tool holders; and a drawer fitter that splits baseplates to fit your printer bed. STL and 3MF.">
+<link rel="canonical" href="https://hotendhq.com/generators/gridfinity">
+<link rel="icon" href="/assets/img/favicon-32.png" sizes="32x32">
+<link rel="apple-touch-icon" href="/assets/img/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest">
+<link rel="stylesheet" href="/assets/css/fonts.css?v=1f7e92bbba">
+<link rel="stylesheet" href="/assets/css/theme.css?v=d26c8b034c">
+<link rel="stylesheet" href="/assets/css/pages.css?v=21efca8f31">
+<link rel="stylesheet" href="/assets/css/gridfinity.css?v=ee469903da">
+<script src="/assets/js/config.js?v=a00c59ebda" defer></script>
+<script src="/assets/js/nav.js?v=893b3196f6" defer></script>
+<script src="/assets/js/site.js?v=ab388de307" defer></script>
+<script src="/assets/js/api.js?v=097762e5df" defer></script>
+<script type="importmap">
+{"imports":{
+  "three":"/assets/vendor/three/three.module.js",
+  "three/addons/":"/assets/vendor/three/addons/"
+}}
+</script>
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebApplication","name":"Hotend HQ Gridfinity Generator",
+ "url":"https://hotendhq.com/generators/gridfinity","applicationCategory":"DesignApplication","operatingSystem":"Any (runs in the browser)",
+ "offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},
+ "description":"Generate Gridfinity bins, baseplates, lids and tool holders in the browser and download STL or 3MF."}
+</script>
+</head>
+<body>
+<main id="main" class="gf-page">
+  <section class="wrap gf-hero">
+    <nav class="crumbs" aria-label="Breadcrumb"><a href="/generators">3D model generators</a><span aria-hidden="true">/</span><span>Gridfinity</span></nav>
+    <h1>Gridfinity, built for your drawer</h1>
+    <p class="lede">Bins, baseplates, lids and tool holders to spec. Compartments, magnets, printed labels,
+      half units. Clean STL or 3MF, generated right in your browser.</p>
+  </section>
+
+  <section class="wrap gf-wrap" aria-label="Generator">
+    <div class="gf">
+      <!-- controls -->
+      <div class="gf-panel">
+        <div class="gf-tabs" id="gf-tabs" role="group" aria-label="What to make"></div>
+        <h2 id="gf-title" class="gf-h"></h2>
+        <p id="gf-blurb" class="faint gf-blurb"></p>
+        <div class="gf-presets chips" id="gf-presets"></div>
+        <ul id="gf-warn" class="gf-warn hidden" aria-live="polite"></ul>
+        <div id="gf-drawer" class="gf-drawer hidden">
+          <div id="gf-plan"></div>
+        </div>
+        <div id="gf-controls"></div>
+      </div>
+
+      <!-- preview -->
+      <div class="gf-view">
+        <div class="gf-stage" id="gf-stage">
+          <span class="gen-badge">Drag to orbit · scroll or pinch to zoom</span>
+          <div class="gf-tools">
+            <button type="button" class="gf-tool" id="gf-fit" aria-label="Reset the view" title="Reset view">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg></button>
+            <button type="button" class="gf-tool" id="gf-full" aria-label="Full screen" title="Full screen">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
+          </div>
+          <div class="gen-readout" id="gf-readout"></div>
+          <div class="gf-busy" aria-hidden="true"><span class="spin"></span></div>
+        </div>
+        <p id="gf-status" class="gf-status" role="status" aria-live="polite">Loading…</p>
+        <div class="gf-bar">
+          <div id="gf-actions" class="gf-actions">
+            <button class="btn btn-primary" id="gf-stl" type="button">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M7 11l5 5 5-5"/><path d="M4 20h16"/></svg>Download STL</button>
+            <button class="btn btn-ghost" id="gf-3mf" type="button">3MF</button>
+            <button class="btn btn-ghost" id="gf-link" type="button" aria-label="Copy a link to this design">Copy link</button>
+            <button class="btn btn-ghost" id="gf-reset" type="button">Reset</button>
+          </div>
+          <div id="gf-dactions" class="gf-actions hidden">
+            <button class="btn btn-primary" id="gf-dzip" type="button">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M7 11l5 5 5-5"/><path d="M4 20h16"/></svg>All pieces (.zip)</button>
+            <button class="btn btn-ghost" id="gf-d3mf" type="button">One 3MF</button>
+            <button class="btn btn-ghost" id="gf-dlink" type="button" aria-label="Copy a link to this layout">Copy link</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="wrap section">
+    <div class="sec-head"><span class="eyebrow">Printing it</span><h2>Settings that work for Gridfinity</h2></div>
+    <div class="grid g3">
+      <div class="card"><h3>Bins</h3>
+        <p class="muted gf-card-p">0.2 mm layers, 2–3 walls, 15 % infill. Leave <em>detect thin walls</em> on so the
+          stacking lip prints solid. No supports: every overhang here is 45° or less.</p></div>
+      <div class="card"><h3>Baseplates</h3>
+        <p class="muted gf-card-p">Print flat, no brim unless your bed struggles. Big plates warp at the corners;
+          PETG or a 5 mm mouse-ear helps. Too big for the bed? Use the <strong>Drawer fitter</strong> tab.</p></div>
+      <div class="card"><h3>Magnets</h3>
+        <p class="muted gf-card-p">6 × 2 mm neodymium discs, 6.5 mm holes, glued in. Or switch on crush ribs for a
+          press fit, or a print-in cover and add a pause at the height the generator gives you.</p></div>
+    </div>
+  </section>
+
+  <section class="wrap section--tight">
+    <div class="sec-head"><span class="eyebrow">The spec</span><h2>Gridfinity in 60 seconds</h2></div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th scope="col">Dimension</th><th scope="col">Value</th><th scope="col">Why it matters</th></tr></thead>
+        <tbody>
+          <tr><td>Grid pitch</td><td><code>42 mm</code></td><td>Every bin is a whole (or half) number of cells.</td></tr>
+          <tr><td>Height unit</td><td><code>7 mm</code></td><td>A “3-unit” bin is 21 mm tall before the stacking lip.</td></tr>
+          <tr><td>Bin size</td><td><code>41.5 mm</code> per unit</td><td>0.25 mm clearance each side so bins drop in without binding.</td></tr>
+          <tr><td>Base profile</td><td><code>0.8 / 1.8 / 2.15 mm</code></td><td>The stepped 45° profile that self-centres every bin.</td></tr>
+          <tr><td>Magnets</td><td><code>6 × 2 mm</code>, 13 mm from centre</td><td>Four per cell, in both the bin feet and the baseplate.</td></tr>
+          <tr><td>Screws</td><td><code>M3</code></td><td>Optional, for bins that must not lift out.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="wrap section">
+    <div class="sec-head"><span class="eyebrow">Questions</span><h2>Gridfinity generator FAQ</h2></div>
+    <div class="gf-faq">
+      <details><summary>Will these fit bins and baseplates from other generators?</summary>
+        <p>Yes. The grid, base profile and magnet positions follow Zack Freedman’s Gridfinity spec, so these bins sit in any
+          standard baseplate and standard bins sit in these plates. If your printer runs tight, raise <em>Clearance per side</em>
+          under Advanced.</p></details>
+      <details><summary>Why are the STLs “watertight”, and why should I care?</summary>
+        <p>Every model is built with real boolean geometry (the Manifold engine), so each file is one closed, valid solid.
+          Slicers never have to guess, repair tools find nothing to fix, and label text and magnet holes come out exactly as drawn.</p></details>
+      <details><summary>How do I make a baseplate bigger than my print bed?</summary>
+        <p>Open the <strong>Drawer fitter</strong> tab, enter the drawer’s inside size and pick your printer. It works out the grid,
+          spreads the leftover space as padding, splits the plate into pieces that fit your bed, and adds bow-tie clips to
+          lock them together. You get every piece in one zip.</p></details>
+      <details><summary>What do the half units do?</summary>
+        <p>A half unit is 21 mm. Use it to fill the last gap in a drawer, or for narrow bins. Half-grid feet let a bin sit at a
+          half-cell offset on a half-grid baseplate.</p></details>
+      <details><summary>Can I sell what I print?</summary>
+        <p>Yes. Files you generate here are yours to print, modify and sell. Gridfinity itself is an open standard created by
+          Zack Freedman. Please credit it.</p></details>
+    </div>
+  </section>
+
+  <section class="wrap section--tight">
+    <div class="sec-head between"><div><span class="eyebrow">More generators</span><h2>Make something else</h2></div>
+      <a class="btn btn-ghost btn-sm" href="/generators">All 3D model generators</a></div>
+    <div class="grid g3 gens-grid">
+      <a class="card card--link gens-card" href="/generators/chain" data-cat="jewelry">
+        <img src="/assets/img/generators/chain.webp" alt="Chain generator preview" width="800" height="500" loading="lazy" decoding="async">
+        <div class="gens-body">
+          <h3>Chain generator</h3>
+          <p class="muted">Print-in-place necklace chains in 26 styles, sized to your nozzle and bed, with clasps and an extender.</p>
+          <div class="gens-tags"><span class="tag">STL</span><span class="tag">3MF</span><span class="tag">Print-in-place</span></div>
+          <span class="gens-go">Open generator <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+        </div>
+      </a>
+      <a class="card card--link gens-card" href="/generators/storage-box" data-cat="organize">
+        <img src="/assets/img/generators/storage-box.webp" alt="Storage box generator preview" width="800" height="500" loading="lazy" decoding="async">
+        <div class="gens-body">
+          <h3>Storage box generator</h3>
+          <p class="muted">A box to your exact size, with dividers, a snap-on lid and screw-down mounting ears.</p>
+          <div class="gens-tags"><span class="tag">STL</span><span class="tag">Lid</span><span class="tag">Dividers</span></div>
+          <span class="gens-go">Open generator <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+        </div>
+      </a>
+      <a class="card card--link gens-card" href="/generators/grid-organiser" data-cat="organize">
+        <img src="/assets/img/generators/grid-organiser.webp" alt="Grid organiser generator preview" width="800" height="500" loading="lazy" decoding="async">
+        <div class="gens-body">
+          <h3>Grid organiser generator</h3>
+          <p class="muted">A drawer tray with a grid of cells sized to what you store, with optional stacking feet.</p>
+          <div class="gens-tags"><span class="tag">STL</span><span class="tag">Stackable</span></div>
+          <span class="gens-go">Open generator <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+        </div>
+      </a>
+    </div>
+  </section>
+</main>
+
+<script type="module" src="/assets/js/gridfinity.js?v=624f427c72"></script>
+<script>
+/* If the 3D module cannot start (very old browser, blocked script), say so instead of spinning forever. */
+setTimeout(function () {
+  var t = document.getElementById('gf-tabs'), s = document.getElementById('gf-status');
+  if (t && !t.children.length && s) {
+    s.textContent = 'The 3D generator could not start in this browser. Update it, or open this page in Chrome, Edge, Firefox or Safari.';
+    s.setAttribute('data-kind', 'bad');
+  }
+}, 12000);
+</script>
+</body>
+</html>

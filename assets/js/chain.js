@@ -6,8 +6,8 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { toCreasedNormals } from 'three/addons/utils/BufferGeometryUtils.js';
-import { meshToSTL, meshesTo3MF, zip } from './gridfinity-core.js?v=2';
-import { STYLES, DEFAULTS } from './chain-build.js?v=1';
+import { meshToSTL, meshesTo3MF, zip } from './gridfinity-core.js?v=cd2b8dee8c';
+import { STYLES, DEFAULTS } from './chain-build.js?v=289509d433';
 
 const $ = (s, r = document) => r.querySelector(s);
 const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -63,9 +63,9 @@ const GROUPS = [
     { k: 'strip', type: 'button', label: 'Download test strip', hint: 'Three short chains at your gap and 0.1 mm either side, labelled.' },
   ] },
   { title: '3. Ends and fit', items: [
-    S('ends', 'Chain ends', [['loops', 'Plain end loops (add any clasp)'], ['toggle', 'Built-in toggle clasp'], ['none', 'Open (no end links)']], 'loops',
-      { show: s => isRing(s) }),
-    B('extender', 'Extender tail (2 in of smaller links)', false, { show: s => isRing(s) && s.ends !== 'toggle', hint: 'Lets a clasp hook in anywhere for adjustable length.' }),
+    S('ends', 'Chain ends', [['loops', 'Plain end loops (add any clasp)'], ['toggle', 'Built-in toggle clasp'], ['endless', 'Endless loop (no clasp, slips over your head)'], ['none', 'Open (no end links)']], 'loops',
+      { show: s => isRing(s), hint: 'Endless prints as one closed loop, ready to wear. Use 24 in or longer so it fits over your head.' }),
+    B('extender', 'Extender tail (2 in of smaller links)', false, { show: s => isRing(s) && s.ends !== 'toggle' && s.ends !== 'endless', hint: 'Lets a clasp hook in anywhere for adjustable length.' }),
     B('jumpRings', 'Include jump rings', true, { hint: 'Two open rings sized to the chain, for a pendant or clasp. Split chains get extra rings to join the parts.' }),
   ] },
   { title: '4. Looks', items: [
@@ -121,7 +121,7 @@ function params() {
     style: state.style, shape: state.shape, name: state.name, letterH: state.letterH, plateT: state.plateT, pattern: state.pattern,
     lengthMM: len, wire: state.wire, linkL: state.linkL, linkW: state.linkW, profile: state.profile,
     nozzle: +state.nozzle, bedX: bx, bedY: by, clearance: state.clearance,
-    ends: state.ends, extender: state.extender && state.ends !== 'toggle', jumpRings: state.jumpRings,
+    ends: state.ends, extender: state.extender && state.ends !== 'toggle' && state.ends !== 'endless', jumpRings: state.jumpRings,
     graduated: state.graduated, twoTone: state.twoTone, stations: +state.stations, beadD: state.beadD,
     material: state.material, pricePerKg: state.pricePerKg,
   };
@@ -429,7 +429,7 @@ function getWorker() {
   if (worker && builds > 25 && !busy) { worker.terminate(); worker = null; }
   if (!worker) {
     builds = 0;
-    worker = new Worker(new URL('./chain-worker.js?v=1', import.meta.url), { type: 'module' });
+    worker = new Worker(new URL('./chain-worker.js?v=f143cb4d9c', import.meta.url), { type: 'module' });
     worker.onmessage = (e) => { const h = handlers.get(e.data.id); if (h) { handlers.delete(e.data.id); h(e.data); } };
     worker.onerror = (e) => { console.error(e); setStatus('The chain engine failed to load. Reload the page to try again.', 'bad'); busy = false; };
   }

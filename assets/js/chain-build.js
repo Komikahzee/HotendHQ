@@ -5,7 +5,7 @@
    ============================================================ */
 import {
   createChainEngine, NOZZLE, mMul, mRx, mRz, mT, mApply, meshVolume, transformMesh, meshBounds, clean, clamp, TAU, D2R,
-} from './chain-core.js?v=1';
+} from './chain-core.js?v=86943a3a24';
 
 const Q = Math.PI / 4, H = Math.PI / 2;
 const IN = 25.4;
@@ -137,6 +137,7 @@ function buildRingChain(E, font, p, c, warn, st, polys) {
   if (n > 1600) { warn.push('That is over 1,600 links. Length capped; use bigger links for long chains.'); n = 1600; }
   const connSpec = connectorFor(E, baseSpec, c);
   const plateOpts = { conn: connSpec, c, t: p.plateT, Hc };
+  const endless = p.ends === 'endless';
   const warnKeep = warn.length;
   const makeSeq = (n) => {
     warn.length = warnKeep;
@@ -190,7 +191,8 @@ function buildRingChain(E, font, p, c, warn, st, polys) {
     const ext0 = E.profile('round', connSpec.r).ext;
     const wMax35 = 2 * (Hc - ext0) / Math.sin(35 * D2R);
     const bigRing = (scale) => { const s2 = { ...connSpec, shape: 'stadium' }; s2.W = round2(clamp(connSpec.W * scale, Math.min(connSpec.W, wMax35), Math.max(wMax35, 4 * ext0 + 2 * c + 0.6))); s2.L = s2.W; delete s2.twist; delete s2.bar; s2.profile = 'round'; return s2; };
-    if (p.ends === 'toggle') {
+    if (endless) { /* no end links, no clasp: the last link threads the first */ }
+    else if (p.ends === 'toggle') {
       const tb = toggleBar(E, p, plateOpts, bigRing(1.9));
       items.unshift({ type: 'ring', spec: bigRing(1.9), color: 0, end: true });
       items.push({ type: 'plate', body: tb, color: 0 });
@@ -198,7 +200,7 @@ function buildRingChain(E, font, p, c, warn, st, polys) {
       items.unshift({ type: 'ring', spec: bigRing(1.35), color: 0, end: true });
       if (!p.extender) items.push({ type: 'ring', spec: bigRing(1.35), color: 0, end: true });
     }
-    if (p.extender) {
+    if (p.extender && !endless) {
       const k = Math.max(2, Math.round(2 * IN / (s0.p * 0.72)));
       const xs = { ...connSpec }; xs.r = round2(Math.max(connSpec.r * 0.85, (NOZZLE[p.nozzle] || NOZZLE[0.4]).wire / 2)); xs.L = round2(Math.max(xs.W, connSpec.L * 0.8));
       for (let i = 0; i < k; i++) items.push({ type: 'ring', spec: xs, color: 0, ext: true });
@@ -223,20 +225,43 @@ function buildRingChain(E, font, p, c, warn, st, polys) {
   const measure = (pl) => { const main = pl.filter(it => !it.ext); const a = main[0], b = main[main.length - 1];
     const er = (it, sg) => it.type === 'ring' ? (sg < 0 ? it.body.reachL : it.body.reachR) + it.body.ext : (sg < 0 ? -it.body.x0 : it.body.x1);
     return b.x - a.x + er(a, -1) + er(b, 1); };
-  let placed = null;
-  for (let it = 0; it < 4; it++) {
+  let placed = null, close = null;
+  // endless: the last link must thread the first, so they need opposite tilts (an even count of flips)
+  const closing = (pl) => {
+    const a = pl[pl.length - 1], b = pl[0];
+    if (a.type !== 'ring' || b.type !== 'ring') return null;
+    const s = E.solvePair(a.body, a.tilt, b.body, b.tilt, c);
+    return s.ok ? s : null;
+  };
+  for (let it = 0; it < 6; it++) {
     const seq = makeSeq(n);
     placed = solveLine(E, seq, c, st, warn, Hc);
     if (!placed) return emptyOut();
-    const len = measure(placed), baseCount = seq.filter(q => q.type === 'ring' && !q.conn && !q.end && !q.ext).length || 1;
+    if (endless) {
+      close = closing(placed);
+      if (!close) { n = clamp(n + 1, 4, 1600); if (it < 5) continue; warn.push('Could not close this chain into a loop. Try plain end loops instead.'); return emptyOut(); }
+    }
+    const len = endless ? placed[placed.length - 1].x - placed[0].x + close.p : measure(placed), baseCount = seq.filter(q => q.type === 'ring' && !q.conn && !q.end && !q.ext).length || 1;
     const per = len / Math.max(1, n);
     const dn = Math.round((target - len) / Math.max(per, 0.5));
     if (Math.abs(target - len) <= Math.max(per * 0.6, 2) || dn === 0) break;
-    n = clamp(n + dn, 3, 1600);
+    n = clamp(n + (endless && dn % 2 ? dn + Math.sign(dn) : dn), 3, 1600);   // keep the flip count even
+  }
+  if (endless) {
+    if (target < 24 * IN - 1) warn.push(`An endless chain has to slip over your head. ${fmtIn(target)} is short for that; 24 in (610 mm) or longer is safer.`);
+    const out = layoutClosed(E, placed, close, p, c, warn);
+    if (out) { addExtras(E, out, p, c, {}, warn); return out; }
+    // too big for one closed loop on this bed: print it open and close it with a jump ring
+    const o = layoutOnBed(E, placed, p, c, warn, { r: baseSpec.r, ringBody: b0, closeRing: true });
+    warn.push(o.parts.filter(q => q.name !== 'jump-rings').length > 1
+      ? 'Too long to print as one loop on this bed, so it prints in parts. Join them, and close the loop, with the jump rings included.'
+      : 'This chain can\u2019t print as one closed loop on this bed, so it prints open. Close it with one of the jump rings included.');
+    return o;
   }
   return layoutOnBed(E, placed, p, c, warn, { r: baseSpec.r, ringBody: b0 });
 }
 const round2 = (v) => Math.round(v * 50) / 50;
+const fmtIn = (mm) => `${(mm / IN).toFixed(1).replace(/\.0$/, '')} in`;
 function emptyOut() { return { parts: [], bodies: [], instances: [], warn: [] }; }
 
 /** the link that threads plate lugs: the chain's own link, lengthened if needed so two bars fit inside */
@@ -507,7 +532,7 @@ function layoutOnBed(E, placed, p, c, warn, ctx) {
     if (bad) warn.push('Some links sit close together on the U-turns. The chain is still printable, but check the preview before printing.');
     if (segments.length > 1) warn.push(`Too long for one ${p.bedX} × ${p.bedY} mm bed: split into ${segments.length} parts. Join them with the jump rings included.`);
     const out = assemble(E, parts);
-    out.jumpRingsNeeded = segments.length - 1;
+    out.jumpRingsNeeded = segments.length - 1 + (ctx.closeRing ? 1 : 0);
     const endReach = (it, sgn) => it.type === 'ring' ? (sgn < 0 ? it.body.reachL : it.body.reachR) + it.body.ext : (sgn < 0 ? -it.body.x0 : it.body.x1);
     out.lengthMM = total + endReach(placed[0], -1) + endReach(placed[placed.length - 1], 1);
     out.linkCount = placed.length;
@@ -515,6 +540,133 @@ function layoutOnBed(E, placed, p, c, warn, ctx) {
     addExtras(E, out, p, c, ctx, warn);
     return out;
   }
+}
+/** Endless chains: lay the links around one closed loop (a circle, or a rounded rectangle that
+    fills the bed), scaled until the last link sits exactly one solved pitch from the first.
+    Returns null if the loop can't fit on the bed. */
+function layoutClosed(E, placed, close, p, c, warn) {
+  const margin = 6, n = placed.length;
+  const Wmax = Math.max(...placed.map(itemWidth));
+  const Lmax = Math.max(...placed.map(it => it.type === 'plate' ? it.body.len : it.body.L + 2 * it.body.r));
+  const xs0 = placed.map(it => it.x - placed[0].x);
+  const extra = new Float64Array(n), centred = new Uint8Array(n);   // extra[0] is the closing pair (last → first)                 // extra spacing per pair (i-1 → i), added where the curve crowds links
+  let xs = xs0.slice();
+  const loopLen = xs0[n - 1] + close.p;
+  const sgCache = new Map();
+  const straightGap = (i, d) => {           // the same pair's gap laid out straight, as solved
+    const key = i * 4 + d; if (sgCache.has(key)) return sgCache.get(key);
+    const a = placed[i], j = (i + d) % n, b = placed[j];
+    const dx = j > i ? b.x - a.x : (xs0[n - 1] - xs0[i]) + close.p + (j > 0 ? xs0[j] : 0);
+    const g = E.gapOf(a.pose.samples, b.pose.samples.map(q => [q[0] + dx, q[1], q[2], q[3]]), 5);
+    sgCache.set(key, g); return g;
+  };
+  const availX = p.bedX - 2 * margin - Wmax, availY = p.bedY - 2 * margin - Wmax;
+  const Rmin = Math.max(Wmax * 1.6, Lmax * 1.6, 12);
+  // path families: circle first (cleanest), then rounded rectangles with shrinking corner radius
+  const shapes = [];
+  if (loopLen / Math.PI <= Math.min(availX, availY)) shapes.push({ kind: 'circle' });
+  for (const k of [0.5, 0.35, 0.22]) shapes.push({ kind: 'rrect', k });
+  const pathFor = (sh, sc) => {
+    if (sh.kind === 'circle') {
+      const R = sc * loopLen / (2 * Math.PI), P = 2 * Math.PI * R;
+      return { P, w: 2 * R, h: 2 * R, R, at: (u) => { const a = (u / P) * 2 * Math.PI - Math.PI / 2; return { x: R * Math.cos(a), y: R * Math.sin(a), yaw: a + Math.PI / 2 }; } };
+    }
+    // rounded rectangle with the bed's aspect, scaled by sc; traced anticlockwise from the bottom straight
+    const ar = availX / availY, w = sc * loopLen / (2 * (1 + 1 / ar)), h = w / ar;
+    const Rc = Math.min(Math.max(Rmin, sh.k * Math.min(w, h)), Math.min(w, h) / 2 - 0.01);
+    const a = w - 2 * Rc, b = h - 2 * Rc, P = 2 * a + 2 * b + 2 * Math.PI * Rc, q = Math.PI * Rc / 2;
+    const segs = [['l', a, 0], ['c', q, 0], ['l', b, Math.PI / 2], ['c', q, Math.PI / 2], ['l', a, Math.PI], ['c', q, Math.PI], ['l', b, 1.5 * Math.PI], ['c', q, 1.5 * Math.PI]];
+    return { P, w, h, R: Rc, at: (u) => {
+      u = ((u % P) + P) % P;
+      let x = -a / 2, y = -h / 2;
+      for (const [t, L, dir] of segs) {
+        const cx = x - Math.sin(dir) * Rc, cy = y + Math.cos(dir) * Rc, a0 = dir - Math.PI / 2;   // arc centre on the left
+        if (u <= L) {
+          if (t === 'l') return { x: x + Math.cos(dir) * u, y: y + Math.sin(dir) * u, yaw: dir };
+          const th = u / Rc;
+          return { x: cx + Rc * Math.cos(a0 + th), y: cy + Rc * Math.sin(a0 + th), yaw: dir + th };
+        }
+        if (t === 'l') { x += Math.cos(dir) * L; y += Math.sin(dir) * L; }
+        else { x = cx + Rc * Math.cos(dir); y = cy + Rc * Math.sin(dir); }
+        u -= L;
+      }
+      return { x, y, yaw: 0 };
+    } };
+  };
+  const march = (path) => {
+    // loop curves are gentle (radius many links long), so every pair keeps its straight solved pitch
+    const S = [0];
+    for (let i = 1; i < n; i++) {
+      const pitch = xs[i] - xs[i - 1];
+      let sv = S[i - 1] + pitch;
+      for (let k = 0; k < 5; k++) {
+        const A = path.at(S[i - 1]), B = path.at(sv), ch = Math.hypot(B.x - A.x, B.y - A.y);
+        if (Math.abs(ch - pitch) < 1e-4) break;
+        sv += pitch - ch;
+      }
+      S.push(sv);
+    }
+    const A = path.at(S[n - 1]), B = path.at(path.P);
+    const room = path.P - S[n - 1];                               // arc left for the closing pair
+    return { S, err: room > 0 ? Math.hypot(B.x - A.x, B.y - A.y) - (close.p + extra[0]) : -1e9 };
+  };
+  for (let round = 0; round < 8; round++) {
+  let crowded = null;
+  for (const sh of shapes) {
+    // bisection on the scale: too small → last link overruns the first; too big → gap
+    let lo = 0.8, hi = 1.3, best = null;
+    if (march(pathFor(sh, hi)).err < 0) continue;
+    for (let k = 0; k < 40; k++) {
+      const mid = (lo + hi) / 2, m = march(pathFor(sh, mid));
+      if (m.err < 0) lo = mid; else { hi = mid; best = { sc: mid, m }; }
+      if (hi - lo < 1e-6) break;
+    }
+    if (!best || Math.abs(best.m.err) > 0.05) continue;
+    const path = pathFor(sh, best.sc);
+    if (path.w > availX + 1e-6 || path.h > availY + 1e-6) continue;
+    const P = best.m.S.map(u => path.at(u));
+    const inst = placed.map((it, i) => {
+      const a = P[(i - 1 + n) % n], b = P[(i + 1) % n];
+      const yaw = Math.atan2(b.y - a.y, b.x - a.x);
+      return { body: it.body.key, m: mMul(mMul(mT(P[i].x, P[i].y, 0), mRz(yaw)), it.pose.m), color: it.color, _it: it };
+    });
+    // every neighbour pair, including last→first, plus links two apart, must keep the gap
+    const bad = [];
+    for (let i = 0; i < n; i++) for (const d of [1, 2]) {
+      const a = inst[i], b = inst[(i + d) % n];
+      if (a._it.type !== 'ring' || b._it.type !== 'ring') continue;
+      const g = E.gapOf(E.xformSamples(a._it.body.samples, a.m), E.xformSamples(b._it.body.samples, b.m), 5);
+      // the loop may not crowd a pair more than the straight chain already does
+      const want = Math.min(c * 0.8, straightGap(i, d) - 0.03);
+      if (g < want) bad.push({ i, d, need: want - g + 0.05 });
+    }
+    if (bad.length) { if (!crowded) crowded = bad; continue; }
+    for (const q of inst) delete q._it;
+    const parts = [{ name: 'chain', label: 'Chain', instances: inst, bounds: [-path.w / 2 - Wmax / 2, -path.h / 2 - Wmax / 2, path.w / 2 + Wmax / 2, path.h / 2 + Wmax / 2] }];
+    const out = assemble(E, parts);
+    out.jumpRingsNeeded = 0;
+    out.lengthMM = xs[n - 1] + close.p + extra[0];   // includes any extra curve spacing
+    out.linkCount = n;
+    out.items = placed;
+    return out;
+  }
+  // crowded on the curve: open those pitches a little (well inside the interlock window) and try again
+  if (!crowded) return null;
+  let grew = false;
+  for (const { i, d, need } of crowded) {
+    if (d === 1) {                       // a neighbour pair rubbing on the curve: centre it in its interlock window
+      const j = (i + 1) % n, it = placed[j];
+      const mid = j > 0 ? (it.pMid && it.pSolved ? it.pMid - it.pSolved : null) : (close.pMid ? close.pMid - close.p : null);
+      if (!centred[j] && mid !== null) { extra[j] = mid; centred[j] = 1; grew = true; }
+      continue;
+    }
+    for (const j of [(i + 1) % n, (i + 2) % n]) if (extra[j] < 0.45) { extra[j] = Math.min(0.45, extra[j] + need / 2); grew = true; }
+  }
+  if (!grew) return null;
+  let acc = 0;
+  xs = xs0.map((v, i) => (acc += i ? extra[i] : 0, v + acc));
+  }
+  return null;
 }
 function splitSegments(placed, nSeg) {
   const total = placed[placed.length - 1].x - placed[0].x, segs = [];

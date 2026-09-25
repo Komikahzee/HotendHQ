@@ -48,6 +48,8 @@ function copyDir(src, dst) {
 }
 fs.rmSync(OUT, { recursive: true, force: true });
 copyDir(ROOT, OUT);
+// mark the output as built: article links and canonicals then point at /guides/<slug>/
+fs.appendFileSync(path.join(OUT, 'assets/js/config.js'), '\nwindow.HHQ_BUILT = true;\n');
 
 /* ---------------- 2. load the browser data in a sandbox ---------------- */
 const noop = () => {};
@@ -70,6 +72,7 @@ for (const f of ['config.js', 'nav.js', 'site.js', 'md.js', 'render.js',
   vm.runInContext(fs.readFileSync(path.join(ROOT, 'assets/js', f), 'utf8'), sandbox, { filename: f });
 }
 const W = sandbox;
+W.HHQ_BUILT = true;   // pages rendered here link to the built /guides/ pages
 const CFG = W.HHQ_CONFIG, BASE = CFG.baseUrl.replace(/\/+$/, '');
 const esc = W.HHQ.esc;
 
@@ -261,20 +264,14 @@ for (const f of fs.readdirSync(OUT)) {
   const name = f.replace(/\.html$/, '');
   edit(f, h => finishPage(h, clean(name)));
 }
-// move the generator pages to /generators/<name> (a file generators/x.html is served at /generators/x)
-fs.mkdirSync(path.join(OUT, 'generators'), { recursive: true });
+// generator pages live in generators/ (served at /generators/<name>); finish them too.
+// The old top-level copies are only forwarding stubs for sites served without this build;
+// here _redirects sends those addresses on with a 301, so the stubs are dropped.
 for (const g of GENERATORS) {
-  const from = path.join(OUT, g + '.html');
-  if (!fs.existsSync(from)) throw new Error(`generator page ${g}.html is missing`);
-  fs.renameSync(from, path.join(OUT, 'generators', g + '.html'));
-}
-// permanent redirects from the old addresses (kept after anything already in _redirects)
-{
-  const rp = path.join(OUT, '_redirects');
-  const had = fs.existsSync(rp) ? fs.readFileSync(rp, 'utf8').trim() : '';
-  const rules = GENERATORS.flatMap(g => [`/${g} /generators/${g} 301`, `/${g}.html /generators/${g} 301`]);
-  fs.writeFileSync(rp, (had ? had + '\n' : '') + rules.join('\n') + '\n');
-  log(`wrote ${rules.length} redirect(s) for the old generator addresses`);
+  const f = path.join('generators', g + '.html');
+  if (!fs.existsSync(path.join(OUT, f))) throw new Error(`generator page ${f} is missing`);
+  edit(f, h => finishPage(h, clean(g)));
+  fs.rmSync(path.join(OUT, g + '.html'), { force: true });
 }
 // JS files carry links too (nav model, cards, admin redirects)
 for (const f of ['nav.js', 'site.js', 'render.js']) edit(path.join('assets/js', f), rewriteLinks);

@@ -4,7 +4,7 @@
    ============================================================ */
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { fitDrawer, meshToSTL, meshesTo3MF, zip, SPEC } from './gridfinity-core.js?v=2';
+import { fitDrawer, meshToSTL, meshesTo3MF, zip, SPEC } from './gridfinity-core.js?v=cd2b8dee8c';
 
 const $ = (s, r = document) => r.querySelector(s);
 const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -524,7 +524,7 @@ function getWorker() {
   if (worker && builds > 30 && !busy) { worker.terminate(); worker = null; }   // free WASM memory now and then
   if (!worker) {
     builds = 0;
-    worker = new Worker(new URL('./gridfinity-worker.js?v=2', import.meta.url), { type: 'module' });
+    worker = new Worker(new URL('./gridfinity-worker.js?v=67dcb60052', import.meta.url), { type: 'module' });
     worker.onmessage = (e) => { const h = handlers.get(e.data.id); if (h) h(e.data); };
     worker.onerror = (e) => { setStatus('The geometry engine failed to load. Try reloading the page.', 'bad'); console.error(e); busy = false; };
   }
