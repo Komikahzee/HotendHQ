@@ -159,3 +159,23 @@
 /* site toast: never block taps, and clear the mobile download bar */
 #hhq-toast{pointer-events:none}
 @media (max-width:900px){#hhq-toast{bottom:calc(84px + env(safe-area-inset-bottom))!important}}
+
+/* ---------- settings panel helpers ---------- */
+.gf-ctlbar{display:flex;justify-content:flex-end;gap:8px;align-items:center;margin:0 0 6px;font-size:.78rem;color:var(--text-faint)}
+.gf-link{background:none;border:0;padding:4px 2px;color:var(--blue-200);font:inherit;font-weight:700;cursor:pointer}
+.gf-link:hover{color:var(--amber-300)}
+.gf-link:focus-visible{outline:2px solid var(--amber-300);outline-offset:2px;border-radius:4px}
+.gf-changed{display:none;margin-left:8px;padding:2px 8px;border-radius:99px;font-size:.62rem;font-weight:800;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--amber-300);background:rgba(243,102,46,.14);border:1px solid rgba(243,102,46,.35);vertical-align:2px}
+.gf-group.is-changed .gf-changed{display:inline-block}
+.gf-greset{display:none;margin:2px 0 6px;font-size:.8rem}
+.gf-group.is-changed .gf-greset{display:inline-block}
+.gf-setup summary>span{display:flex;flex-direction:column;gap:2px}
+.gf-sum{font-weight:600;font-size:.76rem;color:var(--text-faint);letter-spacing:0;text-transform:none}
+.gf-xyz{display:flex!important;gap:10px;flex-wrap:wrap}
+.gf-xyz.hidden{display:none!important}
+.gf-xyz label{display:flex;align-items:center;gap:6px;font-size:.8rem}
+.gf-xyz input{width:72px}
+.gf-2col{display:grid!important;grid-template-columns:1fr 1fr;gap:10px}
+.gf-2col label{display:block;margin-bottom:6px}
+.gf-in{opacity:.65}

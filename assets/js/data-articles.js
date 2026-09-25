@@ -6,6 +6,286 @@
    published rows from the database are shown first and these fill in behind. */
 window.HHQ_SEED_ARTICLES = [
 {
+  slug:'free-3d-model-generators',
+  seo_title:'Free 3D Model Generators: Gridfinity, Chains, Boxes and More',
+  meta_description:'Seven free generators that run in your browser: Gridfinity bins and baseplates, print-in-place necklace chains, storage boxes, drawer trays, cable clips, spool holders and wall brackets.',
+  title:'Seven Free 3D Model Generators, Now Live on Hotend HQ',
+  category:'News',
+  tags:['generators','gridfinity','jewelry','free tools'],
+  excerpt:'Gridfinity, print-in-place chains, boxes, trays, clips, spool holders and brackets. Set your sizes, pick your printer, download a file that is ready to slice.',
+  published_at:'2026-09-25',
+  author_name:'Hotend HQ',
+  featured:true,
+  cover_url:'/assets/img/articles/generators-spotlight.webp',
+  body:`
+Most of what we print at home is not art. It is a box the right size, a bracket for one awkward shelf, a tray for one drawer. Downloading someone else's file and scaling it never quite works, because scaling stretches the walls, the screw holes and the clearances along with everything else.
+
+So we built generators. You type in the sizes you need, the model is built from scratch to those sizes, and you download a file that is ready for your slicer. All seven are free and live now at [hotendhq.com/generators](/generators).
+
+## What every generator does
+
+- **Sized to your printer.** Pick your machine from a list of more than 40 printers from Bambu Lab, Prusa, Creality, Elegoo, Anycubic, Sovol, QIDI, Voron and more, or type in a custom bed. Every generator tells you whether the model fits, and the choice is remembered on your device for next time.
+- **Nothing to install, nothing uploaded.** The model is built on your own computer or phone, in the browser. There is no account and no queue.
+- **Real files.** STL for every generator, and 3MF on Gridfinity and the chain generator.
+- **Share links.** Copy a link and anyone who opens it gets the same design.
+- **Yours to keep.** Print what you make, change it, give it away or sell it.
+
+## Gridfinity generator
+
+![Gridfinity bin preview](/assets/img/generators/gridfinity.webp)
+
+[Gridfinity](/generators/gridfinity) is the modular storage system where bins click into a grid baseplate in your drawer. The generator covers the whole system:
+
+- **Bins** in whole or half units, with dividers (even or uneven), finger scoops, label tabs with printed text, and magnet or screw holes in the feet.
+- **Tool holders** with pockets cut for hex bits, batteries, pens or SD cards.
+- **Lids**, flat, labelled or stackable.
+- **Baseplates** in five styles: minimal, magnetic, weighted, skeleton and screw-down.
+- **Drawer fitter.** Enter the inside of your drawer and it fills it edge to edge, then splits the baseplate into pieces that fit your bed and clip together.
+
+The settings panel now shows how many nozzle lines your walls print as, the weight and cost in your filament, and it keeps your last design so you can pick up where you left off.
+
+## Chain generator
+
+![Endless print-in-place chain on the bed](/assets/img/articles/endless-chain.webp)
+
+The [chain generator](/generators/chain) makes necklace chains that come off the bed already linked. Neighbouring links lean at about 45° in opposite directions and thread through each other with a gap all the way round, so nothing needs supports and nothing needs assembling.
+
+- **26 styles**, from cable, rolo and paperclip to curb, Cuban, figaro, rope, box, snake, name chains and three hand-assembled kits.
+- **Endless loops.** A chain with no clasp prints as one closed circle that slips straight over your head.
+- **Clasps and extras.** Plain end loops, a built-in toggle clasp, an extender tail and matching jump rings.
+- **Looks.** Graduated links, two-tone chains exported as separate 3MF objects, station beads, and your own link shape from an uploaded SVG or image.
+- **A test strip** that prints three short chains at your gap setting and 0.1 mm either side, so you find the right clearance before a long print.
+
+## Storage box generator
+
+![Storage box with dividers and lid](/assets/img/generators/storage-box.webp)
+
+The [storage box generator](/generators/storage-box) makes a box from 20 to 250 mm in any direction. Set the wall and floor thickness and the corner radius, add up to 49 compartments, and add a snap-on lid or screw-down mounting ears.
+
+## Grid organiser generator
+
+![Grid organiser tray](/assets/img/generators/grid-organiser.webp)
+
+The [grid organiser](/generators/grid-organiser) is a single drawer tray with a grid of cells, up to 12 by 12. Size each cell to what you store, choose the depth, and switch on stacking feet if the trays will sit on top of each other.
+
+## Cable clip generator
+
+![Set of cable clips](/assets/img/generators/cable-clip.webp)
+
+The [cable clip generator](/generators/cable-clip) makes screw-down clips for a single cable or a bundle from 2 to 40 mm across. The opening is narrower than the cable, so it presses in and stays put. Print up to eight in one go.
+
+## Spool holder generator
+
+![Wall-mounted spool holder](/assets/img/generators/spool-holder.webp)
+
+The [spool holder generator](/generators/spool-holder) makes a wall-mounted arm with a tapered hub for any spool bore from 15 to 90 mm. A support gusset makes it much stiffer, and an end flange stops the spool walking off.
+
+## Wall bracket generator
+
+![L-bracket with gusset](/assets/img/generators/wall-bracket.webp)
+
+The [wall bracket generator](/generators/wall-bracket) makes an L-bracket with legs up to 160 mm, one to four counterbored screw holes per leg and an optional gusset. Print it standing on its horizontal leg and the corner supports itself.
+
+## What's next
+
+More generators are on the way, starting with clasps and medallions to go with the chains. If there is a part you keep having to design from scratch, [tell us about it](/about#contact).
+`
+},
+{
+  slug:'first-layer-that-sticks',
+  seo_title:'First Layer Not Sticking? Fix Z-Offset, Bed Surface and Speed',
+  meta_description:'Most first-layer failures come down to three things: nozzle height, a dirty or mismatched bed surface, and printing it too fast. How to read the layer and fix each one.',
+  title:'A First Layer That Sticks: Z-Offset, Surfaces and the Ten-Minute Fix',
+  category:'Troubleshooting',
+  tags:['first layer','bed adhesion','beginner'],
+  excerpt:'The first layer tells you exactly what is wrong if you know how to read it. Here is how to read it, and the four fixes that solve nearly every adhesion problem.',
+  published_at:'2026-09-23',
+  author_name:'Hotend HQ',
+  body:`
+Most failed prints fail in the first two minutes. A corner lifts, a line drags, and forty minutes later you have a nest of spaghetti. The good news is that the first layer is also the easiest layer to diagnose, because everything that goes wrong with it leaves a visible mark.
+
+## Read the layer before you change anything
+
+Print a single large square one layer thick, then look at it closely.
+
+- **Round lines with gaps between them** that peel up as one piece: the nozzle is too high. The plastic is being laid on the bed, not pressed into it.
+- **Rough, ridged or see-through lines**, or plastic building up around the nozzle: the nozzle is too low. It is scraping through its own extrusion.
+- **Flat lines that just touch each other** with a smooth, even top: that is the target.
+- **Good in the middle, bad in one corner or along one edge**: this is a bed-mesh or levelling problem, not a nozzle-height problem. Changing the Z-offset will make one area better and another worse.
+
+## Fix 1: Clean the plate properly
+
+This is the fix people skip, and the one that solves the most problems. Fingerprints leave skin oil on the build surface, and PLA will not stick to oil.
+
+Isopropyl alcohol is fine for a quick wipe between prints, but it mostly spreads oil around. Every so often, take the plate to the sink and wash it with warm water and a drop of dish soap, rinse it, and dry it with a clean paper towel. Then handle it by the edges only.
+
+## Fix 2: Set the Z-offset while it prints
+
+Start a large first-layer test and adjust the Z-offset live, 0.02 mm at a time, while you watch the lines go down. Stop when the lines are flat and just touching.
+
+If your printer calibrates its own first layer, and many recent machines do, run that calibration again after you change the nozzle or swap plates, before you touch any offsets by hand.
+
+## Fix 3: Match the surface to the material
+
+Different plastics want different surfaces and temperatures. As a starting point:
+
+- **PLA:** smooth or textured PEI, bed at 55–65 °C.
+- **PETG:** textured PEI, bed at 70–85 °C. On smooth PEI, PETG can bond so well that it pulls the coating off when you remove the part. A thin layer of glue stick acts as a release layer.
+- **ABS and ASA:** PEI at 90–110 °C, ideally in an enclosure so the part cools evenly.
+- **TPU:** textured PEI or a glue-stick layer, bed at about 40–60 °C. The problem with TPU is usually getting it off, not keeping it on.
+- **Nylon:** garolite or a glue-stick layer, and dry filament (see our guide to drying filament).
+
+Always check the recommended temperatures on the spool; brands vary.
+
+## Fix 4: Slow the first layer down
+
+The first layer should be the slowest layer of the print. Settings that help:
+
+- **First-layer speed of 20–50 mm/s**, even on a fast printer.
+- **Part-cooling fan off** for the first layer or two, so the plastic stays soft long enough to grip.
+- **A wider first-layer line**, around 120 % of the nozzle size, for more contact area.
+
+## When the bed itself is the problem
+
+If one area is always wrong, check the bed mesh. Re-run the printer's bed levelling with the bed at printing temperature, because plates change shape as they heat. On large beds, give the bed five to ten minutes to heat through before printing; the edges lag behind the centre.
+
+A plate that is visibly warped or has a worn patch in the middle (usually from printing the same part in the same spot) needs replacing. No setting fixes a damaged surface.
+
+## Big flat parts lift at the corners
+
+Wide, flat parts such as Gridfinity baseplates pull their corners up as they cool and shrink. A brim, or small round "mouse ears" at each corner, helps. So does keeping draughts away from the printer.
+
+The other fix is not to print one huge part at all. The **Drawer fitter** in our [Gridfinity generator](/generators/gridfinity) splits a drawer-sized baseplate into smaller pieces that fit your bed and clip together, and smaller pieces lift far less.
+`
+},
+{
+  slug:'dry-filament-guide',
+  seo_title:'How to Dry Filament: Temperatures and Times for PLA, PETG, TPU and Nylon',
+  meta_description:'Wet filament pops, strings and prints weak. The signs to look for, drying temperatures and times for each material, and how to keep spools dry afterwards.',
+  title:'Wet Filament: How to Tell, and How to Dry It Properly',
+  category:'Materials',
+  tags:['filament','moisture','PETG','nylon'],
+  excerpt:'Popping at the nozzle, stringing that tuning will not fix, weak layers. It is often water in the filament. How to spot it, dry it and keep it dry.',
+  published_at:'2026-09-21',
+  author_name:'Hotend HQ',
+  body:`
+Most filaments absorb water from the air. Some take weeks to get bad and some take a day. When damp filament reaches the hot end, that water turns to steam inside the melt, and the steam is what ruins the print.
+
+## The signs
+
+- **Popping or hissing** at the nozzle while it prints.
+- **Tiny bubbles** or a rough, pitted surface on walls that should be smooth.
+- **Stringing that retraction tuning will not fix.** Steam pushes plastic out of the nozzle during travel moves.
+- **Weak, brittle parts** that snap along layer lines.
+- **Filament that snaps** on the spool (common with damp PLA).
+
+A quick test: print a small part, then dry the same spool and print it again. If the second print is clearly better, moisture was the problem.
+
+## How much each material cares
+
+- **Nylon** absorbs water fastest. It can be noticeably wet within a day in a humid room.
+- **TPU and PETG** get wet within days to weeks and print badly when they do.
+- **PC, ABS and ASA** absorb moisture more slowly, but still print better dry.
+- **PLA** is the most forgiving, but an old spool left out for months will still string and snap.
+
+Filled filaments (carbon fibre, glass fibre) behave like the plastic underneath.
+
+## Drying temperatures and times
+
+These are common starting points. Always check the spool label or the manufacturer's page first; brands differ.
+
+- **PLA:** 45–50 °C for 4–6 hours. Do not go hotter: PLA softens at around 55–60 °C and the spool can fuse into a solid lump.
+- **PETG:** 60–65 °C for 4–6 hours.
+- **TPU:** 45–55 °C for 4–8 hours.
+- **ABS and ASA:** 70–80 °C for about 4 hours.
+- **Nylon:** 70–80 °C for 8–12 hours, then print straight from the dryer.
+- **PC:** 70–80 °C for 6–8 hours.
+
+The spool matters too. Some plastic spools soften at the higher temperatures, so check that the spool can take the heat, or rewind onto one that can.
+
+## What to dry it in
+
+- **A filament dryer** is the easiest option. Most hold a set temperature, and many let you print straight from the box.
+- **A food dehydrator** works well if it reaches the temperature you need. Check it with a separate thermometer; many run hotter or cooler than their dial says.
+- **Your printer's bed**, with the spool covered by a box, works in a pinch, and some printers have a drying mode built in.
+- **A kitchen oven** is the riskiest choice. Many ovens overshoot at low settings, and a few degrees too hot will ruin a spool of PLA. If you use one, check it with a thermometer first and never leave it unattended.
+
+To check that drying worked, weigh the spool before and after. The weight it loses is the water that came out.
+
+## Keep it dry afterwards
+
+Drying only helps if the spool stays dry. Store spools in an airtight box or bag with a few packets of silica gel and a cheap humidity card or hygrometer. Aim to keep the humidity inside under about 20 %. When the silica gel changes colour, dry it out and reuse it.
+
+For nylon and TPU, print from a dry box or dryer so the filament never sits in room air during a long print.
+
+Our [filament database](/tools#filaments) lists typical printing temperatures and properties for each material, so you can plan prints and drying together.
+`
+},
+{
+  slug:'layer-height-line-width-nozzle',
+  seo_title:'Layer Height vs Nozzle Size: The Rules That Actually Matter',
+  meta_description:'Layer height, line width and nozzle size decide how strong, fast and detailed a print is. The ratios that work, the ones that do not, and settings for common jobs.',
+  title:'Layer Height, Line Width and Nozzle Size: Picking the Right Combination',
+  category:'Tuning',
+  tags:['slicer','nozzles','print quality'],
+  excerpt:'Three numbers decide how strong, fast and detailed your prints are. Here are the rules of thumb, why they work, and how to design parts around them.',
+  published_at:'2026-09-18',
+  author_name:'Hotend HQ',
+  body:`
+Every print is built from the same thing: lines of plastic, stacked in layers. Three settings decide the size of those lines, and together they decide how strong, how fast and how detailed a print can be.
+
+- **Nozzle size** is the hole the plastic comes out of.
+- **Line width** is how wide each extruded line is.
+- **Layer height** is how thick each layer is.
+
+## Rule 1: Layer height stays between 25 % and 75 % of the nozzle
+
+The nozzle presses each line flat as it lays it down. If the layer is too thick, the nozzle cannot press it into the layer below and the layers bond poorly. If it is too thin, the plastic has nowhere to go and the print slows down for no gain.
+
+For a 0.4 mm nozzle that means layers from about 0.1 to 0.3 mm. A 0.2 mm layer is the usual default, 0.12–0.16 mm is for fine detail, and 0.28 mm is a common fast draft setting.
+
+## Rule 2: Line width runs from 100 % to about 150 % of the nozzle
+
+Lines can be wider than the nozzle, because the flat face around the hole spreads the plastic out. Most slicers default to a little over 100 %, around 0.42–0.45 mm for a 0.4 mm nozzle.
+
+Wider lines press harder into their neighbours and bond better, so a slightly wider line can make a part stronger. Narrower lines, close to the nozzle size, give sharper detail.
+
+## Rule 3: Design walls as whole numbers of lines
+
+Your slicer builds walls from whole lines. A wall that is not a whole number of lines wide gets a thin, wiggly line of "gap fill" squeezed into the middle, which is slow and weak.
+
+With a 0.4 mm nozzle, wall thicknesses of 0.8, 1.2 and 1.6 mm print cleanly. A 1.0 mm wall does not. Our [Gridfinity generator](/generators/gridfinity) shows how many lines each wall and divider will print as for the nozzle you choose, and warns you when a thickness falls between two.
+
+## Rule 4: Heights should be whole numbers of layers
+
+The same idea applies vertically. A part that is 10 mm tall prints as exactly 50 layers at 0.2 mm. A 10.1 mm part forces the slicer to round, and a lid or a fit that depends on that last 0.1 mm will not come out as designed. Gridfinity's 7 mm height unit works out to exactly 35 layers at 0.2 mm, which is one reason it prints so reliably.
+
+## Speed comes from all three
+
+How fast a printer can go is limited by how fast the hot end can melt plastic, which is measured as volume per second:
+
+flow (mm³/s) = layer height × line width × speed
+
+Double the layer height and you move twice as much plastic at the same speed. That is why a bigger nozzle, which allows thicker layers and wider lines, can halve print time on large parts even though the printer moves no faster.
+
+## Which nozzle for which job
+
+- **0.2 mm:** miniatures, small text and fine jewellery. On our [chain generator](/generators/chain), the 0.2 mm setting allows thinner wire and smaller gaps for delicate chains. Expect long print times.
+- **0.4 mm:** the all-rounder, and what almost every printer ships with.
+- **0.6 mm:** strong functional parts such as brackets, holders and tools. Wider lines bond better and prints finish much faster, with only slightly softer detail.
+- **0.8 mm:** big, simple parts and vases, where speed matters more than detail.
+
+## Settings to start from
+
+- **Detailed display parts:** 0.4 mm nozzle, 0.12 mm layers, 0.42 mm lines.
+- **Everyday parts:** 0.4 mm nozzle, 0.2 mm layers, 0.45 mm lines.
+- **Strong brackets and holders:** 0.6 mm nozzle, 0.3 mm layers, 0.65 mm lines, four or more walls.
+- **Fast drafts:** 0.4 mm nozzle, 0.28 mm layers, 0.5 mm lines.
+
+Small details need at least two lines to print well. Text strokes, thin ribs and wire on a chain thinner than two line widths will come out patchy or not at all, which is why the chain generator warns you when the wire is too thin for the nozzle you picked.
+`
+},
+{
   slug:'all-metal-vs-ptfe-hotends',
   seo_title:'All-Metal vs PTFE Hotend: Which Does Your Printer Need? (2026)',
   meta_description:'PTFE-lined hotends cap out around 240°C. Here\'s when an all-metal upgrade pays off, when it causes new clogs, and which one to buy.',
@@ -15,7 +295,6 @@ window.HHQ_SEED_ARTICLES = [
   excerpt:'The upgrade everyone recommends, explained honestly — including the three cases where a PTFE-lined hot end is still the better call.',
   published_at:'2026-09-14',
   author_name:'Hotend HQ',
-  featured:true,
   body:`
 A PTFE-lined hot end runs a short length of PTFE tube all the way down to the top of the nozzle. It is cheap, it seals beautifully, and molten plastic slides over it with almost no friction. That is why nearly every budget printer ships with one.
 

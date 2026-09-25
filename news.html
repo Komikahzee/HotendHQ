@@ -10,12 +10,12 @@
 <link rel="apple-touch-icon" href="/assets/img/apple-touch-icon.png">
 <link rel="manifest" href="/site.webmanifest">
 <link rel="stylesheet" href="/assets/css/fonts.css?v=1f7e92bbba">
-<link rel="stylesheet" href="/assets/css/theme.css?v=d26c8b034c">
-<link rel="stylesheet" href="/assets/css/pages.css?v=21efca8f31">
+<link rel="stylesheet" href="/assets/css/theme.css?v=d21bba40c2">
+<link rel="stylesheet" href="/assets/css/pages.css?v=2d53d9dee9">
 <script src="/assets/js/config.js?v=a00c59ebda" defer></script>
-<script src="/assets/js/nav.js?v=893b3196f6" defer></script>
-<script src="/assets/js/site.js?v=ab388de307" defer></script>
-<script src="/assets/js/data-articles.js?v=dc529b91fa" defer></script>
+<script src="/assets/js/nav.js?v=60d1eef206" defer></script>
+<script src="/assets/js/site.js?v=f47d228153" defer></script>
+<script src="/assets/js/data-articles.js?v=512aa6233e" defer></script>
 <script src="/assets/js/api.js?v=097762e5df" defer></script>
 </head>
 <body>
@@ -30,7 +30,7 @@
       <div style="flex:1;min-width:220px;position:relative">
         <input type="search" id="q" placeholder="Search articles…" aria-label="Search articles">
       </div>
-      <a class="btn btn-ghost btn-sm" href="/login" id="write-link"></a>
+      <a class="btn btn-ghost btn-sm" href="/admin" id="write-link" hidden></a>
     </div>
     <div class="chips" id="cats"></div>
   </section>
@@ -48,7 +48,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   $('#write-link').innerHTML = icon('plus') + 'Write an article';
   window.addEventListener('hhq:auth', e => {
-    if (e.detail?.user) { $('#write-link').href = '/admin';
+    if (e.detail?.user) { $('#write-link').href = '/admin'; $('#write-link').hidden = false;
       $('#write-link').innerHTML = icon('edit') + 'Open the editor'; }
   });
 

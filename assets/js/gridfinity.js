@@ -4,6 +4,7 @@
    ============================================================ */
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { printerOptions, printerById, printerForBed, loadPrinter, savePrinter, volumeOf, fits } from './printers.js?v=ff3522465e';
 import { fitDrawer, meshToSTL, meshesTo3MF, zip, SPEC } from './gridfinity-core.js?v=cd2b8dee8c';
 
 const $ = (s, r = document) => r.querySelector(s);
@@ -67,7 +68,7 @@ const MODES = {
         R('divY', 'Dividers front-to-back', 0, 9, 1, 0, '', { hint: 'Walls running side-to-side.' }),
         X('ratiosX', 'Uneven widths (optional)', '', { show: s => s.divX > 0, placeholder: 'e.g. 1,2,1', hint: 'One number per compartment, left to right.' }),
         X('ratiosY', 'Uneven depths (optional)', '', { show: s => s.divY > 0, placeholder: 'e.g. 2,1', hint: 'Front to back.' }),
-        R('divT', 'Divider thickness', 0.8, 3, 0.05, 1.2, 'mm', { show: s => s.divX > 0 || s.divY > 0 }),
+        R('divT', 'Divider thickness', 0.8, 3, 0.05, 1.2, 'mm', { show: s => s.divX > 0 || s.divY > 0, labelFn: s => `Divider thickness · ${linesText(s.divT)}` }),
         R('divLower', 'Lower dividers by', 0, 40, 0.5, 0, 'mm', { show: s => s.divX > 0 || s.divY > 0, hint: 'Shorter dividers make small parts easier to grab.' }),
       ] },
       { title: 'Scoops & labels', open: true, items: [
@@ -81,7 +82,7 @@ const MODES = {
         R('textDepth', 'Text depth / height', 0.2, 1.6, 0.1, 0.6, 'mm', { show: s => s.tab !== 'none' && !!s.labels }),
       ] },
       { title: 'Walls & floor', items: [
-        R('wall', 'Wall thickness', 0.8, 3, 0.05, 1.2, 'mm', { hint: '1.2 mm = 3 lines with a 0.4 mm nozzle.' }),
+        R('wall', 'Wall thickness', 0.8, 3, 0.05, 1.2, 'mm', { labelFn: s => `Wall thickness · ${linesText(s.wall)}`, hint: 'Whole numbers of lines print cleanest: 0.8, 1.2 or 1.6 mm with a 0.4 mm nozzle.' }),
         R('floor', 'Floor thickness', 0.7, 6, 0.05, 1.2, 'mm', { show: s => !s.lite }),
         B('lip', 'Stacking lip', true, { hint: 'Lets bins stack on top of each other.' }),
         B('lite', 'Lite base (hollow feet)', false, { hint: 'Saves filament and time; no magnets or screws.' }),
@@ -94,6 +95,8 @@ const MODES = {
       ['Deep bin', { nx: 2, ny: 2, hUnits: 9, scoop: 40 }],
       ['Magnetic', { nx: 2, ny: 1, hUnits: 3, holes: 'magnet', magRibs: true }],
       ['Lite & fast', { nx: 2, ny: 2, hUnits: 3, lite: true, wall: 0.95 }],
+      ['Half-width', { nx: 0.5, ny: 2, hUnits: 3, scoop: 60 }],
+      ['Labelled drawer', { nx: 2, ny: 1, hUnits: 2, divX: 1, scoop: 60, tab: 'full', labels: 'LEFT|RIGHT' }],
     ],
     build: s => ({ kind: 'bin', params: binParams(s) }),
     file: s => `gridfinity-bin-${fmt(s.nx)}x${fmt(s.ny)}x${s.hMode === 'mm' ? fmt(s.hMM) + 'mm' : s.hUnits}`,
@@ -191,7 +194,7 @@ const MODES = {
   drawer: {
     label: 'Drawer fitter', icon: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 12h18M10 15.5h4"/>',
     title: 'Drawer fitter',
-    blurb: 'Enter your drawer and your printer bed. We fill the drawer edge to edge and split the baseplate into pieces that fit your bed.',
+    blurb: 'Enter your drawer. We fill it edge to edge and split the baseplate into pieces that fit the printer set under “Your printer & filament”.',
     groups: [
       { title: 'Your drawer (inside)', open: true, items: [
         R('W', 'Width', 50, 1200, 0.5, 400, 'mm'), R('D', 'Depth', 50, 1200, 0.5, 300, 'mm'),
@@ -199,12 +202,6 @@ const MODES = {
         R('tol', 'Fit tolerance', 0, 5, 0.1, 1, 'mm', { hint: 'Total gap left so the plate drops in easily.' }),
         B('half', 'Use half units to fill gaps', true),
         S('align', 'Padding', [['center', 'Centre the grid'], ['fl', 'Grid to front-left']], 'center'),
-      ] },
-      { title: 'Your printer', open: true, items: [
-        S('bed', 'Bed', [['180', 'Bambu A1 mini / 180 mm'], ['220', 'Ender 3 / 220 mm'], ['250x210', 'Prusa MK4 / 250 × 210'],
-          ['256', 'Bambu X1 · P1 · A1 / 256 mm'], ['300', 'Ender 5 Plus class / 300+ mm'], ['360', 'Prusa XL / 360 mm'], ['custom', 'Custom…']], '256'),
-        R('bedX', 'Bed X', 100, 600, 1, 256, 'mm', { show: s => s.bed === 'custom' }),
-        R('bedY', 'Bed Y', 100, 600, 1, 256, 'mm', { show: s => s.bed === 'custom' }),
       ] },
       { title: 'Baseplate style', open: true, items: [...plateStyleItems(),
         B('clips', 'Connector clips between pieces', true, { hint: 'Bow-tie clips lock pieces together. Needs a 3.2 mm floor (set automatically).' })] },
@@ -267,6 +264,22 @@ function binParams(s) {
 /* ============================================================
    STATE
    ============================================================ */
+/* shared by every tab: printer (remembered for all generators), nozzle, filament */
+const GKEY = 'hhq-gf-global';
+const MATERIALS = { pla: ['PLA', 1.24], petg: ['PETG', 1.27], abs: ['ABS', 1.04], asa: ['ASA', 1.07], tpu: ['TPU', 1.21], silk: ['Silk PLA', 1.24] };
+const G = (() => {
+  let g = {};
+  try { g = JSON.parse(localStorage.getItem(GKEY) || '{}') || {}; } catch { /* storage blocked */ }
+  return { nozzle: ['0.2', '0.4', '0.6', '0.8'].includes(g.nozzle) ? g.nozzle : '0.4', material: MATERIALS[g.material] ? g.material : 'pla',
+    price: +g.price > 0 ? +g.price : 20, printer: loadPrinter() };
+})();
+const saveG = () => { try { localStorage.setItem(GKEY, JSON.stringify({ nozzle: G.nozzle, material: G.material, price: G.price })); } catch {} savePrinter(G.printer); };
+const vol = () => volumeOf(G.printer);
+function linesText(t) {
+  const n = +G.nozzle, lines = t / n, whole = Math.abs(lines - Math.round(lines)) < 0.08;
+  return whole ? `${Math.round(lines)} line${Math.round(lines) === 1 ? '' : 's'}` : `${fmt(lines, 1)} lines`;
+}
+
 const defaultsOf = (mode) => {
   const d = {};
   for (const g of MODES[mode].groups) for (const c of g.items) if (!(c.k in d)) d[c.k] = c.def;
@@ -288,10 +301,20 @@ function readHash() {
     s[k] = typeof d[k] === 'number' ? +v : typeof d[k] === 'boolean' ? v === '1' : v;
   }
   states[m] = s;
+  // a drawer layout depends on the bed it was made for: take the printer from the link
+  const pr = q.get('pr');
+  if (pr && (printerById(pr) || pr === 'custom')) {
+    const p = printerById(pr);
+    G.printer = p ? { id: p.id, x: p.x, y: p.y, z: p.z } : { id: 'custom', x: +q.get('px') || 256, y: +q.get('py') || 256, z: +q.get('pz') || 256 };
+  } else if (q.get('bed')) {                                   // links made before the shared printer list
+    const b = q.get('bed') === 'custom' ? { id: 'custom', x: +q.get('bedX') || 256, y: +q.get('bedY') || 256, z: 250 } : printerForBed(q.get('bed'));
+    if (b) G.printer = printerById(b.id) ? { ...printerById(b.id) } : { id: 'custom', x: b.x, y: b.y, z: b.z || 250 };
+  }
 }
 function shareURL() {
   const s = stateOf(mode), d = defaultsOf(mode), q = new URLSearchParams({ m: mode });
   for (const k of Object.keys(d)) if (s[k] !== d[k]) q.set(k, typeof s[k] === 'boolean' ? (s[k] ? '1' : '0') : s[k]);
+  if (mode === 'drawer') { q.set('pr', G.printer.id); if (G.printer.id === 'custom') { q.set('px', G.printer.x); q.set('py', G.printer.y); } }
   return location.origin + location.pathname + '#' + q;
 }
 
@@ -319,7 +342,7 @@ function renderPresets() {
     `<button type="button" class="chip" data-i="${i}">${esc(p[0])}</button>`).join('') : '';
   presetsEl.querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
     states[mode] = { ...defaultsOf(mode), ...m.presets[+b.dataset.i][1] };
-    renderControls(); requestBuild(true);
+    renderControls(); rememberDesign(); requestBuild(true);
     presetsEl.querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === b));
   }));
 }
@@ -349,15 +372,86 @@ function ctlHTML(c, s) {
       <input type="text" id="${id}" value="${esc(v || '')}" maxlength="${c.max || 60}" placeholder="${esc(c.placeholder || '')}" autocomplete="off" spellcheck="false"${desc}>${hint}</div>`;
 }
 
+const CHEV = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>';
+const openGroups = {};                  // remembers which groups are open, per tab
+function setupSummary() {
+  const v = vol();
+  return `${esc(v.label === 'your printer' ? `Custom ${v.x} × ${v.y}` : v.label)} · ${G.nozzle} mm · ${MATERIALS[G.material][0]}`;
+}
+function setupHTML() {
+  const p = G.printer, custom = p.id === 'custom', id = 'gf-setup';
+  return `
+    <details class="gf-group gf-setup"${openGroups[mode + ':setup'] ? ' open' : ''} data-g="setup">
+      <summary><span>Your printer &amp; filament <small class="gf-sum" id="gf-sum">${setupSummary()}</small></span>${CHEV}</summary>
+      <div class="gf-body">
+        <div class="gf-row"><label for="${id}-pr">Printer</label><select id="${id}-pr">${printerOptions(p.id)}</select>
+          <p class="hint">Remembered on this device for every Hotend HQ generator. We check each model fits.</p></div>
+        <div class="gf-row gf-xyz${custom ? '' : ' hidden'}" id="${id}-xyz">
+          ${['x', 'y', 'z'].map(k => `<label>${k.toUpperCase()}<span class="gf-num"><input type="number" data-ax="${k}" min="50" max="1000" step="1" value="${p[k]}" inputmode="numeric"><span class="gf-unit">mm</span></span></label>`).join('')}
+        </div>
+        <div class="gf-row"><label for="${id}-nz">Nozzle</label><select id="${id}-nz">
+          ${[['0.2', '0.2 mm (fine detail)'], ['0.4', '0.4 mm (standard)'], ['0.6', '0.6 mm (fast, strong)'], ['0.8', '0.8 mm (very fast)']].map(([v, l]) => `<option value="${v}"${v === G.nozzle ? ' selected' : ''}>${l}</option>`).join('')}
+          </select><p class="hint">Wall and divider thickness show how many lines they print as.</p></div>
+        <div class="gf-row gf-2col">
+          <div><label for="${id}-mat">Filament</label><select id="${id}-mat">${Object.entries(MATERIALS).map(([k, [l]]) => `<option value="${k}"${k === G.material ? ' selected' : ''}>${l}</option>`).join('')}</select></div>
+          <div><label for="${id}-pr2">Price per kg</label><span class="gf-num"><input type="number" id="${id}-pr2" min="1" max="500" step="1" value="${G.price}" inputmode="decimal"><span class="gf-unit">$</span></span></div>
+        </div>
+      </div>
+    </details>`;
+}
+function bindSetup() {
+  const id = 'gf-setup', after = () => {
+    saveG(); $('#gf-sum').innerHTML = setupSummary(); refreshLabels();
+    if (mode === 'drawer') drawerChanged(); else if (current) showInfo(current);
+  };
+  $(`#${id}-pr`).addEventListener('change', e => {
+    const p = printerById(e.target.value);
+    G.printer = p ? { id: p.id, x: p.x, y: p.y, z: p.z } : { ...G.printer, id: 'custom' };
+    $(`#${id}-xyz`).classList.toggle('hidden', !!p);
+    if (p) $(`#${id}-xyz`).querySelectorAll('[data-ax]').forEach(i => { i.value = p[i.dataset.ax]; });
+    after();
+  });
+  $(`#${id}-xyz`).querySelectorAll('[data-ax]').forEach(i => i.addEventListener('change', () => {
+    G.printer[i.dataset.ax] = Math.max(50, Math.min(1000, +i.value || 256)); i.value = G.printer[i.dataset.ax]; after();
+  }));
+  $(`#${id}-nz`).addEventListener('change', e => { G.nozzle = e.target.value; after(); if (mode !== 'drawer') showNozzleNotes(); });
+  $(`#${id}-mat`).addEventListener('change', e => { G.material = e.target.value; after(); });
+  $(`#${id}-pr2`).addEventListener('change', e => { G.price = Math.max(1, +e.target.value || 20); e.target.value = G.price; after(); });
+}
+/* groups whose settings differ from the defaults get a "changed" mark and their own reset */
+function isChanged(g, s, d) { return g.items.some(c => c.k && (!c.show || c.show(s)) && s[c.k] !== d[c.k]); }
+function markChanged() {
+  const m = MODES[mode], s = stateOf(mode), d = defaultsOf(mode);
+  m.groups.forEach((g, gi) => {
+    const el = ctlEl.querySelector(`.gf-group[data-g="${gi}"]`); if (!el) return;
+    el.classList.toggle('is-changed', isChanged(g, s, d));
+  });
+}
+
 function renderControls() {
   const m = MODES[mode], s = stateOf(mode);
   $('#gf-title').textContent = m.title;
   $('#gf-blurb').textContent = m.blurb;
-  ctlEl.innerHTML = m.groups.map((g, gi) => `
-    <details class="gf-group" ${g.open ? 'open' : ''}>
-      <summary><span>${esc(g.title)}</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></summary>
-      <div class="gf-body">${g.items.map(c => ctlHTML(c, s)).join('')}</div>
+  const isOpen = (g, gi) => openGroups[mode + ':' + gi] ?? !!g.open;
+  ctlEl.innerHTML = `
+    <div class="gf-ctlbar"><button type="button" class="gf-link" data-act="open">Expand all</button><span aria-hidden="true">·</span><button type="button" class="gf-link" data-act="close">Collapse all</button></div>`
+    + setupHTML() + m.groups.map((g, gi) => `
+    <details class="gf-group" data-g="${gi}"${isOpen(g, gi) ? ' open' : ''}>
+      <summary><span>${esc(g.title)} <small class="gf-changed">changed</small></span>${CHEV}</summary>
+      <div class="gf-body">${g.items.map(c => ctlHTML(c, s)).join('')}
+        <button type="button" class="gf-link gf-greset" data-reset="${gi}">Reset ${esc(g.title.toLowerCase())}</button></div>
     </details>`).join('');
+  bindSetup();
+  ctlEl.querySelectorAll('.gf-group').forEach(el => el.addEventListener('toggle', () => { openGroups[mode + ':' + el.dataset.g] = el.open; }));
+  ctlEl.querySelectorAll('[data-act]').forEach(b => b.addEventListener('click', () =>
+    ctlEl.querySelectorAll('.gf-group').forEach(el => { el.open = b.dataset.act === 'open'; })));
+  ctlEl.querySelectorAll('[data-reset]').forEach(b => b.addEventListener('click', () => {
+    const g = m.groups[+b.dataset.reset], d = defaultsOf(mode), st = stateOf(mode);
+    for (const c of g.items) if (c.k) st[c.k] = d[c.k];
+    openGroups[mode + ':' + b.dataset.reset] = true;
+    renderControls(); rememberDesign();
+    if (mode === 'drawer') drawerChanged(); else requestBuild(true);
+  }));
   const all = m.groups.flatMap(g => g.items);
   for (const c of all) {
     const row = ctlEl.querySelector(`.gf-row[data-k="${c.k}"]`);
@@ -365,7 +459,7 @@ function renderControls() {
     // a key can appear in only one visible row per mode; bind every row with that key
     ctlEl.querySelectorAll(`.gf-row[data-k="${c.k}"]`).forEach(r => bind(r, c));
   }
-  applyVisibility();
+  applyVisibility(); refreshLabels(); markChanged();
 }
 
 function bind(row, c) {
@@ -398,11 +492,25 @@ function bind(row, c) {
 
 function changed(c) {
   presetsEl.querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', 'false'));
-  if (c.k === 'cut' || c.k === 'hMode') refreshLabels();
   if (c.k === 'hMode') syncHeight();
-  applyVisibility();
-  if (mode === 'drawer') { if (c.k === 'bed') syncBed(); drawerChanged(); }
+  refreshLabels(); applyVisibility(); markChanged(); rememberDesign();
+  if (mode === 'drawer') drawerChanged();
   else requestBuild();
+}
+/* pick up where you left off: the last design on each tab is kept on this device */
+const LKEY = 'hhq-gf-last';
+let saveT = 0;
+function rememberDesign() {
+  clearTimeout(saveT);
+  saveT = setTimeout(() => { try { localStorage.setItem(LKEY, JSON.stringify({ mode, states })); } catch {} }, 400);
+}
+function restoreDesign() {
+  try {
+    const v = JSON.parse(localStorage.getItem(LKEY) || 'null');
+    if (!v || !MODES[v.mode]) return;
+    for (const [m, st] of Object.entries(v.states || {})) if (MODES[m]) states[m] = { ...defaultsOf(m), ...st };
+    mode = v.mode;
+  } catch { /* nothing saved */ }
 }
 function syncHeight() {
   const s = stateOf(mode);
@@ -413,14 +521,14 @@ function syncHeight() {
   }
 }
 function syncBed() {
-  const s = stateOf('drawer');
-  if (s.bed !== 'custom') { const [x, y] = s.bed.split('x').map(Number); s.bedX = x; s.bedY = y || x; }
+  const s = stateOf('drawer'), v = vol();
+  s.bedX = v.x; s.bedY = v.y;
 }
 function refreshLabels() {
   const s = stateOf(mode);
   for (const g of MODES[mode].groups) for (const c of g.items) if (c.labelFn) {
     const row = ctlEl.querySelector(`.gf-row[data-k="${c.k}"]`);
-    if (row) { const t = c.labelFn(s); row.querySelector('label').textContent = t; row.querySelector('input[type=range]').setAttribute('aria-label', t); }
+    if (row) { const t = c.labelFn(s); row.querySelector('label').textContent = t; row.querySelector('input[type=range]')?.setAttribute('aria-label', t); }
   }
 }
 function applyVisibility() {
@@ -526,7 +634,13 @@ function getWorker() {
     builds = 0;
     worker = new Worker(new URL('./gridfinity-worker.js?v=67dcb60052', import.meta.url), { type: 'module' });
     worker.onmessage = (e) => { const h = handlers.get(e.data.id); if (h) h(e.data); };
-    worker.onerror = (e) => { setStatus('The geometry engine failed to load. Try reloading the page.', 'bad'); console.error(e); busy = false; };
+    // a crashed worker must never leave the page stuck: fail the waiting build and start fresh next time
+    worker.onerror = (e) => {
+      console.error(e); e.preventDefault?.();
+      if (worker) { worker.terminate(); worker = null; }
+      busy = false;
+      for (const [id, h] of [...handlers]) { handlers.delete(id); h({ error: 'The geometry engine stopped unexpectedly. Change any setting to try again.' }); }
+    };
   }
   return worker;
 }
@@ -574,10 +688,22 @@ async function doBuild() {
   }
 }
 
-const DENSITY = 1.24;   // PLA g/cm³
+function nozzleNotes() {
+  const s = stateOf(mode), n = +G.nozzle, out = [];
+  for (const [k, label] of [['wall', 'Walls'], ['divT', 'Dividers']]) {
+    if (s[k] == null || (k === 'divT' && !(s.divX > 0 || s.divY > 0))) continue;
+    if (!['bin'].includes(mode)) continue;
+    const lines = s[k] / n;
+    if (lines < 1.9) out.push(`${label} of ${fmt(s[k], 2)} mm are under 2 lines with a ${G.nozzle} mm nozzle, so they may print weak or patchy. Try ${fmt(2 * n, 2)} mm or more.`);
+    else if (Math.abs(lines - Math.round(lines)) > 0.12) out.push(`${label} of ${fmt(s[k], 2)} mm don't divide into ${G.nozzle} mm lines, so the slicer adds thin gap fill. ${fmt(Math.floor(lines) * n, 2)} or ${fmt(Math.ceil(lines) * n, 2)} mm print cleaner.`);
+  }
+  return out;
+}
+function showNozzleNotes() { if (current) showInfo(current); }
 function showInfo(p) {
-  const i = p.info, grams = p.volume / 1000 * DENSITY;
-  readEl.innerHTML = `${fmt(i.W, 1)} × ${fmt(i.D, 1)} × ${fmt(i.H, 2)} mm<br>≈ ${fmt(grams, grams < 10 ? 1 : 0)} g PLA`;
+  const i = p.info, [matName, dens] = MATERIALS[G.material], grams = p.volume / 1000 * dens, cost = grams / 1000 * G.price;
+  const inch = (v) => fmt(v / 25.4, 2);
+  readEl.innerHTML = `${fmt(i.W, 1)} × ${fmt(i.D, 1)} × ${fmt(i.H, 2)} mm<br><span class="gf-in">${inch(i.W)} × ${inch(i.D)} × ${inch(i.H)} in</span><br>≈ ${fmt(grams, grams < 10 ? 1 : 0)} g ${matName} · $${cost.toFixed(2)}`;
   const facts = [];
   if (i.compartments > 1) facts.push(`${i.compartments} compartments`);
   if (i.cutCount) facts.push(`${i.cutCount} pockets`);
@@ -585,8 +711,16 @@ function showInfo(p) {
   if (i.floor != null && mode === 'plate') facts.push(`${fmt(i.floor, 2)} mm floor`);
   if (i.bodyH && mode === 'bin') facts.push(`Floor at ${fmt(i.floorZ, 2)} mm`);
   setStatus(facts.join(' · ') || 'Ready', 'ok');
-  const notes = [...p.warn];
+  const notes = [...p.warn, ...(mode === 'drawer' ? [] : nozzleNotes())];
   if (i.pauseZ) notes.unshift(`Print-in magnets: add a pause at Z = ${fmt(i.pauseZ, 2)} mm (the first layer above that height), drop the magnets in, resume.`);
+  if (mode !== 'drawer') {
+    const v = vol(), f = fits(v, i.W, i.D, i.H);
+    if (!f.ok) notes.unshift(!f.flat
+      ? `Too big for the bed of your ${v.label} (${v.x} × ${v.y} mm).` + (mode === 'plate' ? ' Use the Drawer fitter tab: it splits the baseplate into pieces that fit and clip together.' : ' Make it fewer units wide or deep.')
+      : `Too tall for your ${v.label} (${v.z} mm of height). Lower it.`);
+    facts.push(f.ok ? `fits your ${v.label === 'your printer' ? 'printer' : v.label}` : 'too big for your printer');
+    setStatus(facts.join(' · '), f.ok ? 'ok' : 'bad');
+  }
   warnEl.innerHTML = notes.map(w => `<li>${esc(w)}</li>`).join('');
   warnEl.classList.toggle('hidden', !notes.length);
 }
@@ -619,7 +753,7 @@ $('#gf-link').addEventListener('click', copyLink);
 $('#gf-dlink').addEventListener('click', copyLink);
 $('#gf-reset').addEventListener('click', () => {
   states[mode] = defaultsOf(mode); history.replaceState(null, '', location.pathname);
-  renderControls(); renderPresets(); requestBuild(true);
+  renderControls(); renderPresets(); rememberDesign(); requestBuild(true);
 });
 
 /* ============================================================
@@ -627,6 +761,7 @@ $('#gf-reset').addEventListener('click', () => {
    ============================================================ */
 let plan = null, planParts = null, selPiece = 0;
 function drawerChanged() {
+  syncBed();
   const s = stateOf('drawer');
   const plateFloor = plateParams({ ...s, nx: 1, ny: 1 }).floor;
   plan = fitDrawer({ W: s.W, D: s.D, H: s.H, bedX: s.bedX, bedY: s.bedY, tol: s.tol, half: !!s.half,
@@ -747,7 +882,7 @@ $('#gf-d3mf').addEventListener('click', async () => {
 /* ============================================================
    BOOT
    ============================================================ */
-readHash();
+if (location.hash.length > 1) readHash(); else restoreDesign();
 renderAll();
 resize();
 if (mode !== 'drawer') requestBuild(true);

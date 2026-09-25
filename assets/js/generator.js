@@ -9,6 +9,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { STLExporter } from 'three/addons/exporters/STLExporter.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { printerOptions, printerById, loadPrinter, savePrinter, volumeOf as printerVolume, fits } from './printers.js?v=ff3522465e';
 
 /* ---------------- geometry helpers ---------------- */
 const CURVE = 6;
@@ -275,7 +276,6 @@ tray: {
     }
     notes.push(`${p.cols*p.rows} cells of ${p.cell} × ${p.cell} × ${p.h} mm`);
     notes.push(`Overall footprint ${W.toFixed(1)} × ${D.toFixed(1)} mm`);
-    if (W > 250 || D > 250) notes.push('Warning: larger than a 250 mm bed');
     return { parts, notes };
   }
 },
@@ -544,8 +544,10 @@ function rebuild(){
     `<br><span id="vol" style="opacity:.6">measuring volume…</span>`;
   scheduleVolume(merged);
 
+  lastSize = { w: size.x, d: size.z, h: size.y };
   $('#notes').innerHTML = out.notes.map(n =>
     `<li>${HHQ.esc(n)}</li>`).join('');
+  showFit();
   resize();
 }
 
@@ -606,4 +608,34 @@ $('#reset').addEventListener('click', () => {
   paramsUI(); rebuild();
 });
 
-pickerUI(); paramsUI(); rebuild(); resize();
+/* ---------------- your printer: fit check on every model ---------------- */
+let lastSize = null, myPrinter = loadPrinter();
+function printerUI(){
+  const el = $('#printer'); if (!el) return;
+  const custom = myPrinter.id === 'custom';
+  el.innerHTML = `
+    <label for="pr-sel">Your printer</label>
+    <select id="pr-sel">${printerOptions(myPrinter.id)}</select>
+    <div class="pr-custom${custom ? '' : ' hidden'}">
+      ${['x','y','z'].map(k => `<label>${k.toUpperCase()} <input type="number" data-ax="${k}" min="50" max="1000" step="1" value="${myPrinter[k]}" inputmode="numeric"> mm</label>`).join('')}
+    </div>
+    <p class="pr-fit" id="pr-fit" aria-live="polite"></p>`;
+  $('#pr-sel').addEventListener('change', e => {
+    const p = printerById(e.target.value);
+    myPrinter = p ? { id: p.id, x: p.x, y: p.y, z: p.z } : { ...myPrinter, id: 'custom' };
+    savePrinter(myPrinter); printerUI(); showFit();
+  });
+  el.querySelectorAll('[data-ax]').forEach(inp => inp.addEventListener('change', () => {
+    myPrinter[inp.dataset.ax] = Math.max(50, Math.min(1000, +inp.value || 0)); savePrinter(myPrinter); showFit();
+  }));
+}
+function showFit(){
+  const el = document.getElementById('pr-fit'); if (!el || !lastSize) return;
+  const v = printerVolume(myPrinter), f = fits(v, lastSize.w, lastSize.d, lastSize.h);
+  const vol = `${v.x} × ${v.y} × ${v.z} mm`;
+  el.dataset.kind = f.ok ? 'ok' : 'bad';
+  el.innerHTML = f.ok ? `${icon('check')}<span>Fits your ${HHQ.esc(v.label)} (${vol}).</span>`
+    : `${icon('warn')}<span>Too ${!f.flat ? 'big for the bed' : 'tall'} of your ${HHQ.esc(v.label)} (${vol}). Make it smaller${!f.flat ? ' or print it in parts' : ''}.</span>`;
+}
+
+printerUI(); pickerUI(); paramsUI(); rebuild(); resize();

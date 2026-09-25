@@ -10,12 +10,12 @@
 <link rel="apple-touch-icon" href="/assets/img/apple-touch-icon.png">
 <link rel="manifest" href="/site.webmanifest">
 <link rel="stylesheet" href="/assets/css/fonts.css?v=1f7e92bbba">
-<link rel="stylesheet" href="/assets/css/theme.css?v=d26c8b034c">
-<link rel="stylesheet" href="/assets/css/pages.css?v=21efca8f31">
+<link rel="stylesheet" href="/assets/css/theme.css?v=d21bba40c2">
+<link rel="stylesheet" href="/assets/css/pages.css?v=2d53d9dee9">
 <script src="/assets/js/config.js?v=a00c59ebda" defer></script>
-<script src="/assets/js/nav.js?v=893b3196f6" defer></script>
-<script src="/assets/js/site.js?v=ab388de307" defer></script>
-<script src="/assets/js/data-articles.js?v=dc529b91fa" defer></script>
+<script src="/assets/js/nav.js?v=60d1eef206" defer></script>
+<script src="/assets/js/site.js?v=f47d228153" defer></script>
+<script src="/assets/js/data-articles.js?v=512aa6233e" defer></script>
 <script src="/assets/js/data-troubleshoot.js?v=86b65986b2" defer></script>
 <script src="/assets/js/data-filament.js?v=07561c8b31" defer></script>
 <script src="/assets/js/api.js?v=097762e5df" defer></script>
@@ -39,7 +39,7 @@
         <div class="stats">
           <div class="stat"><b id="s-issues">—</b><span>Failure modes</span></div>
           <div class="stat"><b id="s-causes">—</b><span>Diagnosed causes</span></div>
-          <div class="stat"><b id="s-models">5</b><span>Parametric models</span></div>
+          <div class="stat"><b id="s-models">7</b><span>Model generators</span></div>
           <div class="stat"><b id="s-mats">—</b><span>Materials profiled</span></div>
         </div>
       </div>
@@ -113,7 +113,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const $ = s => document.querySelector(s);
 
   $('#hero-fix').innerHTML = icon('wrench') + 'Diagnose a problem';
-  $('#hero-gen').innerHTML = icon('cube') + 'Generate a part';
+  $('#hero-gen').innerHTML = icon('cube') + 'Generate a model';
   $('#ts-cta').innerHTML   = icon('bolt') + 'Start the diagnostic';
 
   /* stats come from the real data, so they can never drift out of date */

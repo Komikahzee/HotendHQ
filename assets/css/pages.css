@@ -233,3 +233,15 @@
 /* phones: show the model first, then the sliders */
 @media (max-width:860px){ .gen-view{display:contents} .gen-stage{order:-1} .gen-view>.card,.gen-view>.note{order:1;margin-top:0!important} }
 @media (max-width:560px){ .gen-stage{aspect-ratio:4/3} }
+/* ---------- "Your printer" block on the model generators ---------- */
+.gen-printer{display:grid;gap:8px;padding:0 0 16px;margin-bottom:16px;border-bottom:1px solid var(--border)}
+.gen-printer>label{font-size:.78rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--text-faint)}
+.gen-printer select{width:100%}
+.pr-custom{display:flex;gap:8px;flex-wrap:wrap;font-size:.85rem;color:var(--text-dim)}
+.pr-custom label{display:flex;align-items:center;gap:6px}
+.pr-custom input{width:74px}
+.pr-fit{display:flex;gap:8px;align-items:flex-start;margin:0;font-size:.86rem;color:var(--text-dim)}
+.pr-fit svg{width:16px;height:16px;flex:none;margin-top:2px}
+.pr-fit[data-kind=ok] svg{stroke:var(--ok)}
+.pr-fit[data-kind=bad]{color:var(--amber-300)}
+.pr-fit[data-kind=bad] svg{stroke:var(--amber-300)}

@@ -113,8 +113,8 @@
       return `<a href="${abs(n.href)}"${cur?' aria-current="page"':''}>${n.label}</a>`;
     }).join('');
     const cta = `<div class="head-cta">
-        <a class="btn btn-ghost btn-sm" href="/login" data-auth-chip>${icon('user')}<span>Sign in</span></a>
-        <a class="btn btn-primary btn-sm" href="/generators">${icon('cube')}Generate a part</a>
+        <a class="btn btn-ghost btn-sm" href="/admin" data-auth-chip hidden>${icon('edit')}<span>Editor</span></a>
+        <a class="btn btn-primary btn-sm" href="/generators">${icon('cube')}Generate a model</a>
       </div>`;
     return `<a class="skip" href="#main">Skip to content</a>
        <header class="site-head">
@@ -192,13 +192,9 @@
     const chip = document.querySelector('[data-auth-chip]');
     if(!chip) return;
     const u = e.detail && e.detail.user;
-    if(u){
-      chip.href = '/admin';
-      chip.innerHTML = icon('edit') + '<span>' + HHQ.esc((u.email||'account').split('@')[0]) + '</span>';
-    } else {
-      chip.href = '/login';
-      chip.innerHTML = icon('user') + '<span>Sign in</span>';
-    }
+    // public sign-in is off for now: the chip only appears for someone already signed in (go to /login directly)
+    chip.hidden = !u;
+    if(u) chip.innerHTML = icon('edit') + '<span>' + HHQ.esc((u.email||'account').split('@')[0]) + '</span>';
   });
 
   /* ---------- article URLs & cards (shared by home, news, related lists) ----------

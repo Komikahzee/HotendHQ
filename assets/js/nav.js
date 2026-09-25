@@ -21,8 +21,7 @@ window.HHQ_NAV = {
       { href:'/about', label:'About' },
       { href:'/about#contact', label:'Contact' },
       { href:'/about#disclosure', label:'Affiliate Disclosure' },
-      { href:'/about#privacy', label:'Privacy' },
-      { href:'/login', label:'Contributor Sign-in' }
+      { href:'/about#privacy', label:'Privacy' }
     ]}
   ]
 };

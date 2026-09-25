@@ -7,6 +7,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { toCreasedNormals } from 'three/addons/utils/BufferGeometryUtils.js';
 import { meshToSTL, meshesTo3MF, zip } from './gridfinity-core.js?v=cd2b8dee8c';
+import { PRINTERS, printerOptions, printerById, printerForBed, loadPrinter, savePrinter } from './printers.js?v=ff3522465e';
 import { STYLES, DEFAULTS } from './chain-build.js?v=289509d433';
 
 const $ = (s, r = document) => r.querySelector(s);
@@ -30,8 +31,7 @@ const styleOptions = () => {
 const kindOf = (s) => (STYLES[s.style] || {}).kind;
 const isRing = (s) => kindOf(s) === 'ring';
 const LENGTHS = [['356', '14 in (choker)'], ['406', '16 in'], ['457', '18 in (most common)'], ['508', '20 in'], ['559', '22 in'], ['610', '24 in'], ['762', '30 in'], ['exact', 'Exact length…']];
-const BEDS = [['180x180', 'Bambu A1 mini / 180 mm'], ['220x220', 'Ender 3 / 220 mm'], ['250x210', 'Prusa MK4 / 250 × 210'],
-  ['256x256', 'Bambu X1 · P1 · A1 / 256 mm'], ['300x300', '300 mm class'], ['360x360', 'Prusa XL / 360 mm'], ['custom', 'Custom…']];
+const MYP = loadPrinter();          // the printer picked on any generator, remembered on this device
 
 const GROUPS = [
   { title: 'Chain style', open: true, items: [
@@ -56,9 +56,9 @@ const GROUPS = [
   { title: '2. Printer fit', open: true, items: [
     S('nozzle', 'Nozzle', [['0.2', '0.2 mm (fine detail)'], ['0.4', '0.4 mm (standard)'], ['0.6', '0.6 mm (chunky)']], '0.4',
       { hint: 'Sets the thinnest wire and smallest gap that will print.' }),
-    S('bed', 'Printer bed', BEDS, '256x256', { hint: 'The chain folds back and forth to fit, and splits into parts if it has to.' }),
-    R('bedX', 'Bed X', 100, 600, 1, 256, 'mm', { show: s => s.bed === 'custom' }),
-    R('bedY', 'Bed Y', 100, 600, 1, 256, 'mm', { show: s => s.bed === 'custom' }),
+    S('bed', 'Your printer', null, MYP.id, { printers: true, hint: 'The chain folds back and forth to fit your bed, and splits into parts if it has to.' }),
+    R('bedX', 'Bed X', 100, 600, 1, MYP.id === 'custom' ? MYP.x : 256, 'mm', { show: s => s.bed === 'custom' }),
+    R('bedY', 'Bed Y', 100, 600, 1, MYP.id === 'custom' ? MYP.y : 256, 'mm', { show: s => s.bed === 'custom' }),
     R('clearance', 'Gap between links', 0.15, 0.8, 0.01, 0.35, 'mm', { hint: 'Too tight and links fuse; too loose and the chain rattles.' }),
     { k: 'strip', type: 'button', label: 'Download test strip', hint: 'Three short chains at your gap and 0.1 mm either side, labelled.' },
   ] },
@@ -107,6 +107,10 @@ function readHash() {
     if (!(k in d)) continue;
     d[k] = typeof d[k] === 'number' ? +v : typeof d[k] === 'boolean' ? v === '1' : v;
   }
+  if (d.bed !== 'custom' && !printerById(d.bed)) {          // old links carried a bed size like 256x256
+    const p = printerForBed(d.bed) || { id: MYP.id };
+    d.bed = p.id; if (p.id === 'custom') { d.bedX = p.x; d.bedY = p.y; }
+  }
   state = d;
 }
 function shareURL() {
@@ -115,7 +119,8 @@ function shareURL() {
   return location.origin + location.pathname + (q.toString() ? '#' + q : '');
 }
 function params() {
-  const [bx, by] = state.bed === 'custom' ? [state.bedX, state.bedY] : state.bed.split('x').map(Number);
+  const pr = printerById(state.bed);
+  const [bx, by] = pr ? [pr.x, pr.y] : [state.bedX, state.bedY];
   const len = state.lengthSel === 'exact' ? state.lengthMM : +state.lengthSel;
   const p = {
     style: state.style, shape: state.shape, name: state.name, letterH: state.letterH, plateT: state.plateT, pattern: state.pattern,
@@ -146,7 +151,8 @@ function ctlHTML(c) {
       <input type="range" min="${c.min}" max="${c.max}" step="${c.step}" value="${v}" aria-label="${esc(lab)}" tabindex="-1">${hint}</div>`;
   if (c.type === 'select') {
     let opts;
-    if (c.grouped) opts = Object.entries(styleOptions()).map(([g, list]) => `<optgroup label="${esc(g)}">${list.map(([ov, ol]) => `<option value="${ov}"${ov === v ? ' selected' : ''}>${esc(ol)}</option>`).join('')}</optgroup>`).join('');
+    if (c.printers) opts = printerOptions(v);
+    else if (c.grouped) opts = Object.entries(styleOptions()).map(([g, list]) => `<optgroup label="${esc(g)}">${list.map(([ov, ol]) => `<option value="${ov}"${ov === v ? ' selected' : ''}>${esc(ol)}</option>`).join('')}</optgroup>`).join('');
     else opts = c.options.map(([ov, ol]) => `<option value="${ov}"${ov === v ? ' selected' : ''}>${esc(ol)}</option>`).join('');
     return `<div class="gf-row" data-k="${c.k}"><label for="${id}">${esc(lab)}</label><select id="${id}"${desc}>${opts}</select>${hint}</div>`;
   }
@@ -192,6 +198,8 @@ function changed(c) {
   $('#ch-presets').querySelectorAll('.chip').forEach(x => x.setAttribute('aria-pressed', 'false'));
   if (c.k === 'style') { Object.assign(state, styleDims(state.style)); render(); }
   else { visibility(); relabel(); }
+  if (c.k === 'bed' || ((c.k === 'bedX' || c.k === 'bedY') && state.bed === 'custom'))   // remember the printer for every generator
+    savePrinter({ id: state.bed, x: state.bedX, y: state.bedY, z: (printerById(state.bed) || MYP).z || 250 });
   requestBuild();
 }
 function visibility() {
@@ -431,14 +439,27 @@ function getWorker() {
     builds = 0;
     worker = new Worker(new URL('./chain-worker.js?v=f143cb4d9c', import.meta.url), { type: 'module' });
     worker.onmessage = (e) => { const h = handlers.get(e.data.id); if (h) { handlers.delete(e.data.id); h(e.data); } };
-    worker.onerror = (e) => { console.error(e); setStatus('The chain engine failed to load. Reload the page to try again.', 'bad'); busy = false; };
+    // a crashed worker (out of memory on a phone, a failed download) must never leave the page stuck:
+    // answer every waiting build with an error and start a fresh worker next time
+    worker.onerror = (e) => { console.error(e); e.preventDefault?.(); resetWorker('The chain engine stopped unexpectedly.'); };
   }
   return worker;
 }
-function run(kind, p) {
+function resetWorker(msg) {
+  if (worker) { worker.terminate(); worker = null; }
+  busy = false;
+  for (const [id, h] of [...handlers]) { handlers.delete(id); h({ ok: false, error: msg, retry: true }); }
+}
+function run(kind, p, attempt = 0) {
   return new Promise((resolve) => {
     const id = ++reqId; busy = true; builds++;
-    handlers.set(id, (d) => { busy = false; resolve(d); });
+    // watchdog: a build that hangs is restarted once on a fresh worker
+    const dog = setTimeout(() => { const h = handlers.get(id); if (h) resetWorker('This chain took too long to build.'); }, 60000);
+    handlers.set(id, (d) => {
+      clearTimeout(dog); busy = false;
+      if (!d.ok && d.retry && attempt === 0) run(kind, p, 1).then(resolve);   // one automatic retry
+      else resolve(d);
+    });
     getWorker().postMessage({ id, kind, params: p, polys: p.style === 'custom' ? polys : null });
   });
 }
@@ -453,7 +474,7 @@ async function build() {
   const d = await run('chain', params());
   first = false;
   stage.classList.remove('is-busy');
-  if (!d.ok) setStatus('Could not build this chain: ' + d.error, 'bad');
+  if (!d.ok) setStatus('Could not build this chain: ' + d.error + ' Change a setting, or reload the page, to try again.', 'bad');
   else {
     current = { ...d, bodyMap: new Map(d.bodies.map(b => [b.key, b])) };
     for (const k of [...geoCache.keys()]) if (!current.bodyMap.has(k)) { geoCache.get(k).dispose(); geoCache.delete(k); }

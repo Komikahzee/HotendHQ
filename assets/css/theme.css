@@ -166,6 +166,7 @@ mark{background:rgba(255,184,77,.22);color:var(--amber-200);border-radius:3px;pa
 }
 
 /* ---------- Buttons ---------- */
+[hidden]{display:none!important}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:9px;
   padding:11px 20px;border-radius:11px;font-weight:700;font-size:.93rem;cursor:pointer;
   border:1px solid transparent;transition:transform .16s var(--ease),box-shadow .2s var(--ease),
