@@ -5,10 +5,11 @@
    ============================================================ */
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { meshToSTL, meshesTo3MF, zip } from '../gridfinity-core.js?v=cd2b8dee8c';
 import { printerOptions, printerById, loadPrinter, savePrinter, volumeOf, fits } from '../printers.js?v=ff3522465e';
 import { FONTS, PALETTE } from './core.js?v=95f6f46afd';
-import { GENERATORS } from './gens/index.js?v=ed7df2d1d7';
+import { GENERATORS } from './gens/index.js?v=fce36efb1e';
 
 const $ = (s, r = document) => r.querySelector(s);
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -79,14 +80,17 @@ function renderTabs() {
     if (b.dataset.m === mode) return; mode = b.dataset.m; renderAll(); remember(); requestBuild(true);
   }));
 }
+const DICE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="4"/><circle cx="8.5" cy="8.5" r="1.2" fill="currentColor"/><circle cx="15.5" cy="15.5" r="1.2" fill="currentColor"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/><circle cx="15.5" cy="8.5" r="1.2" fill="currentColor"/><circle cx="8.5" cy="15.5" r="1.2" fill="currentColor"/></svg>';
 function renderPresets() {
-  const list = MODES[mode].presets || [];
-  presetsEl.classList.toggle('hidden', !list.length);
-  presetsEl.innerHTML = list.length ? `<span class="gf-pre-lab">Start from</span>` + list.map((p, i) => `<button type="button" class="chip" data-i="${i}">${esc(p[0])}</button>`).join('') : '';
+  const list = MODES[mode].presets || [], rnd = MODES[mode].random;
+  presetsEl.classList.toggle('hidden', !list.length && !rnd);
+  presetsEl.innerHTML = (list.length || rnd ? `<span class="gf-pre-lab">Start from</span>` : '') + list.map((p, i) => `<button type="button" class="chip" data-i="${i}">${esc(p[0])}</button>`).join('')
+    + (rnd ? `<button type="button" class="chip mk-rand" data-rand="1" title="A new random design every click">${DICE}Randomize</button>` : '');
   presetsEl.querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
-    states[mode] = { ...defaultsOf(mode), ...list[+b.dataset.i][1] };
+    if (b.dataset.rand) states[mode] = { ...defaultsOf(mode), ...rnd() };
+    else states[mode] = { ...defaultsOf(mode), ...list[+b.dataset.i][1] };
     renderControls(); remember(); requestBuild(true);
-    presetsEl.querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+    presetsEl.querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', String(x === b && !b.dataset.rand)));
   }));
 }
 function colorOptions(v) {
@@ -285,6 +289,7 @@ function renderAll() { renderTabs(); renderPresets(); renderControls(); }
 const stage = $('#mk-stage');
 const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 stage.prepend(renderer.domElement);
 renderer.domElement.setAttribute('role', 'img');
 renderer.domElement.setAttribute('aria-label', '3D preview of the model. Drag to rotate, pinch or scroll to zoom.');
@@ -292,11 +297,72 @@ const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(38, 1, 0.5, 8000);
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true; controls.dampingFactor = 0.08;
-scene.add(new THREE.HemisphereLight(0xcfe8ff, 0x0a1a33, 1.15));
-const key = new THREE.DirectionalLight(0xfff0dd, 1.5); key.position.set(160, 260, 200); scene.add(key);
+scene.add(new THREE.HemisphereLight(0xcfe8ff, 0x0a1a33, 1.0));
+// soft studio reflections so metal, clear coat and carbon read as materials, not flat colour
+try { const pm = new THREE.PMREMGenerator(renderer); scene.environment = pm.fromScene(new RoomEnvironment(), 0.04).texture; scene.environmentIntensity = 0.45; pm.dispose(); } catch { /* plain lights still work */ }
+const key = new THREE.DirectionalLight(0xfff0dd, 1.6); key.position.set(160, 260, 200); scene.add(key); scene.add(key.target);
+key.castShadow = true; key.shadow.mapSize.set(2048, 2048); key.shadow.bias = -0.0005; key.shadow.normalBias = 0.4;
 const rim = new THREE.DirectionalLight(0x2fa0e0, 0.8); rim.position.set(-220, 120, -180); scene.add(rim);
 const world = new THREE.Group(); world.rotation.x = -Math.PI / 2; scene.add(world);   // Z-up models, Y-up viewer
+const model = new THREE.Group(); world.add(model);
+const shadowCatcher = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.ShadowMaterial({ opacity: 0.32 }));
+shadowCatcher.receiveShadow = true; shadowCatcher.position.z = -0.03; world.add(shadowCatcher);
 let meshes = [], bedObj = null, current = null, lastFit = '';
+/* ---- assembled / print-layout view, for generators whose parts carry an assembled pose or preview-only parts ---- */
+const VKEY = 'hhq-make-view';
+let viewAsm = (() => { try { return localStorage.getItem(VKEY) !== 'print'; } catch { return true; } })();
+const viewEl = document.createElement('div');
+viewEl.className = 'mk-view hidden'; viewEl.setAttribute('role', 'group'); viewEl.setAttribute('aria-label', 'Preview');
+viewEl.innerHTML = '<button type="button" data-v="asm">Assembled</button><button type="button" data-v="print">Print layout</button>';
+stage.appendChild(viewEl);
+viewEl.addEventListener('click', (e) => {
+  const b = e.target.closest('button'); if (!b) return;
+  viewAsm = b.dataset.v === 'asm'; try { localStorage.setItem(VKEY, viewAsm ? 'asm' : 'print'); } catch {}
+  if (current) { showParts(); renderLegend(); }
+});
+const hasAsm = () => !!current && current.parts.some(p => p.asm || p.preview);
+const asmOn = () => hasAsm() && viewAsm;
+const printedParts = () => current.parts.filter(p => !p.preview);
+/* ---- materials ---- */
+let carbonTex = null;
+function carbon() {
+  if (carbonTex) return carbonTex;
+  const c = document.createElement('canvas'); c.width = c.height = 128; const g = c.getContext('2d'), N = 8, s = 128 / N;
+  for (let i = 0; i < N; i++) for (let j = 0; j < N; j++) {                 // 2×2 twill: tows alternate direction along diagonals
+    const across = ((i + j) >> 1) % 2 === 0;
+    const gr = across ? g.createLinearGradient(i * s, j * s, i * s, j * s + s) : g.createLinearGradient(i * s, j * s, i * s + s, j * s);
+    gr.addColorStop(0, '#5a5a5a'); gr.addColorStop(0.5, '#f0f0f0'); gr.addColorStop(1, '#5a5a5a');
+    g.fillStyle = gr; g.fillRect(i * s, j * s, s, s);
+  }
+  carbonTex = new THREE.CanvasTexture(c); carbonTex.wrapS = carbonTex.wrapT = THREE.RepeatWrapping; carbonTex.colorSpace = THREE.SRGBColorSpace; carbonTex.anisotropy = 4;
+  return carbonTex;
+}
+function planarUV(geo, tile = 14) {                   // box-projected UVs so the weave lies on every face
+  const p = geo.attributes.position.array, uv = new Float32Array(p.length / 3 * 2);
+  for (let t = 0; t < p.length; t += 9) {
+    const ax = p[t + 3] - p[t], ay = p[t + 4] - p[t + 1], az = p[t + 5] - p[t + 2], bx = p[t + 6] - p[t], by = p[t + 7] - p[t + 1], bz = p[t + 8] - p[t + 2];
+    const nx = Math.abs(ay * bz - az * by), ny = Math.abs(az * bx - ax * bz), nz = Math.abs(ax * by - ay * bx);
+    for (let k = 0; k < 3; k++) {
+      const x = p[t + k * 3], y = p[t + k * 3 + 1], z = p[t + k * 3 + 2], o = (t / 3 + k) * 2;
+      if (nz >= nx && nz >= ny) { uv[o] = x / tile; uv[o + 1] = y / tile; } else if (nx >= ny) { uv[o] = y / tile; uv[o + 1] = z / tile; } else { uv[o] = x / tile; uv[o + 1] = z / tile; }
+    }
+  }
+  geo.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+}
+const WHITE = new THREE.Color('#ffffff');
+function materialFor(p, color) {
+  const col = new THREE.Color(color);
+  switch (p.look) {
+    case 'carbon': return new THREE.MeshPhysicalMaterial({ color: col.lerp(WHITE, 0.18), map: carbon(), roughness: 0.42, metalness: 0.15, clearcoat: 0.85, clearcoatRoughness: 0.16 });
+    case 'metal': return new THREE.MeshStandardMaterial({ color: col, metalness: 0.75, roughness: 0.3 });
+    case 'glass': return new THREE.MeshStandardMaterial({ color: col, transparent: true, opacity: p.opacity ?? 0.15, depthWrite: false, side: THREE.DoubleSide, roughness: 0.2 });
+    case 'pcb': return new THREE.MeshStandardMaterial({ color: col, metalness: 0.15, roughness: 0.65 });
+    case 'plastic': return new THREE.MeshStandardMaterial({ color: col, metalness: 0.05, roughness: 0.42 });
+    default: return new THREE.MeshStandardMaterial({ color: col, metalness: 0.08, roughness: 0.52 });
+  }
+}
+function tint(mesh, p, color) { const c = new THREE.Color(color); mesh.material.color.copy(p.look === 'carbon' ? c.lerp(WHITE, 0.18) : c); }
+
 function drawBed() {
   if (bedObj) { world.remove(bedObj); bedObj.traverse(o => o.geometry && o.geometry.dispose()); }
   const v = vol(), g = new THREE.Group(), pts = [], step = 10;
@@ -310,42 +376,57 @@ function drawBed() {
 }
 function colorOf(p) { const s = stateOf(mode); return (p.colorKey && s[p.colorKey]) || p.color || '#f3662e'; }
 function showParts() {
-  for (const m of meshes) { world.remove(m); m.geometry.dispose(); m.material.dispose(); }
+  for (const m of meshes) { model.remove(m); m.geometry.dispose(); m.material.dispose(); }
   meshes = [];
+  const asm = asmOn();
+  viewEl.classList.toggle('hidden', !hasAsm());
+  viewEl.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String((b.dataset.v === 'asm') === asm)));
   const box = new THREE.Box3();
-  // centre the whole set on the bed
-  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
-  for (const p of current.parts) { x0 = Math.min(x0, p.min[0]); y0 = Math.min(y0, p.min[1]); x1 = Math.max(x1, p.max[0]); y1 = Math.max(y1, p.max[1]); }
-  const ox = -(x0 + x1) / 2, oy = -(y0 + y1) / 2;
   current.parts.forEach((p, i) => {
     const g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.BufferAttribute(p.pos, 3)); g.setIndex(new THREE.BufferAttribute(p.idx, 1));
-    const ng = g.toNonIndexed(); ng.computeVertexNormals(); g.dispose();
-    const mat = new THREE.MeshStandardMaterial({ color: colorOf(current.meta[i]), metalness: 0.08, roughness: 0.55 });
-    const mesh = new THREE.Mesh(ng, mat); mesh.position.set(ox, oy, 0); mesh.visible = !hidden.has(p.name);
-    world.add(mesh); meshes.push(mesh);
-    ng.computeBoundingBox(); const b = ng.boundingBox.clone(); b.min.x += ox; b.max.x += ox; b.min.y += oy; b.max.y += oy; box.union(b);
+    const ng = g.toNonIndexed(); g.dispose();
+    if (asm && p.asm) ng.applyMatrix4(new THREE.Matrix4().fromArray(p.asm));
+    ng.computeVertexNormals();
+    if (p.look === 'carbon') planarUV(ng);
+    const mesh = new THREE.Mesh(ng, materialFor(p, colorOf(current.meta[i])));
+    mesh.castShadow = p.look !== 'glass'; mesh.receiveShadow = p.look !== 'glass';
+    mesh.userData.show = asm || !p.preview;
+    mesh.visible = mesh.userData.show && !hidden.has(p.name);
+    model.add(mesh); meshes.push(mesh);
+    if (mesh.userData.show) { ng.computeBoundingBox(); box.union(ng.boundingBox); }
   });
+  // centre the set on the bed and stand it on it
+  const c = new THREE.Vector3(); box.getCenter(c);
+  model.position.set(-c.x, -c.y, -box.min.z);
   const size = new THREE.Vector3(); box.getSize(size);
-  const fk = [mode, Math.round(Math.log2(Math.max(size.x, size.y, size.z, 1)) * 4)].join();
-  if (fk !== lastFit) { lastFit = fk; frame(size); }
+  // fit the key light's shadow camera round the model
+  const R = Math.max(size.x, size.y, size.z) * 0.75 + 10, sc = key.shadow.camera;
+  sc.left = sc.bottom = -R; sc.right = sc.top = R; sc.near = 1; sc.far = R * 8; sc.updateProjectionMatrix();
+  key.target.position.set(0, size.z / 2, 0); key.position.set(R * 0.9, R * 2.2, R * 1.2);
+  shadowCatcher.scale.set(R * 6, R * 6, 1);
+  const fk = [mode, asm, Math.round(Math.log2(Math.max(size.x, size.y, size.z, 1)) * 4)].join();
+  if (fk !== lastFit) { lastFit = fk; frame(size, asm); }
 }
-function frame(size) {
+function frame(size, asm = false) {
   const r = Math.max(size.x, size.y, size.z * 1.3) * 0.62 + 6, d = r / Math.sin(camera.fov * Math.PI / 360);
   controls.target.set(0, size.z / 2, 0);
-  camera.position.set(d * 0.35, d * 0.68 + size.z / 2, d * 0.72);
+  const dir = asm && MODES[mode].camera?.dir;                 // a hero angle, given in model (Z-up) coordinates
+  if (dir) { const v = new THREE.Vector3(dir[0], dir[2], -dir[1]).normalize().multiplyScalar(d * 0.95); camera.position.set(v.x, v.y + size.z / 2, v.z); }
+  else camera.position.set(d * 0.35, d * 0.68 + size.z / 2, d * 0.72);
   camera.near = d / 200; camera.far = d * 30; camera.updateProjectionMatrix();
 }
-function recolor() { if (!current) return; meshes.forEach((m, i) => m.material.color.set(colorOf(current.meta[i]))); renderLegend(); }
+function recolor() { if (!current) return; meshes.forEach((m, i) => tint(m, current.parts[i], colorOf(current.meta[i]))); renderLegend(); }
 const hidden = new Set();
 function renderLegend() {
   const el = $('#mk-parts'); if (!current) return;
-  const many = current.parts.length > 1;
+  const asm = asmOn(), shown = current.parts.map((p, i) => i).filter(i => asm || !current.parts[i].preview);
+  const many = shown.length > 1;
   el.classList.toggle('hidden', !many);
-  el.innerHTML = many ? current.parts.map((p, i) => `<button type="button" class="chip" data-i="${i}" aria-pressed="${!hidden.has(p.name)}"><span class="mk-dot" style="background:${esc(colorOf(current.meta[i]))}"></span>${esc(p.label)}</button>`).join('') : '';
+  el.innerHTML = many ? shown.map(i => { const p = current.parts[i]; return `<button type="button" class="chip${p.preview ? ' mk-pv' : ''}" data-i="${i}" aria-pressed="${!hidden.has(p.name)}"${p.preview ? ' title="Preview only: not in the download"' : ''}><span class="mk-dot" style="background:${esc(colorOf(current.meta[i]))}"></span>${esc(p.label)}</button>`; }).join('') : '';
   el.querySelectorAll('.chip').forEach(b => b.addEventListener('click', () => {
     const p = current.parts[+b.dataset.i]; if (hidden.has(p.name)) hidden.delete(p.name); else hidden.add(p.name);
-    meshes[+b.dataset.i].visible = !hidden.has(p.name); b.setAttribute('aria-pressed', String(!hidden.has(p.name)));
+    const m = meshes[+b.dataset.i]; m.visible = m.userData.show && !hidden.has(p.name); b.setAttribute('aria-pressed', String(!hidden.has(p.name)));
   }));
 }
 function resize() { const r = stage.getBoundingClientRect(); renderer.setSize(r.width, r.height, false); camera.aspect = r.width / Math.max(1, r.height); camera.updateProjectionMatrix(); }
@@ -363,7 +444,7 @@ function getWorker() {
   if (worker && builds > 10 && !busy) { worker.terminate(); worker = null; }
   if (!worker) {
     builds = 0;
-    worker = new Worker(new URL('./worker.js?v=36a583e023', import.meta.url), { type: 'module' });
+    worker = new Worker(new URL('./worker.js?v=82cf362cb6', import.meta.url), { type: 'module' });
     worker.onmessage = (e) => { const h = handlers.get(e.data.id); if (h) { handlers.delete(e.data.id); h(e.data); } };
     worker.onerror = (e) => { console.error(e); e.preventDefault?.(); resetWorker('The model engine stopped unexpectedly.'); };
   }
@@ -403,19 +484,20 @@ async function build() {
 }
 function showInfo() {
   let x0 = Infinity, y0 = Infinity, z0 = Infinity, x1 = -Infinity, y1 = -Infinity, z1 = -Infinity, cm3 = 0;
-  for (const p of current.parts) { x0 = Math.min(x0, p.min[0]); y0 = Math.min(y0, p.min[1]); z0 = Math.min(z0, p.min[2]); x1 = Math.max(x1, p.max[0]); y1 = Math.max(y1, p.max[1]); z1 = Math.max(z1, p.max[2]); cm3 += p.volume / 1000; }
+  const pp = printedParts();
+  for (const p of pp) { x0 = Math.min(x0, p.min[0]); y0 = Math.min(y0, p.min[1]); z0 = Math.min(z0, p.min[2]); x1 = Math.max(x1, p.max[0]); y1 = Math.max(y1, p.max[1]); z1 = Math.max(z1, p.max[2]); cm3 += p.volume / 1000; }
   const W = x1 - x0, D = y1 - y0, H = z1 - z0, [mat, dens] = MATERIALS[SET.material], g = cm3 * dens;
   const inch = (v) => fmt(v / 25.4, 2);
   readEl.innerHTML = `${fmt(W, 1)} × ${fmt(D, 1)} × ${fmt(H, 1)} mm<br><span class="gf-in">${inch(W)} × ${inch(D)} × ${inch(H)} in</span><br>≈ ${fmt(g, g < 10 ? 1 : 0)} g ${esc(mat)} (solid)`;
   const v = vol(), f = fits(v, W, D, H), pname = v.label === 'your printer' ? 'printer' : v.label;
   // the whole layout may be too big while every part fits on its own: then they print on separate plates
-  const each = !f.ok && current.parts.length > 1 && current.parts.every(p => fits(v, p.max[0] - p.min[0], p.max[1] - p.min[1], p.max[2] - p.min[2]).ok);
+  const each = !f.ok && pp.length > 1 && pp.every(p => fits(v, p.max[0] - p.min[0], p.max[1] - p.min[1], p.max[2] - p.min[2]).ok);
   const facts = [...(current.info.facts || [])];
   facts.push(f.ok ? `fits your ${pname}` : each ? `each part fits your ${pname}` : 'too big for your printer');
   setStatus(facts.join(' · '), f.ok || each ? 'ok' : 'bad');
   const notes = [...(current.warn || [])];
   if (each) notes.unshift(`All the parts together are bigger than your ${v.label} bed (${v.x} × ${v.y} mm), so print them one or two at a time. The 3MF keeps every part as its own object.`);
-  else if (!f.ok) notes.unshift(!f.flat ? `Too big for the bed of your ${v.label} (${v.x} × ${v.y} mm). Make it smaller${current.parts.length > 1 ? ' or print the parts separately' : ''}.` : `Too tall for your ${v.label} (${v.z} mm).`);
+  else if (!f.ok) notes.unshift(!f.flat ? `Too big for the bed of your ${v.label} (${v.x} × ${v.y} mm). Make it smaller${pp.length > 1 ? ' or print the parts separately' : ''}.` : `Too tall for your ${v.label} (${v.z} mm).`);
   warnEl.innerHTML = notes.map(w => `<li>${esc(w)}</li>`).join('');
   warnEl.classList.toggle('hidden', !notes.length);
   const lines = current.info.lines || [];
@@ -431,16 +513,17 @@ function save(data, name, type = 'application/octet-stream') {
 const safe = (s) => String(s).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 60) || 'model';
 $('#mk-stl').addEventListener('click', () => {
   if (!current) return;
-  const base = 'hotendhq-' + safe(current.file);
-  if (current.parts.length === 1) { const p = current.parts[0]; save(meshToSTL(p.pos, p.idx, base), base + '.stl'); }
-  else save(zip(current.parts.map(p => ({ name: `${base}-${safe(p.name)}.stl`, data: meshToSTL(p.pos, p.idx, p.name) }))), base + '.zip', 'application/zip');
-  window.HHQ?.toast(current.parts.length > 1 ? 'Zip downloaded: one STL per part, already lined up.' : 'STL downloaded.');
+  const base = 'hotendhq-' + safe(current.file), pp = printedParts();
+  if (pp.length === 1) { const p = pp[0]; save(meshToSTL(p.pos, p.idx, base), base + '.stl'); }
+  else save(zip(pp.map(p => ({ name: `${base}-${safe(p.name)}.stl`, data: meshToSTL(p.pos, p.idx, p.name) }))), base + '.zip', 'application/zip');
+  window.HHQ?.toast(pp.length > 1 ? 'Zip downloaded: one STL per part, already lined up.' : 'STL downloaded.');
 });
 $('#mk-3mf').addEventListener('click', () => {
   if (!current) return;
   const base = 'hotendhq-' + safe(current.file);
-  save(meshesTo3MF(current.parts.map(p => ({ name: p.label, pos: p.pos, idx: p.idx }))), base + '.3mf', 'model/3mf');
-  window.HHQ?.toast(current.parts.length > 1 ? '3MF downloaded: each part is its own object, so you can give each a colour.' : '3MF downloaded.');
+  const pp = printedParts();
+  save(meshesTo3MF(pp.map(p => ({ name: p.label, pos: p.pos, idx: p.idx }))), base + '.3mf', 'model/3mf');
+  window.HHQ?.toast(pp.length > 1 ? '3MF downloaded: each part is its own object, so you can give each a colour.' : '3MF downloaded.');
 });
 $('#mk-link').addEventListener('click', async () => {
   history.replaceState(null, '', shareURL());

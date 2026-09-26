@@ -21,3 +21,14 @@
 .mk-upload .ch-trace canvas{width:84px;height:84px;border-radius:10px;border:1px solid var(--border);background:#fff;image-rendering:pixelated}
 .mk-howto ol{margin:0;padding-left:1.2em;display:grid;gap:8px;color:var(--text-dim)}
 .mk-howto strong{color:var(--text)}
+/* assembled / print-layout switch inside the preview */
+.mk-view{position:absolute;left:12px;bottom:12px;z-index:3;display:flex;padding:3px;gap:2px;border-radius:11px;
+  background:rgba(0,9,28,.72);border:1px solid var(--border);backdrop-filter:blur(6px)}
+.mk-view button{appearance:none;border:0;background:transparent;color:var(--text-dim);font:600 .78rem/1 var(--font);padding:8px 11px;border-radius:8px;cursor:pointer}
+.mk-view button:hover{color:var(--text)}
+.mk-view button[aria-pressed=true]{background:linear-gradient(135deg,var(--flame-600),var(--amber-400));color:#1a0800}
+.mk-view.hidden{display:none}
+.chip.mk-rand{display:inline-flex;align-items:center;gap:6px;border-color:rgba(243,102,46,.55);color:var(--amber-300)}
+.chip.mk-rand svg{width:15px;height:15px}
+#mk-parts .chip.mk-pv{border-style:dashed}
+@media (max-width:560px){.mk-view{left:8px;bottom:auto;top:46px}.mk-view button{padding:7px 9px}}

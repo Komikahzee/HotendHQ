@@ -138,7 +138,7 @@ The [fidget spinner generator](/generators/fidget-spinners) makes classic spinne
 
 ![FPV quad frame](/assets/img/generators/drone-frame.webp)
 
-The [drone frame generator](/generators/drone-frame) makes FPV quad frames from 65 mm whoops to 7-inch long range: true X, stretched X, H, deadcat or ducted whoop, with your motor pattern, flight stack, camera mount and strap slots. It checks that your props clear each other.
+The [drone frame generator](/generators/drone-frame) makes FPV frames from 65 mm whoops to 10-inch long range: quads (true X, stretched, H, deadcat, cinewhoop), X8 cinelifters, tricopters with a tilting tail, Y6, hexacopters and octocopters. Choose one-piece or bolt-on arms, fit your motors, stack, camera and GoPro, and see it built with motors, props and a battery before you print. A Randomize button rolls a whole new design.
 
 ## Mic clip & stand accessory generator
 

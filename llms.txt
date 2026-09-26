@@ -13,7 +13,7 @@
 - [Pen grip & cutter adapter generator](https://hotendhq.com/generators/pen-grips): Adapters that fit any pen into Cricut, Silhouette and Brother cutters, plus comfort grips for pens and craft knives.
 - [Board game pieces generator](https://hotendhq.com/generators/board-game-pieces): Numbered tokens and coins, pawns, meeples, resource cubes and card stands, made as whole sets.
 - [Fidget spinner generator](https://hotendhq.com/generators/fidget-spinners): Spinners for 608, 688 and R188 bearings or with no bearing at all, plus spinning rings.
-- [Drone frame generator](https://hotendhq.com/generators/drone-frame): FPV quad frames from 65 mm whoops to 7-inch, with your motor pattern, stack size and camera mount.
+- [Drone frame generator](https://hotendhq.com/generators/drone-frame): FPV quads, cinewhoops, tricopters, hexa and octocopters from 65 mm to 10-inch, shown built with motors and props, plus a randomizer.
 - [Mic clip & stand accessory generator](https://hotendhq.com/generators/mic-accessories): Mic clips, shock mounts, thread adapters, stand cable clips, pop filters and phone mounts with real stand threads.
 - [Storage box generator](https://hotendhq.com/generators/storage-box): A box to your exact size, with dividers, a snap-on lid and screw-down mounting ears.
 - [Grid organiser generator](https://hotendhq.com/generators/grid-organiser): A drawer tray with a grid of cells sized to what you store, with optional stacking feet.

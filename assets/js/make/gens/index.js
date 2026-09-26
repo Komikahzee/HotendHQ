@@ -1,7 +1,7 @@
 /* Every model generator, by page id (<body data-gen="…">). */
 import boardGamePieces from './board-game-pieces.js?v=811f20e1e2';
 import dice from './dice.js?v=2a873ad06f';
-import droneFrame from './drone-frame.js?v=aa1aeac609';
+import droneFrame from './drone-frame.js?v=ef10b26ba4';
 import fidgetSpinners from './fidget-spinners.js?v=01fbb145f1';
 import layeredSigns from './layered-signs.js?v=c7e44c94c7';
 import lettering from './lettering.js?v=490ffb30c4';
