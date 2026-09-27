@@ -5,7 +5,7 @@
    ============================================================ */
 import Module from '../../vendor/manifold/manifold.js?v=26779a4e84';
 import { kit } from './core.js?v=95f6f46afd';
-import { GENERATORS } from './gens/index.js?v=fce36efb1e';
+import { GENERATORS } from './gens/index.js?v=01060310de';
 
 const ready = Module().then(w => { w.setup(); return w; });
 const fonts = new Map();
@@ -32,7 +32,7 @@ self.onmessage = async (e) => {
       transfer.push(mesh.pos.buffer, mesh.idx.buffer);
       parts.push({ name: p.name, label: p.label || p.name, color: p.color || '#f3662e', colorKey: p.colorKey || null, pos: mesh.pos, idx: mesh.idx,
         volume: p.m.volume(), min: b.min, max: b.max,
-        preview: !!p.preview, look: p.look || null, opacity: p.opacity ?? 1, asm: p.asm || null });     // preview parts are shown, never exported
+        preview: !!p.preview, off: !!p.off, look: p.look || null, opacity: p.opacity ?? 1, asm: p.asm || null });     // preview parts are shown, never exported
     }
     K.free();
     if (!parts.some(q => !q.preview)) throw new Error(res.warn?.[0] || 'Nothing to build with these settings.');

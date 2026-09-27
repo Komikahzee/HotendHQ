@@ -1,7 +1,7 @@
 {
   "name": "Hotend HQ",
   "short_name": "Hotend HQ",
-  "description": "Everything 3D printing — news, troubleshooting, generators and gear.",
+  "description": "Everything 3D printing — news, troubleshooting, generators and printing to order.",
   "start_url": "/index.html",
   "display": "standalone",
   "background_color": "#00091c",

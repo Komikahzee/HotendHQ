@@ -221,7 +221,7 @@ a.card:hover,.card--link:hover{border-color:var(--border-strong);transform:trans
 /* ---------- Forms ---------- */
 label{display:block;font-size:.83rem;font-weight:700;color:var(--text-dim);
   margin-bottom:6px;letter-spacing:.01em}
-input[type=text],input[type=email],input[type=password],input[type=url],input[type=number],
+input[type=text],input[type=email],input[type=password],input[type=url],input[type=number],input[type=tel],input[type=date],
 input[type=search],select,textarea{
   width:100%;padding:11px 13px;border-radius:11px;background:rgba(0,0,0,.3);
   border:1px solid var(--border);color:var(--text);font-family:inherit;font-size:.95rem;
@@ -295,3 +295,20 @@ tbody tr:hover{background:rgba(47,160,224,.05)}
 .empty{text-align:center;padding:54px 20px;color:var(--text-faint)}
 .empty svg{width:42px;height:42px;stroke:var(--text-faint);margin:0 auto 14px;opacity:.6}
 .icon-16 svg,svg.icon-16{width:16px;height:16px}
+
+/* ---------- tips (Buy Me a Coffee) ---------- */
+.tip-pop{position:fixed;right:18px;bottom:84px;z-index:998;display:flex;gap:12px;align-items:flex-start;max-width:340px;
+  padding:14px 14px 14px 16px;border-radius:14px;background:var(--surface-2);border:1px solid var(--border-strong);
+  box-shadow:0 18px 44px -14px rgba(0,0,0,.85);font-size:.9rem;color:var(--text-dim);animation:tipIn .3s ease-out}
+.tip-pop strong{display:block;color:var(--text);margin-bottom:2px}
+.tip-pop a{color:var(--amber-300);font-weight:700}
+.tip-pop button{appearance:none;border:0;background:transparent;color:var(--text-faint);font-size:20px;line-height:1;cursor:pointer;padding:0 2px}
+.tip-pop button:hover{color:var(--text)}
+.tip-cup{font-size:1.6rem;line-height:1}
+.tip-card{display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+.tip-card h2{margin:0 0 4px;font-size:1.2rem}
+.tip-card p{margin:0}
+.tip-card > div{flex:1;min-width:220px}
+.tip-card .tip-cup{font-size:2.2rem}
+@keyframes tipIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@media (max-width:560px){.tip-pop{left:12px;right:12px;max-width:none;bottom:80px}}

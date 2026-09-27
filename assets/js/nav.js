@@ -7,7 +7,7 @@ window.HHQ_NAV = {
     { href:'/generators',  label:'Generators', desc:'Gridfinity, boxes, brackets, chains and more, made to your size',
       also:['gridfinity','chain','storage-box','grid-organiser','cable-clip','spool-holder','wall-bracket','generator'] },
     { href:'/tools',       label:'Tools',     desc:'Calculators and reference databases' },
-    { href:'/gear',        label:'Gear',      desc:'Tested hardware picks and buying guides' }
+    { href:'/order',       label:'Print My Order', desc:'Send a file or a photo and get a free quote to have it printed' }
   ],
   footer: [
     { title:'Explore', links:[
@@ -15,7 +15,7 @@ window.HHQ_NAV = {
       { href:'/troubleshoot', label:'Troubleshooting' },
       { href:'/generators', label:'3D Model Generators' },
       { href:'/tools', label:'Calculators' },
-      { href:'/gear', label:'Gear Picks' }
+      { href:'/order', label:'Print My Order (free quotes)' }
     ]},
     { title:'Site', links:[
       { href:'/about', label:'About' },

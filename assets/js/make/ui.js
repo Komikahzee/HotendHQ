@@ -9,7 +9,7 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { meshToSTL, meshesTo3MF, zip } from '../gridfinity-core.js?v=cd2b8dee8c';
 import { printerOptions, printerById, loadPrinter, savePrinter, volumeOf, fits } from '../printers.js?v=ff3522465e';
 import { FONTS, PALETTE } from './core.js?v=95f6f46afd';
-import { GENERATORS } from './gens/index.js?v=fce36efb1e';
+import { GENERATORS } from './gens/index.js?v=01060310de';
 
 const $ = (s, r = document) => r.querySelector(s);
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -85,9 +85,9 @@ function renderPresets() {
   const list = MODES[mode].presets || [], rnd = MODES[mode].random;
   presetsEl.classList.toggle('hidden', !list.length && !rnd);
   presetsEl.innerHTML = (list.length || rnd ? `<span class="gf-pre-lab">Start from</span>` : '') + list.map((p, i) => `<button type="button" class="chip" data-i="${i}">${esc(p[0])}</button>`).join('')
-    + (rnd ? `<button type="button" class="chip mk-rand" data-rand="1" title="A new random design every click">${DICE}Randomize</button>` : '');
+    + (rnd ? `<button type="button" class="chip mk-rand" data-rand="1" title="${esc(MODES[mode].randomTitle || 'A new random design every click')}">${DICE}${esc(MODES[mode].randomLabel || 'Randomize')}</button>` : '');
   presetsEl.querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
-    if (b.dataset.rand) states[mode] = { ...defaultsOf(mode), ...rnd() };
+    if (b.dataset.rand) { const cur = stateOf(mode); states[mode] = { ...cur, ...rnd(params()) }; }     // randomizers change their own part of the design only
     else states[mode] = { ...defaultsOf(mode), ...list[+b.dataset.i][1] };
     renderControls(); remember(); requestBuild(true);
     presetsEl.querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', String(x === b && !b.dataset.rand)));
@@ -207,6 +207,8 @@ function bind(row, c) {
 }
 function changed(c) {
   presetsEl.querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', 'false'));
+  // a control can fill in other settings (a "design" picker): apply them and redraw the controls
+  if (c.sets) { const st = stateOf(mode); Object.assign(st, c.sets(st[c.k], params()) || {}); renderControls(); remember(); requestBuild(); return; }
   applyVisibility(); relabel(); markChanged(); remember(); requestBuild();
 }
 function applyVisibility() {
@@ -383,6 +385,7 @@ function showParts() {
   viewEl.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String((b.dataset.v === 'asm') === asm)));
   const box = new THREE.Box3();
   current.parts.forEach((p, i) => {
+    if (!seenParts.has(p.name)) { seenParts.add(p.name); if (p.off) hidden.add(p.name); }
     const g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.BufferAttribute(p.pos, 3)); g.setIndex(new THREE.BufferAttribute(p.idx, 1));
     const ng = g.toNonIndexed(); g.dispose();
@@ -417,13 +420,13 @@ function frame(size, asm = false) {
   camera.near = d / 200; camera.far = d * 30; camera.updateProjectionMatrix();
 }
 function recolor() { if (!current) return; meshes.forEach((m, i) => tint(m, current.parts[i], colorOf(current.meta[i]))); renderLegend(); }
-const hidden = new Set();
+const hidden = new Set(), seenParts = new Set();   // parts flagged `off` start hidden the first time they appear
 function renderLegend() {
   const el = $('#mk-parts'); if (!current) return;
   const asm = asmOn(), shown = current.parts.map((p, i) => i).filter(i => asm || !current.parts[i].preview);
   const many = shown.length > 1;
   el.classList.toggle('hidden', !many);
-  el.innerHTML = many ? shown.map(i => { const p = current.parts[i]; return `<button type="button" class="chip${p.preview ? ' mk-pv' : ''}" data-i="${i}" aria-pressed="${!hidden.has(p.name)}"${p.preview ? ' title="Preview only: not in the download"' : ''}><span class="mk-dot" style="background:${esc(colorOf(current.meta[i]))}"></span>${esc(p.label)}</button>`; }).join('') : '';
+  el.innerHTML = many ? `<span class="gf-pre-lab">Show</span>` + shown.map(i => { const p = current.parts[i]; return `<button type="button" class="chip${p.preview ? ' mk-pv' : ''}" data-i="${i}" aria-pressed="${!hidden.has(p.name)}"${p.preview ? ' title="Preview only: not in the download"' : ''}><span class="mk-dot" style="background:${esc(colorOf(current.meta[i]))}"></span>${esc(p.label)}</button>`; }).join('') : '';
   el.querySelectorAll('.chip').forEach(b => b.addEventListener('click', () => {
     const p = current.parts[+b.dataset.i]; if (hidden.has(p.name)) hidden.delete(p.name); else hidden.add(p.name);
     const m = meshes[+b.dataset.i]; m.visible = m.userData.show && !hidden.has(p.name); b.setAttribute('aria-pressed', String(!hidden.has(p.name)));
@@ -444,7 +447,7 @@ function getWorker() {
   if (worker && builds > 10 && !busy) { worker.terminate(); worker = null; }
   if (!worker) {
     builds = 0;
-    worker = new Worker(new URL('./worker.js?v=82cf362cb6', import.meta.url), { type: 'module' });
+    worker = new Worker(new URL('./worker.js?v=8de97977f6', import.meta.url), { type: 'module' });
     worker.onmessage = (e) => { const h = handlers.get(e.data.id); if (h) { handlers.delete(e.data.id); h(e.data); } };
     worker.onerror = (e) => { console.error(e); e.preventDefault?.(); resetWorker('The model engine stopped unexpectedly.'); };
   }
@@ -516,14 +519,14 @@ $('#mk-stl').addEventListener('click', () => {
   const base = 'hotendhq-' + safe(current.file), pp = printedParts();
   if (pp.length === 1) { const p = pp[0]; save(meshToSTL(p.pos, p.idx, base), base + '.stl'); }
   else save(zip(pp.map(p => ({ name: `${base}-${safe(p.name)}.stl`, data: meshToSTL(p.pos, p.idx, p.name) }))), base + '.zip', 'application/zip');
-  window.HHQ?.toast(pp.length > 1 ? 'Zip downloaded: one STL per part, already lined up.' : 'STL downloaded.');
+  window.HHQ?.toast(pp.length > 1 ? 'Zip downloaded: one STL per part, already lined up.' : 'STL downloaded.'); window.HHQ?.tip?.();
 });
 $('#mk-3mf').addEventListener('click', () => {
   if (!current) return;
   const base = 'hotendhq-' + safe(current.file);
   const pp = printedParts();
   save(meshesTo3MF(pp.map(p => ({ name: p.label, pos: p.pos, idx: p.idx }))), base + '.3mf', 'model/3mf');
-  window.HHQ?.toast(pp.length > 1 ? '3MF downloaded: each part is its own object, so you can give each a colour.' : '3MF downloaded.');
+  window.HHQ?.toast(pp.length > 1 ? '3MF downloaded: each part is its own object, so you can give each a colour.' : '3MF downloaded.'); window.HHQ?.tip?.();
 });
 $('#mk-link').addEventListener('click', async () => {
   history.replaceState(null, '', shareURL());

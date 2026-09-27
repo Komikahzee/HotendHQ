@@ -30,7 +30,7 @@ const faqLd = (qa) => qa.length ? { '@context': 'https://schema.org', '@type': '
 
 const PAGES = [
   { file: 'index.html', url: '/', type: 'website', ld: () => [
-    { '@context': 'https://schema.org', '@type': 'WebSite', name: 'Hotend HQ', url: BASE + '/', description: 'News, troubleshooting, free 3D model generators, calculators and tested gear for 3D printing.', publisher: ORG },
+    { '@context': 'https://schema.org', '@type': 'WebSite', name: 'Hotend HQ', url: BASE + '/', description: 'Troubleshooting, free 3D model generators, calculators, guides and custom 3D printing with free quotes.', publisher: ORG },
     { '@context': 'https://schema.org', ...ORG }] },
   { file: 'news.html', url: '/news', ld: () => [
     { '@context': 'https://schema.org', '@type': 'CollectionPage', name: '3D printing news & guides', url: BASE + '/news', isPartOf: { '@type': 'WebSite', name: 'Hotend HQ', url: BASE + '/' } },
@@ -42,7 +42,12 @@ const PAGES = [
     { '@context': 'https://schema.org', '@type': 'WebApplication', name: 'Hotend HQ 3D printing calculators', url: BASE + '/tools', applicationCategory: 'UtilitiesApplication',
       operatingSystem: 'Any (runs in the browser)', isAccessibleForFree: true, offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' } },
     crumbs([['Home', '/'], ['Tools', '/tools']])] },
-  { file: 'gear.html', url: '/gear', ld: () => [crumbs([['Home', '/'], ['Gear', '/gear']])] },
+  { file: 'gear.html', noindex: true },          // paused until the affiliate links are ready
+  { file: 'order.html', url: '/order', ld: (h) => [
+    { '@context': 'https://schema.org', '@type': 'Service', name: 'Custom 3D printing', serviceType: '3D printing to order', url: BASE + '/order',
+      provider: ORG, areaServed: 'US', description: 'Send a model file, link or photo and get a free, no-obligation quote to have it 3D printed.',
+      offers: { '@type': 'Offer', name: 'Free quote', price: '0', priceCurrency: 'USD' } },
+    faqLd(faqOf(h)), crumbs([['Home', '/'], ['Print My Order', '/order']])] },
   { file: 'about.html', url: '/about', ld: () => [
     { '@context': 'https://schema.org', '@type': 'AboutPage', name: 'About Hotend HQ', url: BASE + '/about', mainEntity: ORG },
     crumbs([['Home', '/'], ['About', '/about']])] },

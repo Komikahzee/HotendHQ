@@ -29,6 +29,25 @@ window.HHQ_CONFIG = {
     anonKey: 'sb_publishable_DU5YH5j1cx3V6MziTknhOQ_j4_a3aUq'
   },
 
+  /* --- Print My Order (the /order page) ---------------------
+     1. Make a free account at formspree.io and create a form.
+     2. Paste its endpoint below, e.g. 'https://formspree.io/f/abcdwxyz'.
+     Orders then arrive in your email. Photo and model-file uploads
+     need Formspree's Personal plan or higher; on the free plan the
+     order still arrives and the customer is asked to email the files.
+     Leave it blank and the form opens the customer's email app
+     instead, addressed to social.email below.                  */
+  orders: {
+    formspree: ''
+  },
+
+  /* --- Tips: shown after downloads, on generator pages, in the footer and on About.
+     Blank url turns them all off.                                              */
+  tips: {
+    url: 'https://buymeacoffee.com/hotendhq',
+    label: 'Buy us a coffee'
+  },
+
   social: {
     tiktok: 'https://www.tiktok.com/@hotendhq',
     youtube: '',

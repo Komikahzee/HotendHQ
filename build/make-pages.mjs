@@ -262,7 +262,7 @@ ${featured.map(card).join('\n')}
 // llms.txt: a plain summary of the site for AI search assistants
 fs.writeFileSync(path.join(ROOT, 'llms.txt'), `# Hotend HQ
 
-> Hotend HQ is a free 3D printing reference: step-by-step troubleshooting, ${GENERATORS.length} browser-based 3D model generators that export STL and 3MF, calculators, a filament database, guides and tested gear picks. Nothing to install and no account needed.
+> Hotend HQ is a free 3D printing reference: step-by-step troubleshooting, ${GENERATORS.length} browser-based 3D model generators that export STL and 3MF, calculators, a filament database, guides, and custom 3D printing to order with free quotes. Nothing to install and no account needed.
 
 ## Model generators
 ${GENERATORS.map(g => `- [${g.name}](${BASE}${url(g.slug)}): ${g.blurb}`).join('\n')}
@@ -271,7 +271,7 @@ ${GENERATORS.map(g => `- [${g.name}](${BASE}${url(g.slug)}): ${g.blurb}`).join('
 - [Troubleshooting](${BASE}/troubleshoot): answer a few questions about a print problem and get the likely cause, the check that confirms it and the fix.
 - [Calculators & filament database](${BASE}/tools): flow rate and max speed, filament cost, e-steps, shrinkage, spool remaining, and properties of common filaments.
 - [News & guides](${BASE}/news): hands-on 3D printing guides.
-- [Gear](${BASE}/gear): hardware we recommend.
+- [Print My Order](${BASE}/order): send a model file, link or photo and get a free quote to have it 3D printed.
 - [All generators](${BASE}/generators)
 `);
 console.log(`[pages] ${n} generator page(s), hub, ${m} "More generators" section(s)`);

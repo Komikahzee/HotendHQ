@@ -11,7 +11,7 @@
    show the drone assembled with motors, props and electronics while the
    download is the print layout.
    ============================================================ */
-import { R, S, B, C, D2R, PALETTE } from '../core.js?v=95f6f46afd';
+import { R, S, B, C, D2R } from '../core.js?v=95f6f46afd';
 
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 
@@ -51,32 +51,74 @@ const inv = (m) => { const r = [m[0], m[4], m[8], m[1], m[5], m[9], m[2], m[6], 
   return [r[0], r[1], r[2], -(r[0] * t[0] + r[1] * t[1] + r[2] * t[2]), r[3], r[4], r[5], -(r[3] * t[0] + r[4] * t[1] + r[5] * t[2]), r[6], r[7], r[8], -(r[6] * t[0] + r[7] * t[1] + r[8] * t[2])]; };
 const col16 = (m) => [m[0], m[4], m[8], 0, m[1], m[5], m[9], 0, m[2], m[6], m[10], 0, m[3], m[7], m[11], 1];
 
-/* ---------------- randomizer ---------------- */
+/* ---------------- frame designs ----------------
+   Each design fills in the frame settings (shape, arms, pads, cutouts, body, guards);
+   everything else (aircraft, size, electronics, mounts, colours) is left alone.       */
+const QUAD_DESIGNS = {
+  freestyle: ['Freestyle: stretched X, tapered arms, truss', { type: 'sx', stretch: 1.2, build: 'sandwich', armShape: 'tapered', armTaper: 0.35, pad: 'tear', holes: 'truss', chamfer: 0.4, bodyShape: 'rect', bodyR: 6, guards: 'none' }],
+  race: ['Race: true X, slim straight arms', { type: 'x', build: 'uni', armShape: 'straight', pad: 'round', holes: 'slots', chamfer: 0.2, bodyShape: 'rect', bodyR: 4, guards: 'none' }],
+  sqrace: ['Squashed-X racer: wide and low', { type: 'sqx', stretch: 1.25, build: 'uni', armShape: 'tapered', armTaper: 0.2, pad: 'round', holes: 'circles', chamfer: 0.3, bodyShape: 'chamfer', guards: 'none' }],
+  longrange: ['Long range deadcat', { type: 'dc', stretch: 1.2, build: 'sandwich', armShape: 'tapered', armTaper: 0.45, pad: 'tear', holes: 'circles', chamfer: 0.4, bodyShape: 'oval', guards: 'none' }],
+  toothpick: ['Toothpick: ultralight true X', { type: 'x', build: 'uni', armShape: 'straight', pad: 'round', holes: 'circles', chamfer: 0, bodyShape: 'rect', bodyR: 3, guards: 'none' }],
+  skeleton: ['Skeleton: lightweight dogbone arms', { type: 'x', build: 'uni', armShape: 'dogbone', armTaper: 0.45, pad: 'tear', holes: 'truss', chamfer: 0.4, bodyShape: 'chamfer', guards: 'none' }],
+  basher: ['Basher: crash-proof, bumpers, no cutouts', { type: 'sx', stretch: 1.15, build: 'sandwich', armShape: 'flared', armTaper: 0.3, pad: 'tear', holes: 'none', chamfer: 0.8, bodyShape: 'chamfer', guards: 'bumper' }],
+  hframe: ['Classic H frame', { type: 'h', build: 'uni', armShape: 'straight', pad: 'square', holes: 'none', chamfer: 0.3, bodyShape: 'rect', bodyR: 4, guards: 'none' }],
+  plus: ['Plus (+) frame', { type: 'plus', build: 'uni', armShape: 'tapered', armTaper: 0.3, pad: 'round', holes: 'slots', chamfer: 0.3, bodyShape: 'round', guards: 'none' }],
+  cinewhoop: ['Cinewhoop: ducted props', { type: 'whoop', build: 'uni', armShape: 'straight', pad: 'round', holes: 'none', chamfer: 0.3, bodyShape: 'rect', bodyR: 6, guards: 'none' }],
+  guarded: ['Indoor: full prop guard rings', { type: 'x', build: 'uni', armShape: 'straight', pad: 'round', holes: 'circles', chamfer: 0.3, bodyShape: 'round', guards: 'ring' }],
+};
+const MULTI_DESIGNS = {
+  classic: ['Classic: straight arms, round body', { build: 'sandwich', armShape: 'straight', pad: 'round', holes: 'circles', chamfer: 0.3, bodyShape: 'round', guards: 'none' }],
+  light: ['Lightweight: dogbone arms, truss', { build: 'sandwich', armShape: 'dogbone', armTaper: 0.45, pad: 'tear', holes: 'truss', chamfer: 0.4, bodyShape: 'chamfer', guards: 'none' }],
+  heavy: ['Heavy lift: wide tapered arms, solid', { build: 'sandwich', armShape: 'tapered', armTaper: 0.5, pad: 'tear', holes: 'none', chamfer: 0.6, bodyShape: 'round', guards: 'none' }],
+  spider: ['Spider: slim slotted arms, square pads', { build: 'uni', armShape: 'straight', pad: 'square', holes: 'slots', chamfer: 0.2, bodyShape: 'oval', guards: 'none' }],
+  basher: ['Basher: flared arms, bumpers', { build: 'sandwich', armShape: 'flared', armTaper: 0.3, pad: 'tear', holes: 'none', chamfer: 0.8, bodyShape: 'chamfer', guards: 'bumper' }],
+};
+const designOpts = (D) => [['custom', 'Your own (the settings below)'], ...Object.entries(D).map(([k, [l]]) => [k, l])];
+/** rough footprint of a one-piece frame, to switch to bolt-on arms when it would not fit the bed */
+function onePieceSpan(s) {
+  const cl = CLASSES[s.cls] || CLASSES.i5, quad = isQuad(s), n = ARMS[s.air] || 4, propD = cl.prop * 25.4;
+  const type = quad ? (s.type === 'auto' ? cl.type : s.type) : 'radial';
+  const wb = s.wb || (quad ? cl.wb : Math.max(cl.wb, Math.ceil((propD + (s.propGap || 4) + 2) / Math.sin(Math.PI / n))));
+  const d = wb / 2, mk = s.motor === 'auto' || !MOTORS[s.motor] ? cl.motor : s.motor, pad = (MOTORS[mk][0] || 16) * 0.85 + 5;
+  const reach = s.guards === 'ring' ? propD / 2 + 6 : s.guards === 'bumper' ? pad + 4 : pad;
+  let hx, hy;
+  if (!quad) { hx = hy = d; }
+  else if (type === 'x' || type === 'whoop') hx = hy = d / Math.SQRT2 + (type === 'whoop' ? propD / 2 - pad + 4 : 0);
+  else if (type === 'plus') hx = hy = d;
+  else { const k = type === 'sqx' ? 1 / (s.stretch || 1.2) : (s.stretch || 1.2), w = d / Math.sqrt(1 + k * k), l = w * k;
+    [hx, hy] = type === 'dc' ? [w * 1.4, l * 1.05] : [w, l]; }
+  return [2 * (hx + reach), 2 * (hy + reach)];
+}
+const fitBuild = (v, s) => {
+  if (v.build !== 'uni' || !s || !s.bedX) return v;
+  const t = isQuad(s) ? (v.type || s.type) : 'radial';
+  if (t === 'whoop' || t === 'h') return v;
+  const [w, h] = onePieceSpan({ ...s, ...v }), bx = Math.max(s.bedX, s.bedY), by = Math.min(s.bedX, s.bedY);
+  const fits = (w <= bx - 4 && h <= by - 4) || (h <= bx - 4 && w <= by - 4);
+  return fits ? v : { ...v, build: 'sandwich' };
+};
+const designSets = (D) => (v, s) => (D[v] ? fitBuild({ ...D[v][1] }, s) : {});
+
+/* ---------------- randomizer: a new frame, nothing else ---------------- */
 const pick = (list) => list[Math.floor(Math.random() * list.length)];
-const COLS = Object.values(PALETTE);
-function randomDrone() {
-  const air = pick(['quad', 'quad', 'quad', 'quad', 'x8', 'tri', 'y6', 'hex', 'octo']);
-  let cls = air === 'quad' ? pick(['w65', 'w75', 'i2', 'i25', 'i3', 'i35', 'i4', 'i5', 'i5', 'i6', 'i7']) : air === 'octo' || air === 'hex' ? pick(['i3', 'i35', 'i4', 'i5']) : pick(['i4', 'i5', 'i5', 'i6', 'i7']);
-  let type = 'auto';
-  if (air === 'quad') type = ['w65', 'w75', 'i2'].includes(cls) ? 'whoop' : pick(['x', 'sx', 'sx', 'sqx', 'h', 'dc', 'whoop']);
-  if (air === 'x8') type = pick(['x', 'sx', 'sqx']);
-  if (type === 'whoop' && !['w65', 'w75', 'i2', 'i25', 'i3', 'i35'].includes(cls)) cls = pick(['i2', 'i25', 'i3', 'i35']);
-  const tiny = ['w65', 'w75'].includes(cls), bigFrame = air === 'hex' || air === 'octo' || ['i6', 'i7'].includes(cls);
-  const gps = ['i6', 'i7'].includes(cls) && Math.random() < 0.6;
-  return {
-    air, cls, type, wb: 0, stretch: +(1.1 + Math.random() * 0.35).toFixed(2), hexOri: pick(['x', 'plus']),
-    build: type === 'whoop' || type === 'h' ? 'uni' : bigFrame ? 'sandwich' : pick(['uni', 'sandwich']),
-    armShape: pick(['straight', 'tapered', 'tapered', 'dogbone', 'flared']), armTaper: +(0.15 + Math.random() * 0.5).toFixed(2),
-    pad: pick(['round', 'square', 'tear', 'tear']), holes: pick(['none', 'slots', 'circles', 'truss', 'truss']), chamfer: pick([0, 0.4, 0.6]),
-    guards: type === 'whoop' ? 'none' : pick(['none', 'none', 'bumper', ['i25', 'i3'].includes(cls) && air === 'quad' ? 'ring' : 'bumper']),
-    bodyShape: pick(['auto', 'rect', 'chamfer', 'oval']), batt: gps ? 'bottom' : pick(['top', 'top', 'bottom']),
-    gopro: ['i4', 'i5', 'i6', 'i7'].includes(cls) && air !== 'octo' ? pick(['none', 'plate', 'strap']) : 'none', goproTilt: pick([0, 15, 20, 25, 30]),
-    gps, antenna: !tiny && Math.random() < 0.5, xt60: Math.random() < 0.4,
-    camTilt: pick([15, 20, 25, 30, 35, 40]), camTop: Math.random() < 0.4, stackRot: pick(['0', '0', '45']),
-    blades: pick([2, 3, 3, 3, 4, 5]),
-    colFrame: pick(['#23262b', '#23262b', '#1c2f6b', '#8a939e', '#f2f4f7', '#d63b32']),
-    colParts: pick(COLS), colMotor: pick(['#1182c9', '#d63b32', '#8a939e', '#d6a93a', '#7a4fc9', '#3e9b4f', '#f3662e']), colProps: pick(COLS), colBatt: pick(['#f5c542', '#23262b', '#d63b32', '#1182c9']),
-  };
+const jit = (v, f, a, b) => +clamp(v * (1 + (Math.random() * 2 - 1) * f), a, b).toFixed(2);
+function randomFrame(s) {
+  const cls = CLASSES[s.cls] || CLASSES.i5, propIn = cls.prop;
+  if (isQuad(s)) {
+    let keys = Object.keys(QUAD_DESIGNS);
+    if (propIn > 3.5 || s.air === 'x8') keys = keys.filter(k => k !== 'cinewhoop');        // ducts only on small quads
+    if (propIn > 4) keys = keys.filter(k => k !== 'guarded' && k !== 'toothpick');
+    if (propIn < 2.5) keys = keys.filter(k => !['longrange', 'basher', 'hframe'].includes(k));
+    if (propIn >= 7) keys = keys.filter(k => k !== 'hframe');              // a one-piece H this big will not fit a bed
+    const k = pick(keys), d = { ...QUAD_DESIGNS[k][1] };
+    return fitBuild({ ...d, design: k, stretch: jit(d.stretch || 1.2, 0.12, 1.05, 1.6), armTaper: jit(d.armTaper || 0.3, 0.35, 0.05, 0.8),
+      chamfer: pick([d.chamfer, d.chamfer, 0, 0.4, 0.6]), pad: Math.random() < 0.3 ? pick(['round', 'square', 'tear']) : d.pad,
+      holes: Math.random() < 0.25 && d.type !== 'whoop' ? pick(['none', 'slots', 'circles', 'truss']) : d.holes }, s);
+  }
+  const k = pick(Object.keys(MULTI_DESIGNS)), d = { ...MULTI_DESIGNS[k][1] };
+  return fitBuild({ ...d, mdesign: k, armTaper: jit(d.armTaper || 0.3, 0.35, 0.05, 0.8), hexOri: pick(['x', 'plus']),
+    pad: Math.random() < 0.3 ? pick(['round', 'square', 'tear']) : d.pad, holes: Math.random() < 0.25 ? pick(['none', 'slots', 'circles', 'truss']) : d.holes }, s);
 }
 
 export default {
@@ -87,7 +129,7 @@ export default {
       label: 'Frame', title: 'FPV drone frame',
       blurb: 'Quads, X8, tricopters, Y6, hexa and octocopters from 65 mm whoops to 10″. Pick a size and everything fills in; the preview shows it built with motors, props and electronics.',
       camera: { dir: [0.62, 0.9, 0.62] },
-      random: randomDrone,
+      random: randomFrame, randomLabel: 'Randomize frame', randomTitle: 'A new frame design every click. Your size, electronics, mounts and colours stay as they are.',
       groups: [
         { title: 'Airframe', open: true, items: [
           S('air', 'Aircraft', [['quad', 'Quadcopter (4 motors)'], ['x8', 'X8 coaxial cinelifter (8 motors on 4 arms)'], ['tri', 'Tricopter (3 motors, tilting tail)'],
@@ -96,6 +138,10 @@ export default {
           S('type', 'Frame shape', [['auto', 'Typical for the size'], ['x', 'True X'], ['sx', 'Stretched X (freestyle)'], ['sqx', 'Squashed X (wide)'], ['h', 'H frame'],
             ['dc', 'Deadcat (props out of the camera view)'], ['plus', 'Plus (+)'], ['whoop', 'Ducted cinewhoop']], 'auto', { show: isQuad }),
           S('hexOri', 'Arm orientation', [['x', 'X (two arms forward)'], ['plus', 'Plus (one arm forward)']], 'x', { show: s => s.air === 'hex' || s.air === 'octo' }),
+          S('design', 'Frame design', designOpts(QUAD_DESIGNS), 'custom', { show: isQuad, sets: designSets(QUAD_DESIGNS),
+            hint: 'Fills in the frame settings below; change any of them afterwards. Randomize picks a design for you.' }),
+          S('mdesign', 'Frame design', designOpts(MULTI_DESIGNS), 'custom', { show: s => !isQuad(s), sets: designSets(MULTI_DESIGNS),
+            hint: 'Fills in the frame settings below; change any of them afterwards. Randomize picks a design for you.' }),
           R('wb', 'Wheelbase (motor to motor, diagonal)', 0, 800, 1, 0, 'mm', { hint: '0 picks the typical size, or the smallest that keeps the props apart.' }),
           R('stretch', 'Stretch', 1.05, 1.6, 0.01, 1.2, '×', { show: s => isQuad(s) && ['auto', 'sx', 'sqx', 'h', 'dc'].includes(s.type), hint: 'Length ÷ width of the motor layout.' }),
           R('propGap', 'Minimum prop clearance', 2, 20, 0.5, 4, 'mm'),
@@ -207,24 +253,32 @@ export default {
     /* ---------- motor layout ---------- */
     let wb = p.wb, pos;
     const hexOri = p.hexOri === 'plus' ? 'plus' : 'x';
-    if (!wb) wb = quadLike ? cl.wb : Math.max(cl.wb, Math.ceil((propD + p.propGap + 2) / Math.sin(Math.PI / nArms)));
-    const d = wb / 2;
-    if (!quadLike) {
-      let angles;
-      if (air === 'tri' || air === 'y6') angles = [30, 150, 270];
-      else { const step = 360 / nArms, off = hexOri === 'plus' ? 90 : 90 - step / 2; angles = Array.from({ length: nArms }, (_, i) => off + i * step); }
-      pos = angles.map(a => [d * Math.cos(a * D2R), d * Math.sin(a * D2R)]);
-    } else if (type === 'x' || whoop) { const a = d / Math.SQRT2; pos = [[a, a], [-a, a], [-a, -a], [a, -a]]; }
-    else if (type === 'plus') pos = [[0, d], [-d, 0], [0, -d], [d, 0]];
-    else {
+    const layoutAt = (wb) => {
+      const d = wb / 2;
+      if (!quadLike) {
+        let angles;
+        if (air === 'tri' || air === 'y6') angles = [30, 150, 270];
+        else { const step = 360 / nArms, off = hexOri === 'plus' ? 90 : 90 - step / 2; angles = Array.from({ length: nArms }, (_, i) => off + i * step); }
+        return angles.map(a => [d * Math.cos(a * D2R), d * Math.sin(a * D2R)]);
+      }
+      if (type === 'x' || whoop) { const a = d / Math.SQRT2; return [[a, a], [-a, a], [-a, -a], [a, -a]]; }
+      if (type === 'plus') return [[0, d], [-d, 0], [0, -d], [d, 0]];
       const k = type === 'sqx' ? 1 / p.stretch : p.stretch, w = d / Math.sqrt(1 + k * k), l = w * k;
       // deadcat: front motors swept wide and back so the props leave the camera view; rear stays a normal X
-      if (type === 'dc') pos = [[w * 1.4, l * 0.72], [-w * 1.4, l * 0.72], [-w, -l * 1.05], [w, -l * 1.05]];
-      else pos = [[w, l], [-w, l], [-w, -l], [w, -l]];
+      if (type === 'dc') return [[w * 1.4, l * 0.72], [-w * 1.4, l * 0.72], [-w, -l * 1.05], [w, -l * 1.05]];
+      return [[w, l], [-w, l], [-w, -l], [w, -l]];
+    };
+    const gapAt = (P) => { let g = Infinity; for (let i = 0; i < P.length; i++) for (let j = i + 1; j < P.length; j++) g = Math.min(g, Math.hypot(P[i][0] - P[j][0], P[i][1] - P[j][1]) - propD); return g; };
+    if (!wb) {
+      // automatic wheelbase: the typical one for the size, grown until the props keep the clearance you asked for
+      wb = quadLike ? cl.wb : Math.max(cl.wb, Math.ceil((propD + p.propGap + 2) / Math.sin(Math.PI / nArms)));
+      const need = whoop ? 2 * (p.tipGap + p.ductWall) + 1 : p.propGap;
+      for (let i = 0; i < 80 && gapAt(layoutAt(wb)) < need; i++) wb += 2;
     }
+    const d = wb / 2;
+    pos = layoutAt(wb);
     const arms = pos.map(([x, y]) => ({ x, y, L: Math.hypot(x, y), a: Math.atan2(y, x) }));
-    let minGap = Infinity;
-    for (let i = 0; i < arms.length; i++) for (let j = i + 1; j < arms.length; j++) minGap = Math.min(minGap, Math.hypot(arms[i].x - arms[j].x, arms[i].y - arms[j].y) - propD);
+    const minGap = gapAt(pos);
     if (minGap < p.propGap) warn.push(`Props would come within ${minGap.toFixed(1)} mm of each other (${cl.prop}″ props). Set the wheelbase to 0 (auto) or at least ${Math.ceil(wb + (p.propGap - minGap) * (quadLike ? 1.5 : 2.2))} mm.`);
 
     /* ---------- sizes ---------- */
@@ -590,11 +644,13 @@ export default {
       if (x > 0 && x + it.w > maxW) { x = 0; y += rowD + 8; rowD = 0; }
       const P = tr(x - it.min[0], y - it.min[1], -it.min[2]);
       x += it.w + 8; rowD = Math.max(rowD, it.d);
-      parts.push({ name: it.pt.name, label: it.pt.label, m: it.m.transform(col16(P)), colorKey: it.pt.colorKey, color: it.pt.color, look: it.pt.look || null, asm: col16(inv(mul(P, it.T))) });
+      // only the frame itself (and bolt-on arms) shows at first; the rest is one tap away in the parts list
+      parts.push({ name: it.pt.name, label: it.pt.label, m: it.m.transform(col16(P)), colorKey: it.pt.colorKey, color: it.pt.color, look: it.pt.look || null, asm: col16(inv(mul(P, it.T))),
+        off: !(it.pt.name === 'frame' || /^arm\d/.test(it.pt.name)) });
     }
 
     /* ---------- preview-only parts (assembled coordinates, never exported) ---------- */
-    const pv = (name, label, m, colorKey, color, lk, opacity) => { if (m && !m.isEmpty()) parts.push({ name, label, m, colorKey, color, look: lk, opacity, preview: true }); };
+    const pv = (name, label, m, colorKey, color, lk, opacity) => { if (m && !m.isEmpty()) parts.push({ name, label, m, colorKey, color, look: lk, opacity, preview: true, off: true }); };
     const [bD, bHt] = mk === 'custom' ? [Math.max(12, mS * 1.7), Math.max(10, mS)] : BELL[mk];
     const motorTop = [], bells = [], stators = [];
     arms.forEach((a, i) => {

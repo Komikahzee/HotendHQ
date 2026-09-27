@@ -1,0 +1,100 @@
+/* ============================================================
+   HOTEND HQ — Print My Order (order.html). theme.css tokens only.
+   ============================================================ */
+.or-hero{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:34px;align-items:center}
+.or-hero h1{margin:.2em 0 .35em}
+.or-hero h1 .fire{background:linear-gradient(100deg,var(--flame-600) 8%,var(--amber-300) 55%,var(--amber-200));
+  -webkit-background-clip:text;background-clip:text;color:transparent}
+.or-badges{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}
+.or-badge{display:inline-flex;align-items:center;gap:6px;padding:7px 13px;border-radius:99px;font-size:.85rem;font-weight:700;
+  background:var(--surface-2);border:1px solid var(--border);color:var(--text-dim)}
+.or-badge .ico svg,.or-ticks .ico svg{width:15px;height:15px;color:var(--amber-300)}
+.or-badge--free{background:linear-gradient(135deg,var(--flame-600),var(--amber-400));color:#1a0800;border-color:transparent;font-size:.95rem}
+.or-badge--free .ico svg{color:#1a0800}
+.or-steps{list-style:none;margin:0;padding:0;display:grid;gap:12px}
+.or-steps li{display:flex;gap:14px;align-items:flex-start;padding:14px 16px;border-radius:var(--r);background:var(--surface);border:1px solid var(--border)}
+.or-steps strong{display:block;margin-bottom:2px}
+.or-steps p{margin:0;color:var(--text-dim);font-size:.9rem}
+.or-num,.or-lnum{flex:none;display:inline-grid;place-items:center;width:30px;height:30px;border-radius:50%;font-weight:800;font-size:.9rem;
+  background:linear-gradient(135deg,var(--flame-600),var(--amber-400));color:#1a0800}
+.or-lnum{width:24px;height:24px;font-size:.78rem;margin-right:9px}
+
+.or-layout{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:24px;align-items:start}
+.or-form{padding:26px}
+.or-form-title{margin:0 0 4px}
+.or-req-note{margin:0 0 10px;font-size:.85rem}
+.or-star{color:var(--amber-300)}
+.or-form fieldset{border:0;border-top:1px solid var(--border);margin:18px 0 0;padding:18px 0 0;min-width:0}
+.or-form legend{display:flex;align-items:center;font-weight:800;font-size:1.02rem;padding:0 0 12px;float:left;width:100%}
+.or-form legend + *{clear:both}
+.or-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0 16px}
+.or-grid--2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.or-span2{grid-column:span 2}
+.or-form label,.or-lab{display:block;font-weight:600;font-size:.88rem;margin-bottom:6px;color:var(--text)}
+.or-form input,.or-form select,.or-form textarea{width:100%}
+.or-form textarea{min-height:110px}
+.or-form .hint{margin:6px 0 0;font-size:.8rem;color:var(--text-faint)}
+.or-limits{margin-top:-4px!important;margin-bottom:14px!important}
+.or-form [aria-invalid=true]{border-color:#e5484d;box-shadow:0 0 0 3px rgba(229,72,77,.18)}
+
+.or-drop{position:relative;display:flex!important;flex-direction:column;align-items:center;gap:4px;text-align:center;cursor:pointer;
+  border:1.5px dashed var(--border-strong);border-radius:var(--r);padding:18px 12px;background:rgba(0,0,0,.2);color:var(--text-dim);
+  font-weight:500!important;transition:border-color .15s,background .15s}
+.or-drop:hover,.or-drop.is-over{border-color:var(--amber-300);background:rgba(243,102,46,.08);color:var(--text)}
+.or-drop input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%}
+.or-drop .ico svg{width:26px;height:26px;color:var(--amber-300)}
+.or-drop strong{color:var(--text)}
+.or-drop span:last-child{font-size:.8rem;color:var(--text-faint)}
+.or-files{list-style:none;margin:8px 0 0;padding:0;display:grid;gap:6px}
+.or-files li{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:9px;background:var(--surface-2);font-size:.85rem}
+.or-files li span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.or-files small{color:var(--text-faint)}
+.or-thumbs{list-style:none;margin:8px 0 0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(76px,1fr));gap:8px}
+.or-thumbs li{position:relative;aspect-ratio:1;border-radius:10px;overflow:hidden;border:1px solid var(--border);background:var(--surface-2)}
+.or-thumbs img{width:100%;height:100%;object-fit:cover;display:block}
+.or-x{appearance:none;border:0;cursor:pointer;display:grid;place-items:center;width:24px;height:24px;border-radius:50%;
+  background:rgba(0,9,28,.8);color:var(--text);font-size:15px;line-height:1;flex:none}
+.or-thumbs .or-x{position:absolute;top:4px;right:4px}
+.or-x:hover{background:#e5484d}
+
+.or-check{display:flex!important;gap:10px;align-items:flex-start;font-weight:500!important;color:var(--text-dim)!important;margin:6px 0 10px;cursor:pointer}
+.or-check input{width:18px!important;height:18px;flex:none;margin-top:2px;accent-color:var(--flame-500,#f3662e)}
+.or-seg{display:inline-flex;padding:4px;gap:4px;border-radius:12px;background:var(--surface-2);border:1px solid var(--border);margin-bottom:16px}
+.or-seg label{margin:0;cursor:pointer}
+.or-seg input{position:absolute;opacity:0;width:1px;height:1px}
+.or-seg span{display:block;padding:9px 16px;border-radius:9px;font-weight:700;font-size:.9rem;color:var(--text-dim)}
+.or-seg input:checked + span{background:linear-gradient(135deg,var(--flame-600),var(--amber-400));color:#1a0800}
+.or-seg input:focus-visible + span{outline:2px solid var(--blue-400);outline-offset:2px}
+.or-hp{position:absolute!important;left:-9999px!important;width:1px!important;height:1px!important;opacity:0}
+
+.or-errors{margin:18px 0 0;padding:12px 16px 12px 34px;border-radius:var(--r);background:rgba(229,72,77,.1);border:1px solid rgba(229,72,77,.45);color:#ffb3b5;font-size:.9rem}
+.or-submit{display:flex;align-items:center;gap:14px;margin-top:20px;flex-wrap:wrap}
+.or-submit .btn{font-size:1.02rem;padding:13px 24px}
+.or-submit .ico svg{width:18px;height:18px}
+
+.or-side{display:grid;gap:16px;position:sticky;top:90px}
+.or-free h2{margin:.2em 0 .4em;font-size:1.35rem}
+.or-ticks{list-style:none;margin:12px 0 0;padding:0;display:grid;gap:8px;font-size:.9rem}
+.or-ticks li{display:flex;gap:8px;align-items:flex-start}
+.or-ticks .ico{margin-top:2px}
+.or-tips h3{margin:0 0 8px;font-size:1rem}
+.or-tips ul{margin:0;padding-left:1.1em;display:grid;gap:6px;color:var(--text-dim);font-size:.88rem}
+
+.or-done{max-width:640px;margin:0 auto;text-align:center;padding:40px 26px}
+.or-done-ico{display:inline-grid;place-items:center;width:62px;height:62px;border-radius:50%;background:linear-gradient(135deg,var(--flame-600),var(--amber-400));color:#1a0800;margin-bottom:10px}
+.or-done-ico svg{width:30px;height:30px}
+.or-done:focus{outline:none}
+
+@media (max-width:1000px){
+  .or-hero{grid-template-columns:1fr}
+  .or-layout{grid-template-columns:1fr}
+  .or-side{position:static}
+}
+@media (max-width:640px){
+  .or-form{padding:18px 16px}
+  .or-grid,.or-grid--2{grid-template-columns:1fr}
+  .or-span2{grid-column:auto}
+  .or-seg{display:flex}
+  .or-seg label{flex:1;text-align:center}
+}
+.or-form input[type=date]{color-scheme:dark}

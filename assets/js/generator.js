@@ -617,7 +617,7 @@ $('#dl').addEventListener('click', () => {
   a.download = `hotendhq-${modelKey}-${Date.now().toString(36)}.stl`;
   a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 4000);
-  HHQ.toast('STL downloaded — slice it and go.');
+  HHQ.toast('STL downloaded — slice it and go.'); window.HHQ?.tip?.();
 });
 
 $('#share-cfg').addEventListener('click', async () => {

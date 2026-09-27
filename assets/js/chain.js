@@ -556,14 +556,14 @@ $('#ch-stl').addEventListener('click', () => {
     const files = current.parts.map(pt => { const m = partMeshes(pt, false)[0]; return { name: `${baseName()}-${pt.name}.stl`, data: meshToSTL(m.pos, m.idx, pt.name) }; });
     save(zip(files), baseName() + '.zip', 'application/zip');
   }
-  window.HHQ?.toast('Downloaded. Slice it flat, no supports.');
+  window.HHQ?.toast('Downloaded. Slice it flat, no supports.'); window.HHQ?.tip?.();
 });
 $('#ch-3mf').addEventListener('click', () => {
   if (!current || !current.parts.length) return;
   const objs = [];
   for (const pt of current.parts) for (const m of partMeshes(pt, state.twoTone)) objs.push({ name: `${pt.name}${state.twoTone ? (m.color ? '-color2' : '-color1') : ''}`, pos: m.pos, idx: m.idx });
   save(meshesTo3MF(objs), baseName() + '.3mf', 'model/3mf');
-  window.HHQ?.toast(state.twoTone ? '3MF downloaded: assign the two color objects in your slicer.' : '3MF downloaded.');
+  window.HHQ?.toast(state.twoTone ? '3MF downloaded: assign the two color objects in your slicer.' : '3MF downloaded.'); window.HHQ?.tip?.();
 });
 $('#ch-link').addEventListener('click', async () => {
   history.replaceState(null, '', shareURL());

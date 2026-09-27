@@ -111,7 +111,7 @@ async function loadArticles() {
 
 /* ---------------- HTML helpers ---------------- */
 const PAGES = ['index', 'news', 'troubleshoot', 'generator', 'generators', 'gridfinity', 'chain',
-  'storage-box', 'grid-organiser', 'cable-clip', 'spool-holder', 'wall-bracket', 'tools', 'gear', 'about',
+  'storage-box', 'grid-organiser', 'cable-clip', 'spool-holder', 'wall-bracket', 'tools', 'gear', 'order', 'about',
   'login', 'admin', 'article', '404'];
 /* Every generator is served under /generators/<name>; /generators itself is the index page. */
 const GENERATORS = SITE_GENERATORS.map(g => g.slug);
@@ -247,9 +247,9 @@ if (SOURCE) {
     fs.writeFileSync(path.join(gdir, a.slug, 'index.html'), finishPage(guidePage(a, seed), `/guides/${a.slug}/`));
   }
   const day = d => (iso(d) || '').slice(0, 10), today = new Date().toISOString().slice(0, 10);
-  const pages = ['index', 'news', 'troubleshoot', 'generators', ...GENERATORS, 'tools', 'gear', 'about'];
+  const pages = ['index', 'news', 'troubleshoot', 'generators', ...GENERATORS, 'tools', 'order', 'about'];   // gear is paused
   const urls = [
-    ...pages.map(p => `  <url><loc>${BASE}${clean(p)}</loc><lastmod>${today}</lastmod><priority>${p === 'index' ? '1.0' : ['generators', 'gridfinity', 'chain'].includes(p) ? '0.9' : '0.8'}</priority></url>`),
+    ...pages.map(p => `  <url><loc>${BASE}${clean(p)}</loc><lastmod>${today}</lastmod><priority>${p === 'index' ? '1.0' : ['generators', 'gridfinity', 'chain', 'order'].includes(p) ? '0.9' : '0.8'}</priority></url>`),
     ...seed.map(a => `  <url><loc>${guideUrl(a)}</loc>${day(a.updated_at || a.published_at) ? `<lastmod>${day(a.updated_at || a.published_at)}</lastmod>` : ''}<priority>0.7</priority></url>`),
   ];
   fs.writeFileSync(path.join(ROOT, 'sitemap.xml'), `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.join('\n')}\n</urlset>\n`);
@@ -330,7 +330,7 @@ log(`cache-busted ${assetHash.size} asset URL(s) across ${htmlFiles.length} page
 
 /* ---------------- sitemap + robots ---------------- */
 const day = d => (iso(d) || '').slice(0, 10);
-const staticPages = ['index', 'news', 'troubleshoot', 'generators', ...GENERATORS, 'tools', 'gear', 'about'];
+const staticPages = ['index', 'news', 'troubleshoot', 'generators', ...GENERATORS, 'tools', 'order', 'about'];   // gear is paused
 const fileOf = p => (GENERATORS.includes(p) ? `generators/${p}.html` : `${p}.html`);
 /* A URL only goes in the sitemap if the page at that URL names itself as canonical.
    Anything that doesn't is left out and logged, so the sitemap never sends mixed signals. */
@@ -347,7 +347,7 @@ const selfCanonical = (loc, file) => {
 };
 const urls = [
   ...staticPages.filter(p => selfCanonical(BASE + clean(p), fileOf(p)))
-    .map(p => `  <url><loc>${BASE}${clean(p)}</loc><priority>${p === 'index' ? '1.0' : ['generators', 'gridfinity', 'chain'].includes(p) ? '0.9' : '0.8'}</priority></url>`),
+    .map(p => `  <url><loc>${BASE}${clean(p)}</loc><priority>${p === 'index' ? '1.0' : ['generators', 'gridfinity', 'chain', 'order'].includes(p) ? '0.9' : '0.8'}</priority></url>`),
   ...articles.filter(a => selfCanonical(guideUrl(a), path.join('guides', a.slug, 'index.html')))
     .map(a => `  <url><loc>${guideUrl(a)}</loc>${day(a.updated_at || a.published_at) ? `<lastmod>${day(a.updated_at || a.published_at)}</lastmod>` : ''}<priority>0.7</priority></url>`),
 ];

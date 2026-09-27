@@ -17,6 +17,9 @@
     calc:'<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 7h8M8 12h1M12 12h1M16 12h1M8 16h1M12 16h1M16 16h1"/>',
     tag:'<path d="M3 3h8l10 10-8 8L3 11z"/><circle cx="7.5" cy="7.5" r="1.4"/>',
     bolt:'<path d="M13 2L4 14h7l-1 8 9-12h-7z"/>',
+    printer:'<path d="M6 9V3h12v6"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M7 14h10v7H7z"/><path d="M17.5 12h.5"/>',
+    upload:'<path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 20h16"/>',
+    image:'<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9.5" r="1.6"/><path d="M21 16l-5-5-8 8"/>',
     user:'<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
     info:'<circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 7.5v.5"/>',
     warn:'<path d="M12 3l9.5 16.5H2.5z"/><path d="M12 9.5v5M12 17.5v.3"/>',
@@ -36,7 +39,7 @@
       stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"
       aria-hidden="true">${ICONS[name]||''}</svg>`;
 
-  const NAV_ICONS = { 'News':'news','Troubleshoot':'wrench','Generator':'cube','Generators':'cube','Gridfinity':'grid','Tools':'calc','Gear':'tag' };
+  const NAV_ICONS = { 'News':'news','Troubleshoot':'wrench','Generator':'cube','Generators':'cube','Gridfinity':'grid','Tools':'calc','Gear':'tag','Print My Order':'printer' };
   window.HHQ_NAV_ICONS = NAV_ICONS;
 
   /* ---------- helpers exposed to pages ---------- */
@@ -79,7 +82,7 @@
   function head(){
     const page = document.title || CFG.siteName;
     const desc = document.querySelector('meta[name=description]')?.content ||
-      'Everything 3D printing — news, troubleshooting, parametric model generators, calculators, and tested gear picks.';
+      'Everything 3D printing — news, troubleshooting, free model generators, calculators, and 3D printing to order with free quotes.';
     const add = (html) => document.head.insertAdjacentHTML('beforeend', html);
     if(!document.querySelector('link[rel=icon]')) add(
       `<link rel="icon" href="/assets/img/favicon-32.png" sizes="32x32">
@@ -141,7 +144,8 @@
     const social = [
       CFG.social.tiktok && `<a href="${CFG.social.tiktok}" rel="noopener">TikTok</a>`,
       CFG.social.youtube && `<a href="${CFG.social.youtube}" rel="noopener">YouTube</a>`,
-      CFG.social.email && `<a href="mailto:${CFG.social.email}">Email</a>`
+      CFG.social.email && `<a href="mailto:${CFG.social.email}">Email</a>`,
+      tipUrl() && `<a href="${tipUrl()}" rel="noopener" target="_blank">☕ ${HHQ.esc(tipLabel())}</a>`
     ].filter(Boolean).join('');
     return `
       <footer class="site-foot">
@@ -168,6 +172,35 @@
       </footer>`;
   }
   window.HHQ_CHROME = { headerHTML, footerHTML, pageKey };
+
+  /* ---------- tips (Buy Me a Coffee) ---------- */
+  function tipUrl(){ return (CFG.tips && CFG.tips.url) || ''; }
+  function tipLabel(){ return (CFG.tips && CFG.tips.label) || 'Buy us a coffee'; }
+  /** after a download: a small, dismissible nudge, at most once per visit */
+  HHQ.tip = function(){
+    if (!tipUrl()) return;
+    try { if (sessionStorage.getItem('hhq-tip')) return; sessionStorage.setItem('hhq-tip', '1'); } catch {}
+    setTimeout(() => {
+      if (document.getElementById('hhq-tip')) return;
+      const el = document.createElement('div'); el.id = 'hhq-tip'; el.className = 'tip-pop'; el.setAttribute('role', 'status');
+      el.innerHTML = `<span class="tip-cup" aria-hidden="true">☕</span><div><strong>Saved you some time?</strong>
+        <a href="${tipUrl()}" rel="noopener" target="_blank">${HHQ.esc(tipLabel())}</a> to help keep the generators free.</div>
+        <button type="button" aria-label="Close">×</button>`;
+      el.querySelector('button').addEventListener('click', () => el.remove());
+      document.body.appendChild(el);
+      setTimeout(() => el.remove(), 14000);
+    }, 1400);
+  };
+  /** generator pages: a support card above "More generators" */
+  function tipCard(){
+    const more = document.getElementById('more-generators');
+    if (!tipUrl() || !more || document.querySelector('.tip-card')) return;
+    more.insertAdjacentHTML('beforebegin', `<section class="wrap section--tight"><div class="card tip-card">
+      <span class="tip-cup" aria-hidden="true">☕</span>
+      <div><h2>Enjoying the generators?</h2><p class="muted">They're free to use. If one saved you time, you can buy us a coffee to help keep them free and add new ones.</p></div>
+      <a class="btn btn-primary" href="${tipUrl()}" rel="noopener" target="_blank">${HHQ.esc(tipLabel())}</a></div></section>`);
+  }
+  document.addEventListener('DOMContentLoaded', tipCard);
 
   function header(){
     if (!document.querySelector('.site-head'))

@@ -734,12 +734,12 @@ function save(data, name, type = 'application/octet-stream') {
 $('#gf-stl').addEventListener('click', () => {
   if (!current) return;
   save(meshToSTL(current.pos, current.idx, current.file), current.file + '.stl');
-  window.HHQ?.toast('STL downloaded. Slice it and go.');
+  window.HHQ?.toast('STL downloaded. Slice it and go.'); window.HHQ?.tip?.();
 });
 $('#gf-3mf').addEventListener('click', () => {
   if (!current) return;
   save(meshesTo3MF([{ name: current.file, pos: current.pos, idx: current.idx }]), current.file + '.3mf', 'model/3mf');
-  window.HHQ?.toast('3MF downloaded.');
+  window.HHQ?.toast('3MF downloaded.'); window.HHQ?.tip?.();
 });
 async function copyLink() {
   try { await navigator.clipboard.writeText(shareURL()); window.HHQ?.toast('Link copied. It rebuilds this exact design.'); }
@@ -865,14 +865,14 @@ $('#gf-dzip').addEventListener('click', async () => {
     const files = parts.map(p => ({ name: p.name + '.stl', data: meshToSTL(p.pos, p.idx, p.name) }));
     files.push({ name: 'LAYOUT.txt', data: new TextEncoder().encode(layoutSheet()) });
     save(zip(files), 'gridfinity-drawer.zip', 'application/zip');
-    setStatus(`${parts.length} files ready`, 'ok'); window.HHQ?.toast('Zip downloaded.');
+    setStatus(`${parts.length} files ready`, 'ok'); window.HHQ?.toast('Zip downloaded.'); window.HHQ?.tip?.();
   } catch (e) { setStatus('Could not build: ' + e.message, 'bad'); }
 });
 $('#gf-d3mf').addEventListener('click', async () => {
   try {
     const parts = await buildAllPieces();
     save(meshesTo3MF(parts.map(p => ({ name: p.name, pos: p.pos, idx: p.idx }))), 'gridfinity-drawer.3mf', 'model/3mf');
-    setStatus(`${parts.length} objects in one 3MF`, 'ok'); window.HHQ?.toast('3MF downloaded.');
+    setStatus(`${parts.length} objects in one 3MF`, 'ok'); window.HHQ?.toast('3MF downloaded.'); window.HHQ?.tip?.();
   } catch (e) { setStatus('Could not build: ' + e.message, 'bad'); }
 });
 

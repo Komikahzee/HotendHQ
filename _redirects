@@ -1,3 +1,7 @@
+# Gear picks are paused until the affiliate links are ready (302 = temporary)
+/gear / 302
+/gear.html / 302
+
 # Old generator addresses (the generators now live under /generators)
 /gridfinity /generators/gridfinity 301
 /gridfinity.html /generators/gridfinity 301
