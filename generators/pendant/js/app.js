@@ -15,6 +15,8 @@ const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 const SPEC = Object.fromEntries(PARAMS.map((s) => [s.key, s]));
 const LS_KEY = 'hotendhq.v1';
 
+// Designs always start as the bare emblem: no hanger, connector bail or chain until the user adds one.
+const NO_HANGER = { bail: 'none', cbOn: false };
 const state = {
   p: { ...DEFAULTS },
   img: null, imgId: 0, imgName: '', depth: null, depthFor: -1, aiMask: null, aiMaskFor: -1,
@@ -809,7 +811,7 @@ $('#hqModal').addEventListener('mousedown', (e) => { if (e.target.id === 'hqModa
 const _sampleCache = {};
 function sampleCanvas(key) { return (_sampleCache[key] ||= SAMPLES[key][1]()); }
 function presetThumb(pr, cv) {
-  const p = { ...DEFAULTS, ...pr.p }, [a, b] = shapeHalf(p);
+  const p = { ...DEFAULTS, ...pr.p, ...NO_HANGER }, [a, b] = shapeHalf(p);
   const src = pr.sample && p.imageOn !== false ? buildSource(sampleCanvas(pr.sample), null, p, 'thumb-' + pr.sample + p.bgMode) : null;
   const F = buildField(p, src, Math.max(0.12, (2 * Math.max(a, b) + 10) / 110));
   const { nx, ny, S, Z } = F, img = new ImageData(nx, ny), d = img.data;
@@ -853,7 +855,7 @@ function openPresets() {
 function applyPreset(pr) {
   const keep = { imgX: state.p.imgX, imgY: state.p.imgY, imgZoom: state.p.imgZoom, imgRotate: state.p.imgRotate, heightSource: state.p.heightSource };
   const loadSample = pr.sample && (pr.forceSample || !state.img);
-  replaceParams({ ...DEFAULTS, ...(state.img && !loadSample ? keep : {}), ...pr.p });
+  replaceParams({ ...DEFAULTS, ...(state.img && !loadSample ? keep : {}), ...pr.p, ...NO_HANGER });
   state.view.backlit = !!pr.view?.backlit;
   closeModal();
   if (loadSample) setImage(SAMPLES[pr.sample][1](), SAMPLES[pr.sample][0], false); // keep the preset's own image placement
@@ -1028,7 +1030,8 @@ function setupKeys() {
 // ── Boot ────────────────────────────────────────────────────
 hydrateIcons();
 const restored = loadLocal();
-if (!restored) Object.assign(state.p, PRESETS[0].p, { bail: 'none', cbOn: false }); // first visit: emblem only; the user adds a hanger or chain if they want one
+if (!restored) Object.assign(state.p, PRESETS[0].p);
+Object.assign(state.p, NO_HANGER); state.view.chain = false; // every visit starts as the bare emblem
 const viewer = new Viewer($('#three'));
 viewer.state.view = state.view.stage; viewer.state.chain = state.view.chain; viewer.controls.autoRotate = state.view.turntable;
 buildControls();
