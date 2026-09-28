@@ -20,7 +20,7 @@ const state = {
   img: null, imgId: 0, imgName: '', depth: null, depthFor: -1, aiMask: null, aiMaskFor: -1,
   cbImg: null, cbImgId: 0, cbImgName: '', C: null,
   adv: false, quality: 'balanced', designView: 'height',
-  view: { layerLines: false, backlit: false, chain: true, wireframe: false, turntable: false, stage: 'standing' },
+  view: { layerLines: false, backlit: false, chain: false, wireframe: false, turntable: false, stage: 'standing' },
   open: { shape: true, image: true },
   F: null, M: null, previewRes: 0.2,
 };
@@ -1028,7 +1028,7 @@ function setupKeys() {
 // ── Boot ────────────────────────────────────────────────────
 hydrateIcons();
 const restored = loadLocal();
-if (!restored) Object.assign(state.p, PRESETS[0].p);
+if (!restored) Object.assign(state.p, PRESETS[0].p, { bail: 'none', cbOn: false }); // first visit: emblem only; the user adds a hanger or chain if they want one
 const viewer = new Viewer($('#three'));
 viewer.state.view = state.view.stage; viewer.state.chain = state.view.chain; viewer.controls.autoRotate = state.view.turntable;
 buildControls();
