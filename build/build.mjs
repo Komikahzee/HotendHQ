@@ -114,7 +114,9 @@ const PAGES = ['index', 'news', 'troubleshoot', 'generator', 'generators', 'grid
   'storage-box', 'grid-organiser', 'cable-clip', 'spool-holder', 'wall-bracket', 'tools', 'gear', 'order', 'about',
   'login', 'admin', 'article', '404'];
 /* Every generator is served under /generators/<name>; /generators itself is the index page. */
-const GENERATORS = SITE_GENERATORS.map(g => g.slug);
+const GENERATORS = SITE_GENERATORS.filter(g => !g.app).map(g => g.slug);
+/* Full-screen generator apps (generators/<slug>/index.html) are copied as they are: they carry their own layout. */
+const APPS = SITE_GENERATORS.filter(g => g.app).map(g => ({ loc: BASE + g.href, file: path.join('generators', g.slug, 'index.html') }));
 const clean = p => (p === 'index' ? '/' : GENERATORS.includes(p) ? `/generators/${p}` : `/${p}`);
 const jsonLd = obj => `<script type="application/ld+json">${JSON.stringify(obj).replace(/</g, '\\u003c')}</script>`;
 const iso = d => { const x = new Date(d); return isNaN(x) ? undefined : x.toISOString(); };
@@ -250,6 +252,7 @@ if (SOURCE) {
   const pages = ['index', 'news', 'troubleshoot', 'generators', ...GENERATORS, 'tools', 'order', 'about'];   // gear is paused
   const urls = [
     ...pages.map(p => `  <url><loc>${BASE}${clean(p)}</loc><lastmod>${today}</lastmod><priority>${p === 'index' ? '1.0' : ['generators', 'gridfinity', 'chain', 'order'].includes(p) ? '0.9' : '0.8'}</priority></url>`),
+    ...APPS.map(a => `  <url><loc>${a.loc}</loc><lastmod>${today}</lastmod><priority>0.9</priority></url>`),
     ...seed.map(a => `  <url><loc>${guideUrl(a)}</loc>${day(a.updated_at || a.published_at) ? `<lastmod>${day(a.updated_at || a.published_at)}</lastmod>` : ''}<priority>0.7</priority></url>`),
   ];
   fs.writeFileSync(path.join(ROOT, 'sitemap.xml'), `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.join('\n')}\n</urlset>\n`);
@@ -280,11 +283,7 @@ edit('news.html', h => {
   h = fillSlot(h, 'feed', articles.map(W.postCard).join(''));
   return fillSlot(h, 'feed-count', `${articles.length} of ${articles.length} article${articles.length === 1 ? '' : 's'}`);
 });
-edit('index.html', h => {
-  const [lead, ...rest] = articles;
-  h = fillSlot(h, 'home-feature', lead ? W.featureCard(lead) : '');
-  return fillSlot(h, 'home-posts', rest.slice(0, 6).map(W.postCard).join(''));
-});
+edit('index.html', h => fillSlot(h, 'home-posts', articles.slice(0, 3).map(W.postCard).join('')));
 
 /* ---------------- 5. finish every top-level page ---------------- */
 for (const f of fs.readdirSync(OUT)) {
@@ -348,6 +347,7 @@ const selfCanonical = (loc, file) => {
 const urls = [
   ...staticPages.filter(p => selfCanonical(BASE + clean(p), fileOf(p)))
     .map(p => `  <url><loc>${BASE}${clean(p)}</loc><priority>${p === 'index' ? '1.0' : ['generators', 'gridfinity', 'chain', 'order'].includes(p) ? '0.9' : '0.8'}</priority></url>`),
+  ...APPS.filter(a => selfCanonical(a.loc, a.file)).map(a => `  <url><loc>${a.loc}</loc><priority>0.9</priority></url>`),
   ...articles.filter(a => selfCanonical(guideUrl(a), path.join('guides', a.slug, 'index.html')))
     .map(a => `  <url><loc>${guideUrl(a)}</loc>${day(a.updated_at || a.published_at) ? `<lastmod>${day(a.updated_at || a.published_at)}</lastmod>` : ''}<priority>0.7</priority></url>`),
 ];

@@ -7,6 +7,9 @@ export const CATEGORIES = {
 export const GENERATORS = [
   { slug: 'gridfinity', name: 'Gridfinity generator', cat: 'organize', tags: ['STL', '3MF', 'Splits for your bed'],
     blurb: 'Bins with dividers, scoops, labels and magnets, plus baseplates, lids, tool holders and a drawer fitter.' },
+  { slug: 'pendant', name: 'Pendant & medallion generator', cat: 'jewelry', tags: ['STL', '3MF', 'Image to relief'],
+    href: '/generators/pendant/', app: true,
+    blurb: 'Turn any image or logo into a pendant, medallion, keychain or badge: raised, engraved, coin, cameo and lithophane styles, text, bails and colour layers.' },
   { slug: 'chain', name: 'Chain generator', cat: 'jewelry', tags: ['STL', '3MF', 'Print-in-place'],
     blurb: 'Print-in-place necklace chains in 34 styles, sized to your nozzle and bed, with clasps or as an endless loop.' },
   { slug: 'layered-signs', name: 'Layered sign generator', cat: 'crafts', tags: ['3MF', 'Multicolour'],
@@ -40,9 +43,12 @@ export const GENERATORS = [
   { slug: 'wall-bracket', name: 'Wall bracket generator', cat: 'workshop', tags: ['STL', 'Gusset'],
     blurb: 'An L-bracket with counterbored screw holes and an optional gusset, sized to the job.' },
 ];
+/* where a generator lives: full-screen apps (app: true) have their own folder and page */
+export const urlOf = (g) => g.href || `/generators/${g.slug}`;
 /* which generators to suggest from each page */
 export const RELATED = {
-  gridfinity: ['storage-box', 'grid-organiser', 'plant-markers'], chain: ['layered-signs', 'lettering', 'dice'],
+  pendant: ['chain', 'layered-signs', 'stencils'],
+  gridfinity: ['storage-box', 'grid-organiser', 'plant-markers'], chain: ['pendant', 'layered-signs', 'lettering'],
   'layered-signs': ['stencils', 'lettering', 'plant-markers'], dice: ['board-game-pieces', 'fidget-spinners', 'layered-signs'],
   stencils: ['lettering', 'layered-signs', 'pen-grips'], 'plant-markers': ['layered-signs', 'stencils', 'gridfinity'],
   lettering: ['stencils', 'pen-grips', 'layered-signs'], 'pen-grips': ['lettering', 'stencils', 'gridfinity'],

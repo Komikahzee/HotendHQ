@@ -7,15 +7,15 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { GENERATORS, CATEGORIES, RELATED } from './site-generators.mjs';
+import { GENERATORS, CATEGORIES, RELATED, urlOf } from './site-generators.mjs';
 import { PAGES } from './page-content.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const BASE = 'https://hotendhq.com';
 const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-const url = (slug) => `/generators/${slug}`;
-const img = (slug) => `/assets/img/generators/${slug}.webp`;
 const bySlug = Object.fromEntries(GENERATORS.map(g => [g.slug, g]));
+const url = (slug) => (bySlug[slug] ? urlOf(bySlug[slug]) : `/generators/${slug}`);
+const img = (slug) => `/assets/img/generators/${slug}.webp`;
 const ld = (o) => `<script type="application/ld+json">${JSON.stringify(o).replace(/</g, '\\u003c')}</script>`;
 const ARROW = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>';
 
@@ -234,6 +234,7 @@ fs.writeFileSync(path.join(ROOT, 'generators.html'), hub());
 // refresh "More generators" on every generator page (engine pages included, for the up-to-date count)
 let m = 0;
 for (const g of GENERATORS) {
+  if (g.app) continue;                       // full-screen apps have no "More generators" section
   const f = path.join(ROOT, 'generators', g.slug + '.html');
   if (!fs.existsSync(f)) { console.warn('missing page', f); continue; }
   const s = fs.readFileSync(f, 'utf8');
@@ -241,20 +242,10 @@ for (const g of GENERATORS) {
   if (!re.test(s)) { console.warn('no More generators section in', g.slug); continue; }
   fs.writeFileSync(f, s.replace(re, () => moreSection(g.slug))); m++;
 }
-// the home page: generator count and a row of featured generators (plain links search engines can follow)
+// the home page: the generator count in the hero stats
 {
   const f = path.join(ROOT, 'index.html');
   let s = fs.readFileSync(f, 'utf8');
-  const featured = ['chain', 'gridfinity', 'dice', 'layered-signs', 'drone-frame', 'mic-accessories'].map(k => bySlug[k]).filter(Boolean);
-  s = s.replace(/<!--gens:home-->[\s\S]*?<!--\/gens:home-->/, () => `<!--gens:home-->
-  <section class="wrap section" id="home-gens">
-    <div class="sec-head between"><div><span class="eyebrow">Free model generators</span><h2>Make it to size, print it today</h2></div>
-      <a class="btn btn-ghost btn-sm" href="/generators">All ${GENERATORS.length} generators</a></div>
-    <div class="grid g3 gens-grid">
-${featured.map(card).join('\n')}
-    </div>
-  </section>
-  <!--/gens:home-->`);
   s = s.replace(/(<b id="s-models">)\d+(<\/b>)/, `$1${GENERATORS.length}$2`);
   s = s.replace(/with \d+ model generators/, `with ${GENERATORS.length} model generators`);
   fs.writeFileSync(f, s);

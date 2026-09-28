@@ -245,3 +245,17 @@
 .pr-fit[data-kind=ok] svg{stroke:var(--ok)}
 .pr-fit[data-kind=bad]{color:var(--amber-300)}
 .pr-fit[data-kind=bad] svg{stroke:var(--amber-300)}
+
+/* ---------- home: short landing page, one card per top-bar page ---------- */
+.sr-only{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.home-pillars{grid-template-columns:repeat(5,minmax(0,1fr));gap:16px}
+.home-pillar{display:flex!important;flex-direction:column;gap:6px;padding:22px 20px}
+.home-pillar h3{margin:6px 0 0}
+.home-pillar p{font-size:.9rem;margin:0;flex:1}
+.home-go{display:inline-flex;align-items:center;gap:6px;margin-top:10px;font-weight:700;font-size:.88rem;color:var(--amber-300)}
+.home-go svg{width:16px;height:16px;transition:transform .15s}
+.home-pillar:hover .home-go svg{transform:translateX(3px)}
+@media (max-width:1100px){.home-pillars{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media (max-width:720px){.home-pillars{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.home-pillar{padding:16px 14px}}
+@media (max-width:420px){.home-pillars{grid-template-columns:1fr}.home-pillar{display:grid!important;grid-template-columns:auto 1fr;column-gap:14px;row-gap:2px;align-items:center}
+  .home-pillar .card-ico{grid-row:span 2}.home-pillar h3{margin:0}.home-pillar p{grid-column:2}.home-go{display:none}}

@@ -4,7 +4,7 @@ window.HHQ_NAV = {
   primary: [
     { href:'/news',        label:'News',      desc:'Latest 3D printing news, guides, and reviews' },
     { href:'/troubleshoot',label:'Troubleshoot', desc:'Diagnose any print failure step by step' },
-    { href:'/generators',  label:'Generators', desc:'Gridfinity, boxes, brackets, chains and more, made to your size',
+    { href:'/generators',  label:'Generators', desc:'Gridfinity, chains, pendants, drone frames and more, made to your size',
       also:['gridfinity','chain','storage-box','grid-organiser','cable-clip','spool-holder','wall-bracket','generator'] },
     { href:'/tools',       label:'Tools',     desc:'Calculators and reference databases' },
     { href:'/order',       label:'Print My Order', desc:'Send a file or a photo and get a free quote to have it printed' }

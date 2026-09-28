@@ -4,12 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Hotend HQ — 3D Printing Fixes, Free Model Generators &amp; Guides</title>
-<meta name="description" content="Fix 3D printing problems step by step, make free STL and 3MF files with 17 model generators (Gridfinity, chains, dice, signs, drone frames and more), read hands-on guides, or send us a file for a free 3D printing quote.">
+<meta name="description" content="Fix 3D printing problems step by step, make free STL and 3MF files with 18 model generators (Gridfinity, chains, dice, signs, drone frames and more), read hands-on guides, or send us a file for a free 3D printing quote.">
 <!-- seo -->
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Hotend HQ">
 <meta property="og:title" content="Hotend HQ — 3D Printing Fixes, Free Model Generators &amp; Guides">
-<meta property="og:description" content="Fix 3D printing problems step by step, make free STL and 3MF files with 17 model generators (Gridfinity, chains, dice, signs, drone frames and more), read hands-on guides, or send us a file for a free 3D printing quote.">
+<meta property="og:description" content="Fix 3D printing problems step by step, make free STL and 3MF files with 18 model generators (Gridfinity, chains, dice, signs, drone frames and more), read hands-on guides, or send us a file for a free 3D printing quote.">
 <meta property="og:url" content="https://hotendhq.com/">
 <meta property="og:image" content="https://hotendhq.com/assets/img/og-image.png">
 <meta name="twitter:card" content="summary_large_image">
@@ -23,11 +23,11 @@
 <link rel="manifest" href="/site.webmanifest">
 <link rel="stylesheet" href="/assets/css/fonts.css?v=1f7e92bbba">
 <link rel="stylesheet" href="/assets/css/theme.css?v=341fd913da">
-<link rel="stylesheet" href="/assets/css/pages.css?v=2d53d9dee9">
+<link rel="stylesheet" href="/assets/css/pages.css?v=005e75e93f">
 <script src="/assets/js/config.js?v=8c9cdf73c0" defer></script>
-<script src="/assets/js/nav.js?v=2703c2cfff" defer></script>
+<script src="/assets/js/nav.js?v=bf1aa5372b" defer></script>
 <script src="/assets/js/site.js?v=e98640a3e3" defer></script>
-<script src="/assets/js/data-articles.js?v=f58c95f04e" defer></script>
+<script src="/assets/js/data-articles.js?v=b291f8faf2" defer></script>
 <script src="/assets/js/data-troubleshoot.js?v=86b65986b2" defer></script>
 <script src="/assets/js/data-filament.js?v=07561c8b31" defer></script>
 <script src="/assets/js/api.js?v=097762e5df" defer></script>
@@ -51,7 +51,7 @@
         <div class="stats">
           <div class="stat"><b id="s-issues">—</b><span>Failure modes</span></div>
           <div class="stat"><b id="s-causes">—</b><span>Diagnosed causes</span></div>
-          <div class="stat"><b id="s-models">17</b><span>Model generators</span></div>
+          <div class="stat"><b id="s-models">18</b><span>Model generators</span></div>
           <div class="stat"><b id="s-mats">—</b><span>Materials profiled</span></div>
         </div>
       </div>
@@ -65,92 +65,14 @@
     </div>
   </section>
 
-  <!-- ============ FOUR PILLARS ============ -->
-  <section class="wrap section--tight">
-    <div class="grid" id="pillars" style="grid-template-columns:repeat(auto-fit,minmax(min(100%,190px),1fr))"></div>
-  </section>
-
-  <!-- ============ GENERATORS (written by build/make-pages.mjs) ============ -->
-  <!--gens:home-->
-  <section class="wrap section" id="home-gens">
-    <div class="sec-head between"><div><span class="eyebrow">Free model generators</span><h2>Make it to size, print it today</h2></div>
-      <a class="btn btn-ghost btn-sm" href="/generators">All 17 generators</a></div>
-    <div class="grid g3 gens-grid">
-      <a class="card card--link gens-card" href="/generators/chain" data-cat="jewelry">
-        <img src="/assets/img/generators/chain.webp" alt="Chain generator preview" width="800" height="500" loading="lazy" decoding="async">
-        <div class="gens-body">
-          <h3>Chain generator</h3>
-          <p class="muted">Print-in-place necklace chains in 34 styles, sized to your nozzle and bed, with clasps or as an endless loop.</p>
-          <div class="gens-tags"><span class="tag">STL</span><span class="tag">3MF</span><span class="tag">Print-in-place</span></div>
-          <span class="gens-go">Open generator <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
-        </div>
-      </a>
-      <a class="card card--link gens-card" href="/generators/gridfinity" data-cat="organize">
-        <img src="/assets/img/generators/gridfinity.webp" alt="Gridfinity generator preview" width="800" height="500" loading="lazy" decoding="async">
-        <div class="gens-body">
-          <h3>Gridfinity generator</h3>
-          <p class="muted">Bins with dividers, scoops, labels and magnets, plus baseplates, lids, tool holders and a drawer fitter.</p>
-          <div class="gens-tags"><span class="tag">STL</span><span class="tag">3MF</span><span class="tag">Splits for your bed</span></div>
-          <span class="gens-go">Open generator <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
-        </div>
-      </a>
-      <a class="card card--link gens-card" href="/generators/dice" data-cat="games">
-        <img src="/assets/img/generators/dice.webp" alt="Dice generator preview" width="800" height="500" loading="lazy" decoding="async">
-        <div class="gens-body">
-          <h3>Dice generator</h3>
-          <p class="muted">d4, d6, d8, d10, d12, d20 and d100 with your own numbers, words or pips on every face.</p>
-          <div class="gens-tags"><span class="tag">STL</span><span class="tag">3MF</span><span class="tag">d4–d20</span></div>
-          <span class="gens-go">Open generator <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
-        </div>
-      </a>
-      <a class="card card--link gens-card" href="/generators/layered-signs" data-cat="crafts">
-        <img src="/assets/img/generators/layered-signs.webp" alt="Layered sign generator preview" width="800" height="500" loading="lazy" decoding="async">
-        <div class="gens-body">
-          <h3>Layered sign generator</h3>
-          <p class="muted">Multicolour signs with raised or inlaid text, borders and mounting, with the colour-change heights worked out.</p>
-          <div class="gens-tags"><span class="tag">3MF</span><span class="tag">Multicolour</span></div>
-          <span class="gens-go">Open generator <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
-        </div>
-      </a>
-      <a class="card card--link gens-card" href="/generators/drone-frame" data-cat="hobby">
-        <img src="/assets/img/generators/drone-frame.webp" alt="Drone frame generator preview" width="800" height="500" loading="lazy" decoding="async">
-        <div class="gens-body">
-          <h3>Drone frame generator</h3>
-          <p class="muted">FPV quads, cinewhoops, tricopters, hexa and octocopters from 65 mm to 10-inch, shown built with motors and props, plus a randomizer.</p>
-          <div class="gens-tags"><span class="tag">STL</span><span class="tag">3MF</span><span class="tag">Whoop to 10″</span></div>
-          <span class="gens-go">Open generator <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
-        </div>
-      </a>
-      <a class="card card--link gens-card" href="/generators/mic-accessories" data-cat="hobby">
-        <img src="/assets/img/generators/mic-accessories.webp" alt="Mic clip &amp; stand accessory generator preview" width="800" height="500" loading="lazy" decoding="async">
-        <div class="gens-body">
-          <h3>Mic clip &amp; stand accessory generator</h3>
-          <p class="muted">Mic clips, shock mounts, thread adapters, stand cable clips, pop filters and phone mounts with real stand threads.</p>
-          <div class="gens-tags"><span class="tag">STL</span><span class="tag">5/8″ &amp; 3/8″ threads</span></div>
-          <span class="gens-go">Open generator <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
-        </div>
-      </a>
-    </div>
-  </section>
-  <!--/gens:home-->
-
-  <!-- ============ PRINT MY ORDER ============ -->
-  <section class="wrap section--tight">
-    <div class="card card--flame">
-      <div class="between" style="align-items:center;gap:22px">
-        <div style="flex:1;min-width:260px">
-          <span class="eyebrow">Print My Order</span>
-          <h2 style="margin-bottom:.3em">No printer? We'll print it for you.</h2>
-          <p class="muted" style="max-width:58ch;margin:0">Send a model file, a link or just a photo of the part you need.
-            Every quote is free, with no obligation.</p>
-        </div>
-        <a class="btn btn-primary" href="/order" id="order-cta">Get a free quote</a>
-      </div>
-    </div>
+  <!-- ============ SECTIONS (one card per top-bar page) ============ -->
+  <section class="wrap section--tight" aria-labelledby="home-go">
+    <h2 id="home-go" class="sr-only">Where to next</h2>
+    <div class="grid home-pillars" id="pillars"></div>
   </section>
 
   <!-- ============ LATEST ============ -->
-  <section class="wrap section">
+  <section class="wrap section--tight">
     <div class="sec-head between">
       <div>
         <span class="eyebrow">From the workshop</span>
@@ -158,43 +80,7 @@
       </div>
       <a class="btn btn-ghost btn-sm" href="/news">All articles</a>
     </div>
-    <div id="home-feature" style="margin-bottom:30px"><!--prerender:home-feature--></div>
     <div class="grid g3" id="home-posts"><!--prerender:home-posts--><div class="spin"></div><!--/prerender--></div>
-  </section>
-
-  <!-- ============ TROUBLESHOOT TEASER ============ -->
-  <section class="wrap section--tight">
-    <div class="card card--flame">
-      <div class="between" style="align-items:flex-start;gap:26px">
-        <div style="flex:1;min-width:260px">
-          <span class="eyebrow">Diagnostics</span>
-          <h2 style="margin-bottom:.3em">What's actually broken?</h2>
-          <p class="muted" style="max-width:56ch">Answer a few questions about what you are seeing and
-            land on the real cause — with the check that confirms it and the fix that clears it.
-            No forum archaeology.</p>
-          <a class="btn btn-primary" href="/troubleshoot" style="margin-top:8px" id="ts-cta"></a>
-        </div>
-        <div style="flex:1;min-width:250px">
-          <div class="faint" style="margin-bottom:9px">Jump straight to a common one</div>
-          <div class="chips" id="quick-issues"></div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ============ NEWSLETTER ============ -->
-  <section class="wrap section">
-    <div class="subscribe">
-      <span class="eyebrow" style="justify-content:center">Stay current</span>
-      <h2 style="margin-bottom:.3em">New guides, fixes and finds</h2>
-      <p class="muted" style="max-width:48ch;margin-inline:auto">One email when something worth
-        reading goes up. No drip sequences, no filler.</p>
-      <form id="sub-form">
-        <input type="email" required placeholder="you@example.com" aria-label="Email address">
-        <button class="btn btn-primary" type="submit">Subscribe</button>
-      </form>
-      <p class="faint" style="margin-top:12px">Unsubscribe any time.</p>
-    </div>
   </section>
 
 </main>
@@ -205,7 +91,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   $('#hero-fix').innerHTML = icon('wrench') + 'Diagnose a problem';
   $('#hero-gen').innerHTML = icon('cube') + 'Generate a model';
-  $('#ts-cta').innerHTML   = icon('bolt') + 'Start the diagnostic';
 
   /* stats come from the real data, so they can never drift out of date */
   const issues = window.HHQ_ISSUES || [];
@@ -216,35 +101,21 @@ document.addEventListener('DOMContentLoaded', async () => {
   /* pillars render from the nav model — one source of truth */
   const ICO = window.HHQ_NAV_ICONS || {};
   $('#pillars').innerHTML = HHQ_NAV.primary.map(n => `
-    <a class="card card--link" href="${n.href}">
+    <a class="card card--link home-pillar" href="${n.href}">
       <div class="card-ico">${icon(ICO[n.label])}</div>
       <h3>${n.label}</h3>
-      <p class="muted" style="font-size:.9rem;margin:0">${n.desc}</p>
+      <p class="muted">${n.desc}</p>
+      <span class="home-go">Open ${icon('arrow')}</span>
     </a>`).join('');
 
-  /* quick issue chips */
-  $('#quick-issues').innerHTML = ['fl-not-sticking','ex-none','ex-stringing','q-layer-shift','t-runaway','ex-under']
-    .map(id => { const i = issues.find(x=>x.id===id); return i ?
-      `<a class="chip" href="/troubleshoot#${i.id}">${HHQ.esc(i.title)}</a>` : ''; }).join('');
-
-  /* latest articles */
+  /* latest articles: one row, the rest live on /news */
   try {
-    const rows = await HHQ_API.listArticles({ limit:7 });
-    const [lead, ...rest] = rows;
-    if (lead) $('#home-feature').innerHTML = featureCard(lead);
-    $('#home-posts').innerHTML = rest.slice(0,6).map(postCard).join('') ||
+    const rows = await HHQ_API.listArticles({ limit:3 });
+    $('#home-posts').innerHTML = rows.slice(0,3).map(postCard).join('') ||
       '<p class="muted">More going up shortly.</p>';
   } catch (e) {
     $('#home-posts').innerHTML = '<p class="muted">Could not load articles right now.</p>';
   }
-
-  /* newsletter */
-  $('#sub-form').addEventListener('submit', async e => {
-    e.preventDefault();
-    const email = e.target.querySelector('input').value.trim();
-    try { await HHQ_API.subscribe(email,'home'); HHQ.toast('You are on the list.'); e.target.reset(); }
-    catch (err) { HHQ.toast(err.message, 'warn'); }
-  });
 });
 
 </script>

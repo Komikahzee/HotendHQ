@@ -55,6 +55,12 @@ const PAGES = [
     faqLd(faqOf(h)), crumbs([['Home', '/'], ['3D model generators', '/generators'], ['Chains', '/generators/chain']])] },
   { file: 'generators/gridfinity.html', url: '/generators/gridfinity', image: '/assets/img/generators/gridfinity.webp', ld: (h) => [
     faqLd(faqOf(h)), crumbs([['Home', '/'], ['3D model generators', '/generators'], ['Gridfinity', '/generators/gridfinity']])] },
+  { file: 'generators/pendant/index.html', url: '/generators/pendant/', image: '/assets/img/generators/pendant.webp', ld: () => [
+    { '@context': 'https://schema.org', '@type': 'WebApplication', name: 'Hotend HQ Pendant & Medallion Studio', url: BASE + '/generators/pendant/',
+      image: BASE + '/assets/img/generators/pendant.webp', applicationCategory: 'DesignApplication', operatingSystem: 'Any (runs in the browser)',
+      isAccessibleForFree: true, offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' }, publisher: ORG,
+      description: 'Turn any image into a print-ready 3D pendant, medallion, keychain or badge. Exports STL, 3MF and OBJ.' },
+    crumbs([['Home', '/'], ['3D model generators', '/generators'], ['Pendants & medallions', '/generators/pendant/']])] },
   { file: '404.html', noindex: true },
 ];
 

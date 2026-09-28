@@ -7,12 +7,12 @@
 window.HHQ_SEED_ARTICLES = [
 {
   slug:'free-3d-model-generators',
-  seo_title:'17 Free 3D Model Generators: Gridfinity, Chains, Dice, Signs and More',
-  meta_description:'Seventeen free generators that run in your browser: Gridfinity, print-in-place chains, custom dice, layered signs, stencils, plant markers, drone frames, mic clips, fidget spinners, board game pieces and more.',
-  title:'Seventeen Free 3D Model Generators, Now Live on Hotend HQ',
+  seo_title:'18 Free 3D Model Generators: Gridfinity, Chains, Pendants, Dice and More',
+  meta_description:'Eighteen free generators that run in your browser: Gridfinity, print-in-place chains, image-to-pendant medallions, custom dice, layered signs, stencils, plant markers, drone frames, mic clips, fidget spinners, board game pieces and more.',
+  title:'Eighteen Free 3D Model Generators, Now Live on Hotend HQ',
   category:'News',
   tags:['generators','gridfinity','jewelry','free tools'],
-  excerpt:'Gridfinity, print-in-place chains, dice, signs, stencils, drone frames, mic clips and more. Set your sizes, pick your printer, download a file that is ready to slice.',
+  excerpt:'Gridfinity, print-in-place chains, pendants from your own images, dice, signs, stencils, drone frames, mic clips and more. Set your sizes, pick your printer, download a file that is ready to slice.',
   published_at:'2026-09-25',
   author_name:'Hotend HQ',
   featured:true,
@@ -20,7 +20,7 @@ window.HHQ_SEED_ARTICLES = [
   body:`
 Most of what we print at home is not art. It is a box the right size, a bracket for one awkward shelf, a tray for one drawer. Downloading someone else's file and scaling it never quite works, because scaling stretches the walls, the screw holes and the clearances along with everything else.
 
-So we built generators. You type in the sizes you need, the model is built from scratch to those sizes, and you download a file that is ready for your slicer. All seventeen are free and live now at [hotendhq.com/generators](/generators).
+So we built generators. You type in the sizes you need, the model is built from scratch to those sizes, and you download a file that is ready for your slicer. All eighteen are free and live now at [hotendhq.com/generators](/generators).
 
 ## What every generator does
 
@@ -127,6 +127,12 @@ The [pen grip generator](/generators/pen-grips) makes adapters that hold your ow
 ![Numbered game tokens](/assets/img/generators/board-game-pieces.webp)
 
 The [board game pieces generator](/generators/board-game-pieces) makes numbered tokens and coins, pawns, meeples and figures, resource cubes and gems, and card stands, as whole sets with a colour per player.
+
+## Pendant & medallion generator
+
+![Pendant made from an image](/assets/img/generators/pendant.webp)
+
+The [pendant & medallion generator](/generators/pendant/) turns any image or logo into a pendant, medallion, keychain or badge. Pick a style (raised, engraved, coin, cameo, lithophane, stencil, halftone and more), a shape and rim, add text and a loop or bail, and export STL, 3MF or OBJ, with colour-swap layers worked out for multicolour prints. It opens as a full-screen studio, and the depth and background-removal AI runs on your own device, so your images are never uploaded.
 
 ## Fidget spinner generator
 

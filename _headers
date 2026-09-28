@@ -6,3 +6,7 @@
 
 /assets/*
   Cache-Control: public, max-age=31536000, immutable
+
+# Pendant studio: the AI models and runtime never change under the same name
+/generators/pendant/ai/*
+  Cache-Control: public, max-age=2592000
