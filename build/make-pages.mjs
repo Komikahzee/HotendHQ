@@ -179,6 +179,8 @@ const FEATURED = [
     text: 'FPV quads, cinewhoops, tricopters, hexa and octocopters from 65 mm to 10-inch, with rounded joints and stiffening rims made for printing. See it built with motors and props, then download it laid out for your bed.' },
   { slug: 'fidget-spinners', img: '/assets/img/articles/spinner-petal.webp', article: '/guides/fidget-spinner-generator-2/', open: 'Design a spinner',
     text: 'Bearing and print-in-place spinners in eight shapes, weighted with bearings, nuts or coins, plus spinner rings. See it finished with the steel in place, check how much of the spin is in the weights, and roll a new design with one click.' },
+  { slug: 'chain', img: '/assets/img/articles/chain-cuban.webp', article: '/guides/chain-generator-2/', open: 'Design a chain',
+    text: 'Print-in-place necklace chains in 37 styles, from fine cable to chunky Cuban, paperclip & rolo and name chains. See it worn on a display bust before you print, know where it will sit, then download it folded to fit your bed.' },
 ];
 const feature = (f) => `      <div class="card gens-feature">
         <a class="gens-feature-img" href="${url(f.slug)}" tabindex="-1" aria-hidden="true">

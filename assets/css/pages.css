@@ -286,13 +286,12 @@
 .gens-feature-body p{margin:0}
 .gens-feature-cta{display:flex;flex-wrap:wrap;gap:10px;margin-top:6px}
 .gens-feature-cta .btn svg{width:16px;height:16px}
-.gens-features{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}
+.gens-features{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}
 .gens-features .gens-feature{grid-template-columns:minmax(0,1fr);grid-template-rows:auto 1fr}
 .gens-features .gens-feature-img img{height:auto}
 .gens-features .gens-feature-body{justify-content:flex-start;padding:clamp(18px,2.4vw,28px)}
 .gens-features .gens-feature-body h3{margin:0;font-size:1.35rem}
 .gens-features .gens-feature-body p{flex:1}
-@media (max-width:1100px){.gens-features{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:700px){.gens-features{grid-template-columns:minmax(0,1fr)}}
 @media (max-width:760px){.gens-feature{grid-template-columns:minmax(0,1fr)}.gens-feature-img img{height:auto}}
 @media (max-width:420px){.gens-feature-cta .btn{flex:1 1 100%;justify-content:center}}

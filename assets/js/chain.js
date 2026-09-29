@@ -8,7 +8,7 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { toCreasedNormals } from 'three/addons/utils/BufferGeometryUtils.js';
 import { meshToSTL, meshesTo3MF, zip } from './gridfinity-core.js?v=cd2b8dee8c';
 import { PRINTERS, printerOptions, printerById, printerForBed, loadPrinter, savePrinter } from './printers.js?v=ff3522465e';
-import { STYLES, DEFAULTS } from './chain-build.js?v=cef34e2a53';
+import { STYLES, DEFAULTS } from './chain-build.js?v=1110be17c2';
 
 const $ = (s, r = document) => r.querySelector(s);
 const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -39,7 +39,7 @@ const MYP = loadPrinter();          // the printer picked on any generator, reme
 const GROUPS = [
   { title: 'Chain style', open: true, items: [
     S('style', 'Style', null, 'oval', { grouped: true }),
-    S('shape', 'Link shape', [['heart', 'Heart'], ['star', 'Star'], ['diamond', 'Diamond'], ['hexagon', 'Hexagon'], ['flower', 'Flower']], 'heart', { show: s => s.style === 'shaped' }),
+    S('shape', 'Link shape', [['heart', 'Heart'], ['star', 'Star'], ['diamond', 'Diamond'], ['hexagon', 'Hexagon'], ['flower', 'Flower']], 'heart', { show: s => s.style === 'shaped' || s.style === 'shapedrolo' }),
     X('name', 'Name', 'MAYA', { show: s => s.style === 'name', max: 16, placeholder: 'e.g. MAYA', hint: 'Up to 16 letters or numbers.' }),
     R('letterH', 'Letter / shape height', 5, 20, 0.5, 9, 'mm', { show: s => s.style === 'name' || s.style === 'custom' }),
     R('plateT', 'Letter / shape thickness', 1, 3, 0.1, 1.6, 'mm', { show: s => s.style === 'name' || s.style === 'custom' }),
@@ -90,6 +90,7 @@ const PRESETS = [
   ['Everyday', { style: 'oval', lengthSel: '508', color: 'silver' }],
   ['Chunky streetwear', { style: 'cuban', wire: 2.4, linkL: 9.5, linkW: 8, lengthSel: '559', color: 'gold' }],
   ['Cosplay', { style: 'curb', wire: 2.6, linkL: 14, linkW: 9, lengthSel: '610', color: 'black', material: 'petg' }],
+  ['Paperclip & rolo', { style: 'cliprolo', lengthSel: '457', color: 'gold' }],
   ['Keychain', { style: 'rolo', wire: 2, linkL: 8, linkW: 8, lengthSel: 'exact', lengthMM: 100, color: 'flame', ends: 'loops' }],
 ];
 
@@ -238,7 +239,7 @@ function surprise() {
     color: COLORS[Math.floor(Math.random() * COLORS.length)][0], color2: COLORS[Math.floor(Math.random() * COLORS.length)][0],
     twoTone: Math.random() < 0.3, graduated: Math.random() < 0.2 ? 40 : 0,
     lengthSel: ['406', '457', '508', '559'][Math.floor(Math.random() * 4)],
-    shape: ['heart', 'star', 'diamond', 'hexagon', 'flower'][Math.floor(Math.random() * 5)],
+    shape: ['heart', 'star', 'diamond', 'hexagon', 'flower'][Math.floor(Math.random() * 5)], ends: Math.random() < 0.15 ? 'toggle' : 'loops',
   };
   if (state.color2 === state.color) state.color2 = state.color === 'flame' ? 'silver' : 'flame';
   render(); swatches(); requestBuild(true);
@@ -249,7 +250,7 @@ function swatches() {
       aria-pressed="${state.color === k || (state.twoTone && state.color2 === k)}" style="background:#${hex.toString(16).padStart(6, '0')}"></button>`).join('');
   el.querySelectorAll('.ch-swatch').forEach(b => b.addEventListener('click', (e) => {
     if (state.twoTone && (e.shiftKey || state.color === b.dataset.c)) state.color2 = b.dataset.c; else state.color = b.dataset.c;
-    swatches(); paint();
+    swatches(); paint(); propColor();
   }));
 }
 
@@ -384,6 +385,17 @@ function drawBed(bx, by) {
   world.add(bedObj);
 }
 const geoCache = new Map();
+function geoFor(bk) {
+  let g = geoCache.get(bk);
+  if (!g) {
+    const b = current.bodyMap.get(bk); if (!b) return null;
+    g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(b.pos, 3)); g.setIndex(new THREE.BufferAttribute(b.idx, 1));
+    if (/^(letter|custom|tag|toggleBar|kit):/.test(bk)) g = toCreasedNormals(g, Math.PI / 5);   // flat faces + sharp edges on plates
+    else g.computeVertexNormals();
+    g.computeBoundingBox(); geoCache.set(bk, g);
+  }
+  return g;
+}
 function showPart() {
   for (const m of meshes) world.remove(m);
   meshes = [];
@@ -394,14 +406,7 @@ function showPart() {
   const box = new THREE.Box3(), tmp = new THREE.Box3(), M = new THREE.Matrix4();
   for (const [k, list] of byKey) {
     const [bk, col] = k.split('|');
-    const b = current.bodyMap.get(bk); if (!b) continue;
-    let g = geoCache.get(bk);
-    if (!g) {
-      g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(b.pos, 3)); g.setIndex(new THREE.BufferAttribute(b.idx, 1));
-      if (/^(letter|custom|tag|toggleBar|kit):/.test(bk)) g = toCreasedNormals(g, Math.PI / 5);   // flat faces + sharp edges on plates
-      else g.computeVertexNormals();
-      g.computeBoundingBox(); geoCache.set(bk, g);
-    }
+    const g = geoFor(bk); if (!g) continue;
     const im = new THREE.InstancedMesh(g, mats[+col] || mats[0], list.length);
     list.forEach((inst, i) => {
       const m = inst.m;
@@ -429,7 +434,219 @@ function frame(span) {
 function resize() { const r = stage.getBoundingClientRect(); renderer.setSize(r.width, r.height, false); camera.aspect = r.width / Math.max(1, r.height); camera.updateProjectionMatrix(); }
 new ResizeObserver(resize).observe(stage);
 (function loop() { requestAnimationFrame(loop); controls.update(); renderer.render(scene, camera); })();
-$('#ch-fit').addEventListener('click', () => { lastFitKey = ''; showPart(); });
+
+/* ============================================================
+   WORN PREVIEW: the finished chain on a display bust, or hung
+   over a peg when it's too short to wear. Preview only: the
+   download is always the chain as it prints.
+   ============================================================ */
+const worn = new THREE.Group(); scene.add(worn);       // already Y-up, mm
+let view = 'worn', wornMeshes = [], wornProps = null, wornFitKey = '', wornKind = 'worn';
+const propMat = new THREE.MeshStandardMaterial({ roughness: 0.93, metalness: 0 });
+const SHOULDER = 162, NECK_TOP = 92, SH_DROP = 120;
+let NECK = 52;                                           // slimmer for chokers, so they still go round
+// the bust is a stack of ellipses: round at the neck, sloping shoulders, flatter across the chest
+const bustR = (y) => {
+  if (y >= 0) return NECK * (1 - 0.07 * Math.min(1, y / NECK_TOP)) + 5 * Math.exp(-y / 7);     // slight flare where the neck meets the shoulders
+  const t = Math.min(1, -y / SH_DROP);
+  return NECK + 5 + (SHOULDER - NECK - 5) * (1 - (1 - t) * (1 - t)) - (y < -SH_DROP ? Math.min(40, 0.14 * (-y - SH_DROP)) : 0);
+};
+const bustD = (y) => y >= 0 ? 0.97 : 0.97 - 0.43 * Math.min(1, -y / SH_DROP);
+const bustF = (x, y, z, off) => { const R = bustR(y) + off, D = bustD(y) * R; return (x * x) / (R * R) + (z * z) / (D * D); };
+function bustNormal(x, y, z, off) {
+  const e = 0.5;
+  const n = [bustF(x + e, y, z, off) - bustF(x - e, y, z, off), bustF(x, y + e, z, off) - bustF(x, y - e, z, off), bustF(x, y, z + e, off) - bustF(x, y, z - e, off)];
+  const l = Math.hypot(...n) || 1; return [n[0] / l, n[1] / l, n[2] / l];
+}
+/** A closed or open path of total length L with an outward normal at every point.
+    worn: round the back of the neck, then a catenary over the chest.
+    peg:  over a peg, then two straight strands (open) or a catenary (closed). */
+function hangPath(L, closed, off, Wmax) {
+  const pts = [], nrm = [];
+  const push = (p, n) => { pts.push(p); nrm.push(n); };
+  NECK = Math.max(40, Math.min(52, L / (2 * Math.PI) - off - 8));
+  const Xs = bustR(0) + off;
+  // catenary through (±X, 0), parameterised by its own arc length; zOf lifts it onto the chest
+  const drape = (a, X, zOf, n) => {
+    const Sh = a * Math.sinh(X / a), out = [];
+    for (let i = 0; i <= n; i++) {
+      const S = -Sh + 2 * Sh * i / n, x = a * Math.asinh(S / a), y = a * (Math.cosh(x / a) - Math.cosh(X / a));
+      out.push([x, y, zOf(x, y)]);
+    }
+    return out;
+  };
+  const len3 = (q) => { let t = 0; for (let i = 1; i < q.length; i++) t += Math.hypot(q[i][0] - q[i - 1][0], q[i][1] - q[i - 1][1], q[i][2] - q[i - 1][2]); return t; };
+  const solveA = (target, X, zOf) => {
+    let lo = Math.log(X / 22), hi = Math.log(5e4);
+    if (len3(drape(Math.exp(hi), X, zOf, 160)) > target) return null;       // too short to hang this way
+    for (let k = 0; k < 50; k++) { const mid = (lo + hi) / 2; if (len3(drape(Math.exp(mid), X, zOf, 160)) > target) lo = mid; else hi = mid; }
+    return Math.exp((lo + hi) / 2);
+  };
+  const chestZ = (x, y) => { const R = bustR(y) + off; return bustD(y) * Math.sqrt(Math.max(0, R * R - x * x)); };
+  const a = L > 250 ? solveA(L - Math.PI * Xs, Xs, chestZ) : null;
+  if (a) {
+    const arc = (a0, a1) => { for (let i = 0; i <= 48; i++) { const t = a0 + (a1 - a0) * i / 48, p = [Xs * Math.sin(t), 0, Xs * Math.cos(t)]; push(p, bustNormal(p[0], -0.6, p[2], off)); } };
+    arc(Math.PI, 1.5 * Math.PI); pts.pop(); nrm.pop();
+    for (const p of drape(a, Xs, chestZ, 400)) push(p, bustNormal(p[0], p[1], p[2], off));
+    pts.pop(); nrm.pop(); arc(0.5 * Math.PI, Math.PI);
+    return { kind: 'worn', pts, nrm, Xs };
+  }
+  // peg: round the top of a horizontal peg, facing the viewer
+  let Rq = Math.max(6, Wmax * 1.1) + off;
+  Rq = Math.min(Rq, L / (Math.PI + 2));
+  const F = [0, 0, 1];
+  if (closed) {
+    const ac = solveA(L - Math.PI * Rq, Rq, () => 0);
+    if (ac) {
+      for (let i = 0; i <= 32; i++) { const t = Math.PI - Math.PI * i / 32; push([Rq * Math.cos(t), Rq * Math.sin(t), 0], F); }
+      pts.pop(); nrm.pop();
+      const d = drape(ac, Rq, () => 0, 300).reverse();     // right side back round to the left
+      for (const p of d) push(p, F);
+      return { kind: 'peg', pts, nrm, Rq, pegR: Rq - off * 1.15 };
+    }
+  }
+  const strand = Math.max(0, (L - Math.PI * Rq) / 2);
+  push([-Rq, -strand, 0], F);
+  for (let i = 0; i <= 32; i++) { const t = Math.PI - Math.PI * i / 32; push([Rq * Math.cos(t), Rq * Math.sin(t), 0], F); }
+  push([Rq, -strand, 0], F);
+  return { kind: 'peg', pts, nrm, Rq, pegR: Rq - off * 1.15, open: true };
+}
+function pathSampler(path) {
+  const { pts, nrm } = path, cum = [0];
+  for (let i = 1; i < pts.length; i++) cum.push(cum[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1], pts[i][2] - pts[i - 1][2]));
+  const total = cum[cum.length - 1];
+  const at = (s) => {
+    s = Math.min(Math.max(s, 0), total);
+    let lo = 0, hi = cum.length - 1;
+    while (hi - lo > 1) { const m = (lo + hi) >> 1; if (cum[m] <= s) lo = m; else hi = m; }
+    const f = (s - cum[lo]) / Math.max(1e-9, cum[hi] - cum[lo]), A = pts[lo], B = pts[hi];
+    const P = new THREE.Vector3(A[0] + (B[0] - A[0]) * f, A[1] + (B[1] - A[1]) * f, A[2] + (B[2] - A[2]) * f);
+    // tangent over about a link's length, so the frame turns smoothly
+    const a2 = pts[Math.max(0, lo - 2)], b2 = pts[Math.min(pts.length - 1, hi + 2)];
+    const T = new THREE.Vector3(b2[0] - a2[0], b2[1] - a2[1], b2[2] - a2[2]).normalize();
+    const N = new THREE.Vector3(nrm[lo][0] + (nrm[hi][0] - nrm[lo][0]) * f, nrm[lo][1] + (nrm[hi][1] - nrm[lo][1]) * f, nrm[lo][2] + (nrm[hi][2] - nrm[lo][2]) * f);
+    N.addScaledVector(T, -N.dot(T)).normalize();
+    return { P, T, N };
+  };
+  return { at, total };
+}
+const frameM = (P, T, N) => { const B = new THREE.Vector3().crossVectors(N, T); return new THREE.Matrix4().makeBasis(T, B, N).setPosition(P); };
+function makeProps(path, lowY) {
+  const g = new THREE.Group();
+  if (path.kind === 'worn') {
+    const ys = [];
+    for (let y = NECK_TOP; y > -SH_DROP; y -= y > 12 ? 8 : 3) ys.push(y);
+    const bottom = Math.min(-240, lowY - 50);
+    for (let y = -SH_DROP; y >= bottom; y -= 10) ys.push(y);
+    if (ys[ys.length - 1] > bottom) ys.push(bottom);
+    const seg = 72, pos = [], idx = [];
+    for (const y of ys) { const R = bustR(y), D = bustD(y); for (let i = 0; i < seg; i++) { const t = i / seg * Math.PI * 2; pos.push(R * Math.sin(t), y, D * R * Math.cos(t)); } }
+    for (let r = 0; r + 1 < ys.length; r++) for (let i = 0; i < seg; i++) {
+      const a = r * seg + i, b = r * seg + (i + 1) % seg, c2 = a + seg, d = b + seg;
+      idx.push(a, c2, b, b, c2, d);
+    }
+    const capTop = pos.length / 3; pos.push(0, ys[0], 0);
+    for (let i = 0; i < seg; i++) idx.push(capTop, i, (i + 1) % seg);
+    const last = (ys.length - 1) * seg, capBot = pos.length / 3; pos.push(0, ys[ys.length - 1], 0);
+    for (let i = 0; i < seg; i++) idx.push(capBot, last + (i + 1) % seg, last + i);
+    const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); geo.setIndex(idx);
+    geo.computeVertexNormals();
+    g.add(new THREE.Mesh(geo, propMat));
+  } else {
+    const r = Math.max(2, path.pegR);
+    const peg = new THREE.Mesh(new THREE.CylinderGeometry(r, r, 36, 32), propMat);
+    peg.rotation.x = Math.PI / 2; peg.position.z = -10; g.add(peg);
+  }
+  return g;
+}
+function clearWorn() {
+  for (const m of wornMeshes) worn.remove(m);
+  wornMeshes = [];
+  if (wornProps) { worn.remove(wornProps); wornProps.traverse(o => o.geometry && o.geometry.dispose()); wornProps = null; }
+}
+function showWorn() {
+  clearWorn();
+  const line = current.line, st = STYLES[state.style] || {};
+  const main = line.items.filter(it => !it.ext), tail = line.items.filter(it => it.ext);
+  const closed = line.close > 0;
+  const Wmax = Math.max(4, ...main.map(it => { const g = geoFor(it.body); const b = g.boundingBox; return Math.max(b.max.y - b.min.y, b.max.z - b.min.z); }));
+  const off = line.h * 0.9;
+  const gap = closed ? 0 : 8;                                    // room for the clasp at the back of the neck
+  const L = main[main.length - 1].s + (closed ? line.close : gap);
+  const path = hangPath(L, closed, off, Wmax);
+  const S = pathSampler(path);
+  const k = S.total / L;                                           // the path matches L to within a hair
+  // links hang alternately flat and edge-on. As printed they lean one way and the other, so turn each
+  // one about the chain: the leaning-one-way set with the most link area lies flat, the rest stand on edge
+  const area = { 1: 0, [-1]: 0 };
+  for (const it of main) if (it.ring && it.t) { const b = geoFor(it.body).boundingBox; area[Math.sign(it.t)] += (b.max.x - b.min.x) * (b.max.y - b.min.y); }
+  const flatSign = area[1] >= area[-1] ? 1 : -1;
+  const rollOf = (it) => st.kind === 'bike' ? Math.PI / 2 : !it.ring || !it.t ? 0 : Math.sign(it.t) === flatSign ? -it.t : Math.sign(it.t) * Math.PI / 2 - it.t;
+  const lift = new THREE.Matrix4().makeTranslation(0, 0, -line.h);
+  const place = [];
+  const peg = path.kind === 'peg' && path.open;
+  const start = peg ? 0 : gap / 2;
+  for (const it of main) {
+    const f = S.at((start + it.s) * k);
+    place.push([it, frameM(f.P, f.T, f.N)]);
+  }
+  if (tail.length) {                    // the extender tail hangs down from the clasp
+    const endS = main[main.length - 1].s, f = S.at(peg ? S.total : (start + endS) * k);
+    const down = new THREE.Vector3(0, -1, 0), out = peg ? new THREE.Vector3(0, 0, 1) : new THREE.Vector3(0, 0, -1);
+    for (const it of tail) place.push([it, frameM(f.P.clone().addScaledVector(down, it.s - endS), down, out)]);
+  }
+  const byKey = new Map();
+  for (const [it, F] of place) {
+    const M = F.clone().multiply(new THREE.Matrix4().makeRotationX(rollOf(it))).multiply(lift).multiply(toM4(it.m));
+    const key = it.body + '|' + (it.color || 0);
+    (byKey.get(key) || byKey.set(key, []).get(key)).push(M);
+  }
+  const box = new THREE.Box3(), tmp = new THREE.Box3();
+  for (const [key, list] of byKey) {
+    const [bk, col] = key.split('|'); const g = geoFor(bk); if (!g) continue;
+    const im = new THREE.InstancedMesh(g, mats[+col] || mats[0], list.length);
+    list.forEach((M, i) => { im.setMatrixAt(i, M); tmp.copy(g.boundingBox).applyMatrix4(M); box.union(tmp); });
+    im.instanceMatrix.needsUpdate = true;
+    worn.add(im); wornMeshes.push(im);
+  }
+  wornProps = makeProps(path, box.min.y);
+  wornKind = path.kind; propColor();
+  worn.add(wornProps);
+  // frame the chain, plus the neck when it's on the bust
+  if (path.kind === 'worn') box.union(new THREE.Box3(new THREE.Vector3(-SHOULDER * 0.7, box.min.y, -NECK), new THREE.Vector3(SHOULDER * 0.7, NECK_TOP * 0.6, NECK)));
+  const fk = [path.kind, Math.round(Math.log2(box.max.y - box.min.y + 1) * 4)].join();
+  if (fk !== wornFitKey) { wornFitKey = fk; frameBox(box); }
+}
+// a velvet bust, or a linen one when the chain itself is black
+function propColor() { propMat.color.setHex(wornKind === 'worn' ? (state.color === 'black' ? 0xd8d0c2 : 0x252c3b) : 0x4a5468); }
+const toM4 = (m) => new THREE.Matrix4().set(m[0], m[1], m[2], m[3], m[4], m[5], m[6], m[7], m[8], m[9], m[10], m[11], 0, 0, 0, 1);
+function frameBox(box) {
+  box = box.clone(); box.min.y -= (box.max.y - box.min.y) * 0.1;      // room under the chain for the view switch
+  const c = box.getCenter(new THREE.Vector3()), sz = box.getSize(new THREE.Vector3());
+  const fitH = sz.y / 2 / Math.tan(camera.fov * Math.PI / 360), fitW = sz.x / 2 / Math.tan(camera.fov * Math.PI / 360) / camera.aspect;
+  const d = Math.max(fitH, fitW) * 1.12 + sz.z / 2;
+  controls.target.copy(c);
+  camera.position.set(c.x + d * 0.18, c.y + d * 0.2, c.z + d * 0.96);
+  camera.near = d / 200; camera.far = d * 20; camera.updateProjectionMatrix();
+}
+function canWear() { return !!(current && current.line && current.line.items.length > 2); }
+function showView() {
+  const wornOn = view === 'worn' && canWear();
+  world.visible = !wornOn; worn.visible = wornOn;
+  if (wornOn) { lastFitKey = ''; showWorn(); } else { wornFitKey = ''; clearWorn(); showPart(); }
+  const vb = $('#ch-view');
+  vb.classList.toggle('hidden', !canWear());
+  vb.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === (wornOn ? 'worn' : 'bed'))));
+  const wb = vb.querySelector('[data-v="worn"]');
+  wb.textContent = wornOn && wornKind === 'peg' ? 'Hanging' : 'Worn';
+  $('#ch-parts').classList.toggle('is-dim', wornOn);
+  renderer.domElement.setAttribute('aria-label', wornOn ? '3D preview of the finished chain as it hangs. Drag to rotate, pinch or scroll to zoom.' : '3D preview of the chain on the printer bed. Drag to rotate, pinch or scroll to zoom.');
+}
+$('#ch-view').addEventListener('click', (e) => {
+  const b = e.target.closest('button[data-v]'); if (!b || !current) return;
+  view = b.dataset.v; showView();
+});
+$('#ch-fit').addEventListener('click', () => { lastFitKey = ''; wornFitKey = ''; showView(); });
 const fsBtn = $('#ch-full'), fsEl = () => document.fullscreenElement || document.webkitFullscreenElement;
 if (!(document.fullscreenEnabled || document.webkitFullscreenEnabled)) fsBtn.hidden = true;
 fsBtn.addEventListener('click', () => { if (fsEl()) (document.exitFullscreen || document.webkitExitFullscreen).call(document); else (stage.requestFullscreen || stage.webkitRequestFullscreen).call(stage); });
@@ -443,7 +660,7 @@ function getWorker() {
   if (worker && builds > 25 && !busy) { worker.terminate(); worker = null; }
   if (!worker) {
     builds = 0;
-    worker = new Worker(new URL('./chain-worker.js?v=ad869a09a1', import.meta.url), { type: 'module' });
+    worker = new Worker(new URL('./chain-worker.js?v=50768d17d3', import.meta.url), { type: 'module' });
     worker.onmessage = (e) => { const h = handlers.get(e.data.id); if (h) { handlers.delete(e.data.id); h(e.data); } };
     // a crashed worker (out of memory on a phone, a failed download) must never leave the page stuck:
     // answer every waiting build with an error and start a fresh worker next time
@@ -485,7 +702,7 @@ async function build() {
     current = { ...d, bodyMap: new Map(d.bodies.map(b => [b.key, b])) };
     for (const k of [...geoCache.keys()]) if (!current.bodyMap.has(k)) { geoCache.get(k).dispose(); geoCache.delete(k); }
     partIdx = Math.min(partIdx, Math.max(0, d.parts.length - 1));
-    showParts(); showPart(); showInfo();
+    showParts(); showView(); showInfo();
   }
   if (pending) { pending = false; requestBuild(true); }
 }
@@ -494,15 +711,21 @@ function showParts() {
   const multi = current.parts.length > 1;
   el.classList.toggle('hidden', !multi);
   el.innerHTML = multi ? current.parts.map((p, i) => `<button type="button" class="chip" data-i="${i}" aria-pressed="${i === partIdx}">${esc(p.label)}</button>`).join('') : '';
-  el.querySelectorAll('.chip').forEach(b => b.addEventListener('click', () => { partIdx = +b.dataset.i; showParts(); showPart(); }));
+  el.querySelectorAll('.chip').forEach(b => b.addEventListener('click', () => { partIdx = +b.dataset.i; view = 'bed'; showParts(); showView(); }));
   $('#ch-stl-label').textContent = multi ? 'Download all (.zip)' : 'Download STL';
+}
+// the usual jewellery length chart: where a chain of this length ends up when worn
+function sitsAt(mm) {
+  const i = mm / IN;
+  return i < 5 ? 'Keychain' : i < 9 ? 'Wrist' : i < 12.5 ? 'Ankle' : i < 15 ? 'Choker' : i < 17 ? 'Base of neck' : i < 19 ? 'Collarbone'
+    : i < 21 ? 'Below collarbone' : i < 23 ? 'Top of chest' : i < 27 ? 'Chest' : i < 33 ? 'Below the bust' : 'Opera length';
 }
 function showInfo() {
   const s = current.stats || {}, p = params();
   const len = s.lengthMM || 0;
   $('#ch-readout').innerHTML = `${fmt(len / IN, 1)} in · ${fmt(len, 0)} mm<br>≈ ${fmt(s.grams, s.grams < 10 ? 1 : 0)} g ${esc(({ petg: 'PETG', silk: 'silk PLA', pla: 'PLA', tpu: 'TPU', abs: 'ABS', asa: 'ASA' })[p.material] || '')}`;
   $('#ch-stats').innerHTML = [
-    ['Links', fmt(s.links, 0)], ['Length', `${fmt(len / IN, 1)} in`], ['Weight', `${fmt(s.grams, 1)} g`], ['Wire', `${fmt(p.wire, 2)} mm`],
+    ['Links', fmt(s.links, 0)], ['Length', `${fmt(len / IN, 1)} in`], ['Weight', `${fmt(s.grams, 1)} g`], ['Wire', `${fmt(p.wire, 2)} mm`], ['Sits at', sitsAt(len)],
   ].map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join('');
   const nChain = current.parts.filter(q => q.name !== 'jump-rings').length;
   setStatus(`${fmt(s.links, 0)} links · ${nChain > 1 ? nChain + ' parts · ' : ''}built in ${current.ms} ms`, 'ok');
@@ -597,6 +820,8 @@ const LOOK = {
   belcher: 'Round links in a wide, flat band', circles: 'Big round rings joined by small ones', teardrop: 'Pear-shaped links, one round end',
   triangle: 'Rounded triangle links', rosary: 'A bead between every link', barlink: 'Long flat bars joined by round rings',
   marquise: 'Pointed-oval links twisted to lie flat', flatmariner: 'Flat, wide anchor links with a centre bar',
+  cliprolo: 'Paperclip links spaced by round rolo links', shapedrolo: 'Hearts, stars or flowers with a rolo between each',
+  twistclip: 'Long paperclip links twisted to lie flat',
 };
 const GROUP_ORDER = ['Easy', 'Medium', 'Hard', 'Hand-assembled'];
 $('#ch-style-table').innerHTML = Object.entries(STYLES).sort((a, b) => GROUP_ORDER.indexOf(a[1].group) - GROUP_ORDER.indexOf(b[1].group)).map(([k, s]) => `<tr><td><a href="#style=${k}" data-style="${k}">${esc(s.name)}</a></td><td>${esc(LOOK[k] || '')}</td><td>${esc(s.group === 'Hand-assembled' ? 'Printed open, closed by hand' : 'In place, ' + s.group.toLowerCase())}</td></tr>`).join('');

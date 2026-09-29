@@ -7,6 +7,13 @@
 .ch-swatch{width:24px;height:24px;border-radius:50%;border:2px solid rgba(255,255,255,.18);cursor:pointer;padding:0}
 .ch-swatch[aria-pressed=true]{border-color:var(--amber-300);box-shadow:0 0 0 2px rgba(255,184,77,.35)}
 .ch-swatch:focus-visible{outline:2px solid var(--amber-300);outline-offset:2px}
+.ch-view{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);display:flex;z-index:2;
+  background:rgba(0,9,28,.72);border:1px solid var(--border);border-radius:99px;padding:4px}
+.ch-view button{border:0;background:none;color:var(--text-dim);font-family:inherit;font-weight:700;font-size:.8rem;padding:6px 14px;border-radius:99px;cursor:pointer;white-space:nowrap}
+.ch-view button[aria-pressed=true]{background:var(--amber-300);color:#1a0f00}
+.ch-view button:focus-visible{outline:2px solid var(--amber-300);outline-offset:2px}
+.ch-view.hidden{display:none}
+.ch-parts.is-dim .chip[aria-pressed=true]{border-color:var(--border)}
 .ch-parts{margin:10px 2px 0}
 .ch-parts .chip{padding:6px 12px;font-size:.8rem}
 .ch-stats{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin:0 0 12px;padding:0}
@@ -33,6 +40,7 @@
   .ch-ro-extra{display:inline}
   .ch-full{display:none}
   .ch-swatches{bottom:auto;top:56px;left:10px}
+  .ch-view{left:10px;top:10px;bottom:auto;transform:none}
 }
 /* the chain page has a stats row and part chips under the stage: keep the download bar above the fold */
 @media (min-width:901px){ .gf-stage{height:calc(100vh - 318px);min-height:400px} }

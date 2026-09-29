@@ -6,6 +6,68 @@
    published rows from the database are shown first and these fill in behind. */
 window.HHQ_SEED_ARTICLES = [
 {
+  slug:'chain-generator-2',
+  seo_title:'Free 3D Printed Chain Generator: See Your Necklace Worn Before You Print',
+  meta_description:'Design a print-in-place necklace chain in your browser and see it worn on a display bust before you print: 37 styles including paperclip & rolo, hearts & rolo and twisted paperclip, a length guide and free STL or 3MF.',
+  title:'The Chain Generator Now Shows Your Chain Worn, Plus Three New Styles',
+  category:'News',
+  tags:['generators','chains','jewelry','new feature'],
+  excerpt:'A preview that drapes the finished chain round a display bust, paperclip & rolo, shaped & rolo and twisted paperclip styles, and a figure that tells you where your chain will sit.',
+  published_at:'2026-09-29',
+  author_name:'Hotend HQ',
+  cover_url:'/assets/img/articles/chain-cuban.webp',
+  body:`
+The [chain generator](/generators/chain) makes necklace chains that come off the printer already linked: every link leans about 45° the opposite way to its neighbours and threads through them with a gap all the way round, so there is nothing to support and nothing to assemble. This update is about the question everyone asks before a long print: what will it actually look like on?
+
+It is free, it runs in your browser, and nothing is uploaded.
+
+## See it worn
+
+The preview now opens on a display bust with your chain round its neck. The chain goes round the back of the neck, over the shoulders and down onto the chest, and hangs in the curve a real chain makes. The links are turned the way they fall when you wear them: the big ones lie flat and the ones between them stand on edge, so a paperclip chain looks like a paperclip chain and a Cuban lies in a tight rope of gold.
+
+Change anything, from the style and length to the wire, the colours or the clasp, and the chain on the bust changes with it. Drag to look round it, and zoom right in to see how the links sit together.
+
+Switch to **On the bed** to see exactly what you will print, folded to fit your printer. The bust is only in the preview; the download is always the chain as it prints.
+
+![A 22 inch gold Cuban chain on the display bust](/assets/img/articles/chain-cuban.webp)
+
+Short chains, like keychains and bracelets, are too short to go round a neck, so they hang over a peg instead. A black chain gets a pale bust so you can still see it.
+
+## Know where it will sit
+
+Under the preview there is a new **Sits at** figure. It uses the usual jewellery length chart: 14 in is a choker, 16 in sits at the base of the neck, 18 in on the collarbone, 20 in just below it, 22 in at the top of the chest and 24 in or more on the chest. Pick a length and you can see it and read it.
+
+## Three new styles
+
+There are now 37 styles. The new ones:
+
+- **Paperclip & rolo**: long paperclip links spaced with round rolo links, one of the most popular chains in jewellery shops right now.
+- **Shaped & rolo**: hearts, stars, diamonds, hexagons or flowers with a rolo link between each one.
+- **Twisted paperclip**: long paperclip links with a twist, so they lie flat like a curb chain.
+
+All three print in place like the rest. Try two-tone on the shaped chain for alternating colours from a multi-material printer.
+
+![A gold paperclip and rolo chain](/assets/img/articles/chain-paperclip-rolo.webp)
+
+![Silver hearts with orange rolo links between them](/assets/img/articles/chain-hearts.webp)
+
+## Names look right too
+
+Name chains show every letter plate facing out, reading left to right across the front, so you can check the spelling and spacing before you print.
+
+![A name chain spelling MAYA on the display bust](/assets/img/articles/chain-name.webp)
+
+## Print settings that work
+
+- Print at 0.12 to 0.16 mm layers with no supports and no brim.
+- PETG flexes without cracking; silk PLA looks like metal.
+- Print the test strip first to find the gap your printer needs, then set it under **Printer fit**.
+- After printing, flex the chain gently along its length to free any link that stuck.
+
+Ready to make one? [Open the chain generator](/generators/chain).
+`
+},
+{
   slug:'fidget-spinner-generator-2',
   seo_title:'Free Fidget Spinner Generator: Design, Weight and 3D Print Your Own Spinner',
   meta_description:'Design a 3D printable fidget spinner in your browser: bearing or print-in-place, eight shapes, bearing, nut or coin weights, a finished-spinner preview, spin figures and a randomizer. Free STL.',
@@ -395,7 +457,8 @@ The settings panel shows how many nozzle lines your walls print as and the weigh
 
 The [chain generator](/generators/chain) makes necklace chains that come off the bed already linked. Neighbouring links lean at about 45° in opposite directions and thread through each other with a gap all the way round, so nothing needs supports and nothing needs assembling.
 
-- **34 styles**, from cable, rolo, belcher and paperclip to curb, Cuban, figaro, marquise, flat mariner, bar & link, rosary, rope, box, snake, name chains and three hand-assembled kits, in sizes from fine to extra chunky.
+- **37 styles**, from cable, rolo, belcher, paperclip and paperclip & rolo to curb, Cuban, figaro, marquise, flat mariner, bar & link, rosary, rope, box, snake, name chains and three hand-assembled kits, in sizes from fine to extra chunky.
+- **See it worn.** The preview drapes the finished chain round a display bust, so you can judge the length and look before you print.
 - **Endless loops.** A chain with no clasp prints as one closed circle that slips straight over your head.
 - **Clasps and extras.** Plain end loops, a built-in toggle clasp, an extender tail and matching jump rings.
 - **Looks.** Graduated links, two-tone chains exported as separate 3MF objects, station beads, and your own link shape from an uploaded SVG or image.
