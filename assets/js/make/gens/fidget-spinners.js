@@ -1,4 +1,6 @@
-/* Fidget spinners (bearing or print-in-place) and spinner rings. */
+/* Fidget spinners (bearing or print-in-place) and spinner rings.
+   The preview shows the finished spinner: steel bearings, nuts or coin stacks in the
+   pockets and the finger caps pushed in. The download is only the printed parts. */
 import { R, S, B, C, D2R } from '../core.js?v=95f6f46afd';
 
 // ball bearings: outer Ø, bore, width (mm)
@@ -6,16 +8,23 @@ const BEARINGS = { '608': [22, 8, 7], '688': [16, 8, 5], 'R188': [12.7, 6.35, 4.
 // weights: [pocket Ø, thickness each, shape]
 const WEIGHTS = { b608: [22, 7, 'round'], b688: [16, 5, 'round'], nutM8: [13, 6.5, 'hex'], nutM6: [10, 5, 'hex'], penny: [19.05, 1.52, 'round'],
   nickel: [21.21, 1.95, 'round'], quarter: [24.26, 1.75, 'round'], euro2: [25.75, 2.2, 'round'], euro1: [23.25, 2.33, 'round'], solid: [0, 0, 'none'], custom: [0, 0, 'round'] };
+// grams per weight (per coin for coins), for the spin figures
+const MASS = { b608: 12, b688: 3.7, nutM8: 5.2, nutM6: 2.5, penny: 2.5, nickel: 5, quarter: 5.67, euro1: 7.5, euro2: 8.5 };
+const BEARING_G = { '608': 12, '688': 3.7, 'R188': 2.3, '626': 8.5, '6000': 19 };
+// preview colours for the hardware
+const HW_COL = { penny: '#b87333', nickel: '#c7ccd1', quarter: '#c7ccd1', euro1: '#d9b44a', euro2: '#d9b44a', nutM8: '#aab2bb', nutM6: '#aab2bb' };
 const WEIGHT_OPTS = [['b608', '608 bearing (22 mm)'], ['b688', '688 bearing (16 mm)'], ['nutM8', 'M8 hex nut'], ['nutM6', 'M6 hex nut'], ['penny', 'US penny'],
   ['nickel', 'US nickel'], ['quarter', 'US quarter'], ['euro1', '€1 coin'], ['euro2', '€2 coin'], ['solid', 'None (solid plastic)'], ['custom', 'Custom round weight']];
 
 const bodyGroups = () => [
   { title: 'Shape', open: true, items: [
     R('arms', 'Arms', 1, 8, 1, 3, ''),
-    S('style', 'Arm style', [['lobes', 'Round lobes'], ['bar', 'Straight bars'], ['ring', 'Lobes joined by a ring'], ['star', 'Pointed star'], ['tri', 'Rounded body'], ['wing', 'Swept wings']], 'lobes'),
+    S('style', 'Arm style', [['lobes', 'Round lobes'], ['bar', 'Straight bars'], ['ring', 'Lobes joined by a ring'], ['star', 'Pointed star'], ['tri', 'Rounded body'], ['wing', 'Swept wings'], ['petal', 'Petals'], ['gear', 'Gear']], 'lobes'),
+    R('teeth', 'Gear teeth', 12, 48, 1, 24, '', { show: s => s.style === 'gear' }),
     R('armR', 'Arm length (centre to weight)', 15, 60, 0.5, 28, 'mm'),
     R('wall', 'Wall around pockets', 1.2, 6, 0.1, 2.4, 'mm'),
     R('edge', 'Rounded edges', 0, 3, 0.1, 1.2, 'mm'),
+    R('blend', 'Blend between arms', 0, 12, 0.5, 0, 'mm', { hint: 'Rounds the inside corners where the arms meet. 0 picks one for the size.' }),
   ] },
   { title: 'Weights', open: true, items: [
     S('weight', 'Weight in each arm', WEIGHT_OPTS, 'b608', { hint: 'Heavier weights far from the middle spin longer.' }),
@@ -24,7 +33,22 @@ const bodyGroups = () => [
     R('coins', 'Coins per pocket', 1, 6, 1, 3, '', { show: s => ['penny', 'nickel', 'quarter', 'euro1', 'euro2'].includes(s.weight) }),
     R('wFit', 'Weight fit', -0.2, 0.5, 0.05, 0.1, 'mm', { hint: 'Added to the pocket. Lower for a tighter press fit.' }),
   ] },
+  { title: 'Preview', items: [
+    B('pvHw', 'Show the bearing and weights', true, { hint: 'Preview only: they are never in the download.' }),
+  ] },
 ];
+
+/* ---------------- randomizer: a new design, keeping the bearing, fits and colours ---------------- */
+const pick = (list) => list[Math.floor(Math.random() * list.length)];
+const rnd = (a, b, step) => +(a + Math.round(Math.random() * (b - a) / step) * step).toFixed(2);
+function randomSpinner(s) {
+  const style = pick(['lobes', 'lobes', 'bar', 'ring', 'star', 'tri', 'wing', 'petal', 'petal', 'gear']);
+  const arms = style === 'bar' ? pick([2, 2, 3, 4]) : pick([2, 3, 3, 3, 4, 4, 5, 6]);
+  const weight = pick(['b608', 'b608', 'b688', 'nutM8', 'nutM6', 'penny', 'nickel', 'quarter', 'euro1', 'euro2', ...(style === 'wing' || style === 'gear' ? ['solid'] : [])]);
+  const coins = pick([2, 3, 4]);
+  return { style, arms, weight, coins, armR: rnd(arms > 4 ? 30 : 24, arms > 4 ? 40 : 34, 0.5), wall: rnd(2, 3.4, 0.1), edge: rnd(0.6, 2, 0.1),
+    blend: 0, teeth: pick([18, 24, 30, 36]) };
+}
 
 export default {
   id: 'fidget-spinners', title: 'Fidget spinners', usesBed: false,
@@ -49,9 +73,11 @@ export default {
         ] },
         { title: 'Colours', items: [C('colBody', 'Body', '#1182c9'), C('colCap', 'Caps', '#f3662e')] },
       ],
-      presets: [['Classic tri', { arms: 3, style: 'lobes', weight: 'b608' }], ['Coin spinner', { arms: 3, weight: 'quarter', coins: 4, style: 'ring' }],
+      random: randomSpinner, randomLabel: 'Randomize design', randomTitle: 'A new spinner design every click. Your bearing, fits and colours stay as they are.',
+      camera: { dir: [0.5, -0.9, 0.9] },
+      presets: [['Classic tri', { arms: 3, style: 'lobes', weight: 'b608' }], ['Petal', { arms: 4, style: 'petal', weight: 'nutM8', armR: 29 }], ['Gear', { arms: 3, style: 'gear', weight: 'b608', armR: 27, teeth: 30 }], ['Coin spinner', { arms: 3, weight: 'quarter', coins: 4, style: 'ring' }],
         ['Bar spinner', { arms: 2, style: 'bar', weight: 'nutM8', armR: 32 }], ['Star', { arms: 5, style: 'star', weight: 'penny', coins: 4, armR: 30 }], ['Mini', { bearing: '688', thick: 5, weight: 'b688', armR: 20 }]],
-      test: [{ weight: 'custom' }, { weight: 'penny' }, { style: 'bar' }],
+      test: [{ weight: 'custom' }, { weight: 'penny' }, { style: 'bar' }, { style: 'petal' }, { style: 'gear' }, { arms: 1 }, { arms: 8, style: 'gear' }, { weight: 'solid', style: 'star' }, { caps: false }, { capStyle: 'dome' }, { bearing: '6000', thick: 8 }],
     },
     pip: {
       label: 'No bearing', title: 'Print-in-place spinner', icon: '<circle cx="12" cy="12" r="4"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/>',
@@ -66,8 +92,10 @@ export default {
         ...bodyGroups(),
         { title: 'Colours', items: [C('colBody', 'Body', '#1182c9'), C('colCap', 'Hub', '#f3662e')] },
       ],
-      presets: [['Tri spinner', { arms: 3 }], ['Solid swirl', { arms: 4, style: 'wing', weight: 'solid' }], ['Coin ring', { arms: 3, style: 'ring', weight: 'nickel', coins: 3 }]],
-      test: [{ weight: 'solid' }],
+      random: randomSpinner, randomLabel: 'Randomize design', randomTitle: 'A new spinner design every click. Your hub, fits and colours stay as they are.',
+      camera: { dir: [0.5, -0.9, 0.9] },
+      presets: [['Tri spinner', { arms: 3 }], ['Petal', { arms: 3, style: 'petal', weight: 'penny', coins: 3 }], ['Solid swirl', { arms: 4, style: 'wing', weight: 'solid' }], ['Coin ring', { arms: 3, style: 'ring', weight: 'nickel', coins: 3 }]],
+      test: [{ weight: 'solid' }, { style: 'gear' }, { style: 'petal', weight: 'quarter' }],
     },
     ring: {
       label: 'Spinner ring', title: 'Spinner ring', icon: '<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="5"/>',
@@ -102,39 +130,58 @@ export default {
     else centreR = p.hubD / 2 + p.gap + 1.2 + p.wall;
     const lobeR = (wD ? pocketR : 7) + p.wall;
     const T = p.thick;
-    if (wD && p.armR < centreR + lobeR - p.wall) { warn.push('Arms are too short for these weights: they were lengthened.'); p.armR = centreR + lobeR - p.wall + 1; }
-    const n = p.arms, arm = (i) => (90 + 360 * i / n) * D2R;
+    let armR = p.armR;
+    const n = p.arms;
+    // the weights need room from the centre and from each other
+    const minR = Math.max(wD ? centreR + lobeR - p.wall + 1 : 0, wD && n > 1 ? (pocketR + p.wall * 0.75) / Math.sin(Math.PI / n) : 0);
+    if (armR < minR - 0.01) { warn.push(`The arms were lengthened to ${minR.toFixed(1)} mm so the weights fit.`); armR = minR; }
+    const arm = (i) => (90 + 360 * i / n) * D2R;
+    const at = (i) => [armR * Math.cos(arm(i)), armR * Math.sin(arm(i))];
     const centre = K.circle(centreR, 96);
     let body = centre;
     for (let i = 0; i < n; i++) {
-      const a = arm(i), x = p.armR * Math.cos(a), y = p.armR * Math.sin(a);
+      const a = arm(i), [x, y] = at(i);
       const lobe = K.circle(lobeR, 96).translate([x, y]);
       let piece;
-      if (p.style === 'bar') piece = K.rect(p.armR, lobeR * 1.2).translate([p.armR / 2, 0]).rotate(a / D2R).add(lobe);
-      else if (p.style === 'star') piece = K.poly([[0, -centreR * 0.8], [p.armR + lobeR * 1.2, 0], [0, centreR * 0.8]]).rotate(a / D2R).add(lobe);
-      else if (p.style === 'wing') { const sw = K.poly(Array.from({ length: 21 }, (_, k) => { const t = k / 20, r = t * p.armR, th = t * 0.6; return [r * Math.cos(th), r * Math.sin(th) + lobeR * (1 - t) * 0.9]; }).concat(Array.from({ length: 21 }, (_, k) => { const t = 1 - k / 20, r = t * p.armR, th = t * 0.6; return [r * Math.cos(th), r * Math.sin(th) - lobeR * 0.9 * (1 - t) - 2]; }))); piece = K.CS.hull([centre, lobe]).intersect(K.circle(p.armR + lobeR, 96)).add(sw.rotate(a / D2R - 17)); }
+      if (p.style === 'bar') piece = K.rect(armR, lobeR * 1.2).translate([armR / 2, 0]).rotate(a / D2R).add(lobe);
+      else if (p.style === 'star') piece = K.poly([[0, -centreR * 0.8], [armR + lobeR * 1.2, 0], [0, centreR * 0.8]]).rotate(a / D2R).add(lobe);
+      else if (p.style === 'wing') { const sw = K.poly(Array.from({ length: 21 }, (_, k) => { const t = k / 20, r = t * armR, th = t * 0.6; return [r * Math.cos(th), r * Math.sin(th) + lobeR * (1 - t) * 0.9]; }).concat(Array.from({ length: 21 }, (_, k) => { const t = 1 - k / 20, r = t * armR, th = t * 0.6; return [r * Math.cos(th), r * Math.sin(th) - lobeR * 0.9 * (1 - t) - 2]; }))); piece = K.CS.hull([centre, lobe]).intersect(K.circle(armR + lobeR, 96)).add(sw.rotate(a / D2R - 17)); }
+      else if (p.style === 'petal') {        // a teardrop lobe with its tip swept round, like a flower petal
+        const tipA = a + 0.38, tipR = armR + lobeR * 0.95;
+        piece = K.CS.hull([lobe, K.circle(lobeR * 0.28, 48).translate([tipR * Math.cos(tipA), tipR * Math.sin(tipA)])]).add(K.CS.hull([centre, K.circle(lobeR * 0.62, 64).translate([x, y])]));
+      }
       else piece = K.CS.hull([centre, lobe]);
       body = body.add(piece);
     }
-    if (p.style === 'tri') body = K.CS.hull([centre, ...Array.from({ length: n }, (_, i) => K.circle(lobeR, 64).translate([p.armR * Math.cos(arm(i)), p.armR * Math.sin(arm(i))]))]);
-    if (p.style === 'ring') body = body.add(K.circle(p.armR + lobeR * 0.45, 128).subtract(K.circle(p.armR - lobeR * 0.45, 128)));
-    if (p.style === 'lobes' && n > 1) { // soften the joins between lobes
-      body = body.offset(2, 'Round').offset(-2, 'Round');
+    if (p.style === 'tri') body = K.CS.hull([centre, ...Array.from({ length: n }, (_, i) => K.circle(lobeR, 64).translate(at(i)))]);
+    if (p.style === 'ring') body = body.add(K.circle(armR + lobeR * 0.45, 128).subtract(K.circle(armR - lobeR * 0.45, 128)));
+    if (p.style === 'gear') {                // a toothed disc: the weights sit just inside the teeth
+      const rOut = armR + lobeR, z = p.teeth, depth = Math.min(3, lobeR * 0.35), pts = [];
+      for (let k = 0; k < z * 8; k++) { const t = k / (z * 8), ph = (t * z) % 1, r = rOut - depth * (ph < 0.3 ? 0 : ph < 0.5 ? (ph - 0.3) / 0.2 : ph < 0.8 ? 1 : 1 - (ph - 0.8) / 0.2);
+        pts.push([r * Math.cos(t * 2 * Math.PI), r * Math.sin(t * 2 * Math.PI)]); }
+      body = K.poly(pts);
     }
+    // blend every inside corner where the arms meet: sharp corners are where printed spinners crack
+    const blend = p.blend || (p.style === 'gear' ? 0.6 : p.style === 'ring' ? 1.2 : clampN(lobeR * 0.45, 1.5, 8));      // small on rings, so their windows stay open
+    if (n > 1 || p.style !== 'lobes') body = body.offset(blend, 'Round').offset(-blend, 'Round');
     // ---- holes
     let hole2 = null;
     if (p.mode === 'bearing') hole2 = K.circle(BEARINGS[p.bearing][0] / 2 + p.fit, 96);
     let m = K.softSlab(body, T, p.edge);
-    const pockets = [];
+    const pockets = [], pocket2D = [], weightZ = [];
+    const pocketShape = () => (W[2] === 'hex' ? K.regular(6, pocketR / Math.cos(Math.PI / 6), 0) : K.circle(pocketR, 96));
     for (let i = 0; i < n; i++) {
-      const a = arm(i), x = p.armR * Math.cos(a), y = p.armR * Math.sin(a);
+      const [x, y] = at(i);
       if (!wD) continue;
-      const shape = W[2] === 'hex' ? K.regular(6, pocketR / Math.cos(Math.PI / 6), 0) : K.circle(pocketR, 96);
-      const depth = Math.min(wT + 0.1, T + 1);
-      if (wT >= T - 0.4) pockets.push(K.extrude(shape, T + 2).translate([x, y, -1]));              // through
+      const shape = pocketShape();
+      const depth = Math.min(wT + 0.1, T + 1), through = wT >= T - 0.4;
+      pocket2D.push(shape.translate([x, y]));
+      if (through) pockets.push(K.extrude(shape, T + 2).translate([x, y, -1]));
       else pockets.push(K.extrude(shape, depth + 0.01).translate([x, y, T - depth]));                // blind, from the top
+      weightZ.push(through ? (T - wT) / 2 : T - depth);
     }
     if (wT > T + 0.01) warn.push(`The weights (${wT.toFixed(1)} mm) are thicker than the body (${T} mm) and will stick out.`);
+    if (n === 1) warn.push('A single arm is off balance and will wobble. Use two or more arms for a smooth spin.');
     if (hole2) pockets.push(K.extrude(hole2, T + 2).translate([0, 0, -1]));
     if (pockets.length) m = m.subtract(K.union(pockets));
     const parts = [];
@@ -147,30 +194,77 @@ export default {
       const cut = K.poly(hubProf).offset(c, 'Miter', 4).intersect(K.poly([[0, -2], [rh + 5, -2], [rh + 5, T + 2], [0, T + 2]]));
       m = m.subtract(K.revolve(cut, 96));
       hub = K.revolve(K.poly(hubProf), 96);
-      if (p.dimple) { const dr = rh * 0.7, sag = Math.min(1.2, T / 5), R = (dr * dr + sag * sag) / (2 * sag); hub = hub.subtract(K.sphere(R, 96).translate([0, 0, T + R - sag])); }
+      if (p.dimple) { const dr = rh * 0.7, sag = Math.min(1.2, T / 5), R = (dr * dr + sag * sag) / (2 * sag); hub = hub.subtract(K.sphere(R, 192).translate([0, 0, T + R - sag])); }
       info.lines.push('Print as one piece with no supports. When it comes off the bed, twist the hub firmly once to break any strands.');
     }
     parts.push({ name: 'body', label: 'Body', m, colorKey: 'colBody', color: p.colBody });
     if (hub) parts.push({ name: 'hub', label: 'Hub', m: hub, colorKey: 'colCap', color: p.colCap });
+    let capMass = 0;
     if (p.mode === 'bearing' && p.caps) {
-      const [od, bore, bw] = BEARINGS[p.bearing];
-      const cap = () => {
-        let c = K.softSlab(K.circle(p.capD / 2, 64), p.capT, Math.min(0.8, p.capT / 3));
-        if (p.capStyle === 'dish') { const sag = Math.min(0.8, p.capT - 0.8), rr = p.capD * 0.35, R = (rr * rr + sag * sag) / (2 * sag); c = c.subtract(K.sphere(R, 64).translate([0, 0, p.capT + R - sag])); }
-        if (p.capStyle === 'dome') c = c.add(K.sphere(p.capD / 2, 64).scale([1, 1, 0.18]).intersect(K.cyl(p.capD / 2, p.capD, 64)).translate([0, 0, p.capT]));
-        const spacer = K.cyl(bore / 2 + 1.2, 0.5, 48).translate([0, 0, -0.5]);            // stops the cap rubbing the outer race
-        const shaft = K.cyl(bore / 2 + p.capFit, bw / 2 - 0.4, 48).translate([0, 0, -0.5 - (bw / 2 - 0.4)]);
-        return K.onBed(c.add(spacer).add(shaft).rotate([180, 0, 0]), false);
-      };
-      const off = Math.max(...m.boundingBox().max) + p.capD / 2 + 6;
-      parts.push({ name: 'caps', label: 'Finger caps', m: K.union([cap().translate([off, -p.capD / 2 - 3, 0]), cap().translate([off, p.capD / 2 + 3, 0])]), colorKey: 'colCap', color: p.colCap });
+      const [, bore, bw] = BEARINGS[p.bearing];
+      // one cap as it sits on top of the bearing: disc from z = 0 up, spacer and shaft below
+      let c = K.softSlab(K.circle(p.capD / 2, 64), p.capT, Math.min(0.8, p.capT / 3));
+      if (p.capStyle === 'dish') { const sag = Math.min(0.8, p.capT - 0.8), rr = p.capD * 0.35, R = (rr * rr + sag * sag) / (2 * sag); c = c.subtract(K.sphere(R, 192).translate([0, 0, p.capT + R - sag])); }
+      if (p.capStyle === 'dome') c = c.add(K.sphere(p.capD / 2, 128).scale([1, 1, 0.18]).intersect(K.cyl(p.capD / 2, p.capD, 64)).translate([0, 0, p.capT]));
+      const spacer = K.cyl(bore / 2 + 1.2, 0.5, 48).translate([0, 0, -0.5]);            // stops the cap rubbing the outer race
+      const shaft = K.cyl(bore / 2 + p.capFit, bw / 2 - 0.4, 48).translate([0, 0, -0.5 - (bw / 2 - 0.4)]);
+      const cap = c.add(spacer).add(shaft);
+      // printed face down beside the body; the preview puts one on each side of the bearing
+      const cb = cap.boundingBox(), off = Math.max(...m.boundingBox().max) + p.capD / 2 + 6;
+      [[1, -1, (T + bw) / 2 + 0.5], [2, 1, (T - bw) / 2 - 0.5]].forEach(([k, side, z]) => {
+        const printY = side * (p.capD / 2 + 3);
+        const print = cap.rotate([180, 0, 0]).translate([off, printY, cb.max[2]]);
+        // assembled pose from the print pose: undo the move and flip, then flip again for the bottom cap
+        const asm = k === 1 ? [1, 0, 0, 0, 0, -1, 0, 0, 0, 0, -1, 0, -off, printY, cb.max[2] + z, 1]
+          : [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, -off, -printY, z - cb.max[2], 1];
+        parts.push({ name: 'cap' + k, label: k === 1 ? 'Finger cap (top)' : 'Finger cap (bottom)', m: print, colorKey: 'colCap', color: p.colCap, asm });
+      });
+      capMass = 2 * cap.volume() / 1000 * 1.24;
       info.lines.push('Press the bearing in from one side, then push a cap into each side of the bearing\'s centre.');
     }
+    // ---- preview only: the bearing and the weights, where they sit in the finished spinner
+    if (p.pvHw) {
+      const steel = [], other = [];
+      const bearing = (od, id, w, z0) => {       // outer race, shield with a groove, inner race
+        const outer = K.cyl(od / 2, w, 64).subtract(K.cyl(od / 2 - Math.max(1, od * 0.09), w + 2, 64).translate([0, 0, -1]));
+        const inner = K.cyl(id / 2 + Math.max(1, id * 0.25), w, 48).subtract(K.cyl(id / 2, w + 2, 48).translate([0, 0, -1]));
+        const shield = K.cyl(od / 2 - Math.max(1, od * 0.09) + 0.05, w - 0.6, 64).translate([0, 0, 0.3])
+          .subtract(K.cyl(id / 2 + Math.max(1, id * 0.25) - 0.05, w + 2, 48).translate([0, 0, -1]));
+        return K.union([outer, inner, shield]).translate([0, 0, z0]);
+      };
+      if (p.mode === 'bearing') { const [od, id, bw] = BEARINGS[p.bearing]; steel.push(bearing(od, id, bw, (T - bw) / 2)); }
+      if (wD && p.weight !== 'solid') for (let i = 0; i < n; i++) {
+        const [x, y] = at(i), z0 = weightZ[i];
+        if (p.weight === 'b608' || p.weight === 'b688') steel.push(bearing(wD, 8, wT, z0).translate([x, y, 0]));
+        else if (W[2] === 'hex') other.push(K.extrude(K.regular(6, wD / 2 / Math.cos(Math.PI / 6), 0).subtract(K.circle(p.weight === 'nutM8' ? 4 : 3, 32)), wT).translate([x, y, z0]));
+        else if (coin) { const cs = []; for (let k = 0; k < p.coins; k++) cs.push(K.cyl(wD / 2, W[1] - 0.06, 64).translate([0, 0, k * W[1]])); other.push(K.union(cs).translate([x, y, z0])); }
+        else other.push(K.cyl(wD / 2, wT, 64).translate([x, y, z0]));
+      }
+      if (steel.length) parts.push({ name: 'steel', label: p.mode === 'bearing' ? 'Bearings' : 'Weights', m: K.union(steel), color: '#c9ced6', look: 'metal', preview: true });
+      if (other.length) parts.push({ name: 'weights', label: coin ? 'Coins' : 'Weights', m: K.union(other), color: HW_COL[p.weight] || '#aab2bb', look: 'metal', preview: true });
+    }
+    // ---- spin figures: how much of the spinning inertia sits in the weights
+    const J = (cs) => { let j = 0; for (const poly of cs.toPolygons()) for (let k = 0; k < poly.length; k++) {
+      const [x0, y0] = poly[k], [x1, y1] = poly[(k + 1) % poly.length], cr = x0 * y1 - x1 * y0;
+      j += cr * (x0 * x0 + x0 * x1 + x1 * x1 + y0 * y0 + y0 * y1 + y1 * y1) / 12; } return Math.abs(j); };
+    const rho = 1.24e-3;                                                           // PLA, g/mm³
+    const holes2D = pocket2D.length ? K.CS.union(pocket2D) : null;
+    const bodyJ = (J(body) - (holes2D ? J(holes2D) * Math.min(1, wT >= T - 0.4 ? 1 : (wT + 0.1) / T) : 0)) * T * rho;       // g·mm²
+    const perW = wD && p.weight !== 'solid' ? (MASS[p.weight] ?? (Math.PI * (wD / 2) ** 2 * wT * 7.8e-3)) * (coin ? p.coins : 1) : 0;
+    const wJ = perW * n * (armR * armR + wD * wD / 8);
+    const bodyMass = m.volume() * rho;
+    const total = bodyMass + perW * n + (p.mode === 'bearing' ? BEARING_G[p.bearing] : 0) + capMass + (hub ? hub.volume() * rho : 0);
+    info.facts.push(`${n} arm${n > 1 ? 's' : ''}`, `about ${Math.round(total)} g built`);
+    if (wJ > 0) {
+      const share = wJ / (wJ + bodyJ);
+      info.facts.push(`${Math.round(share * 100)}% of the spin in the weights`);
+      info.lines.push(`About ${Math.round(share * 100)}% of the spinning inertia is in the weights. The higher that is, the longer it spins: ${share > 0.75 ? 'this one is built for long spins.' : 'move the weights further out, or use heavier ones, for longer spins.'}`);
+    }
     if (wD && p.weight !== 'solid') info.lines.push(coin ? `Stack ${p.coins} coins in each pocket; a drop of glue keeps them in.` : 'Press the weights in after printing. A small clamp or vise helps.');
-    info.facts.push(`${n} arm${n > 1 ? 's' : ''}`);
     return { parts, warn, info };
   },
 };
+const clampN = (v, a, b) => Math.min(b, Math.max(a, v));
 
 function ring(K, p, info) {
   const ri = (p.sizeBy === 'us' ? 11.63 + 0.8128 * p.usSize : p.innerD) / 2;

@@ -5,7 +5,7 @@
    ============================================================ */
 import Module from '../../vendor/manifold/manifold.js?v=26779a4e84';
 import { kit } from './core.js?v=95f6f46afd';
-import { GENERATORS } from './gens/index.js?v=59a45f1465';
+import { GENERATORS } from './gens/index.js?v=13d96ef5f8';
 
 const ready = Module().then(w => { w.setup(); return w; });
 const fonts = new Map();

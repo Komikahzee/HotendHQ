@@ -9,7 +9,7 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { meshToSTL, meshesTo3MF, zip } from '../gridfinity-core.js?v=cd2b8dee8c';
 import { printerOptions, printerById, loadPrinter, savePrinter, volumeOf, fits } from '../printers.js?v=ff3522465e';
 import { FONTS, PALETTE } from './core.js?v=95f6f46afd';
-import { GENERATORS } from './gens/index.js?v=59a45f1465';
+import { GENERATORS } from './gens/index.js?v=13d96ef5f8';
 
 const $ = (s, r = document) => r.querySelector(s);
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -447,7 +447,7 @@ function getWorker() {
   if (worker && builds > 10 && !busy) { worker.terminate(); worker = null; }
   if (!worker) {
     builds = 0;
-    worker = new Worker(new URL('./worker.js?v=114b18f60f', import.meta.url), { type: 'module' });
+    worker = new Worker(new URL('./worker.js?v=42e756fe99', import.meta.url), { type: 'module' });
     worker.onmessage = (e) => { const h = handlers.get(e.data.id); if (h) { handlers.delete(e.data.id); h(e.data); } };
     worker.onerror = (e) => { console.error(e); e.preventDefault?.(); resetWorker('The model engine stopped unexpectedly.'); };
   }

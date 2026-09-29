@@ -6,6 +6,68 @@
    published rows from the database are shown first and these fill in behind. */
 window.HHQ_SEED_ARTICLES = [
 {
+  slug:'fidget-spinner-generator-2',
+  seo_title:'Free Fidget Spinner Generator: Design, Weight and 3D Print Your Own Spinner',
+  meta_description:'Design a 3D printable fidget spinner in your browser: bearing or print-in-place, eight shapes, bearing, nut or coin weights, a finished-spinner preview, spin figures and a randomizer. Free STL.',
+  title:'The Fidget Spinner Generator Gets New Shapes, a Finished Preview and Spin Figures',
+  category:'News',
+  tags:['generators','fidget spinners','toys','new feature'],
+  excerpt:'Petal and gear spinners, a preview that shows the bearing, nuts and coins in place, a figure for how much of the spin is in the weights, and a Randomize button for a new design every click.',
+  published_at:'2026-09-29',
+  author_name:'Hotend HQ',
+  cover_url:'/assets/img/articles/spinner-petal.webp',
+  body:`
+The [fidget spinner generator](/generators/fidget-spinners) makes spinners you can print today: a classic spinner with a skateboard bearing in the middle, a print-in-place spinner that needs no bearing at all, or a spinning worry ring sized to your finger. This update is about making them look better and spin longer, and about seeing the finished spinner before you print.
+
+It is free, it runs in your browser, and nothing is uploaded.
+
+## See it finished
+
+The preview now shows the spinner as you will hold it: the steel bearing in the centre, the finger caps pushed in on both sides, and the weights in every arm, whether they are bearings, hex nuts or a stack of coins. Switch to **Print layout** to see exactly what goes on the bed. The bearings, nuts and coins are only in the preview, never in the download.
+
+## New shapes, smoother joins
+
+There are now eight shapes: round lobes, straight bars, lobes joined by a ring, a pointed star, a rounded body, swept wings, and two new ones:
+
+- **Petals**: teardrop arms with their tips swept round, like a flower.
+- **Gear**: a toothed disc with the weights just inside the teeth. Choose from 12 to 48 teeth.
+
+Every shape now blends smoothly where the arms meet the centre. Sharp inside corners are where printed spinners crack when they are dropped, and rounded ones look better too. The **Blend between arms** setting lets you make the curves tighter or softer.
+
+![A gear spinner with 608 bearings as weights](/assets/img/articles/spinner-gear.webp)
+
+## One click, a new design
+
+Press **Randomize design** and the generator rolls a new spinner: the shape, the number of arms, the weights, the arm length and the edges. Your bearing, fits and colours stay as they are. Keep clicking until you like one, then fine-tune it.
+
+## Know how well it will spin
+
+A spinner keeps going because of its flywheel effect, and the heavier the weights and the further out they sit, the longer it spins. The generator now works out how much of the spinning inertia is in the weights rather than the plastic, and tells you if you could get a longer spin by moving them out or using heavier ones. It also gives the weight of the finished spinner, bearing and weights included.
+
+It checks the weights fit too. If two pockets would run into each other, or into the centre, the arms are lengthened to make room, and it warns you if the weights are thicker than the body or if a single arm would leave the spinner off balance.
+
+![A coin spinner with a stack of four quarters in each arm](/assets/img/articles/spinner-coins.webp)
+
+## Weights you already have
+
+Pockets are sized for 608 and 688 bearings, M8 and M6 hex nuts, US pennies, nickels and quarters, €1 and €2 coins, or any round weight you measure. Stack up to six coins in each pocket.
+
+## No bearing? No problem
+
+The print-in-place spinner prints with its hub already trapped inside the body on a V-shaped track. Twist it firmly once when it comes off the bed and it spins.
+
+![A print-in-place spinner weighted with pennies](/assets/img/articles/spinner-pip.webp)
+
+## Print settings that work
+
+- Print flat with no supports, in PLA or PETG, with 3 or 4 walls.
+- If a bearing is loose, lower **Bearing fit** by 0.05 mm; if it will not go in, raise it.
+- For the longest, quietest spins, clean the grease out of the centre bearing.
+
+Ready to make one? [Open the fidget spinner generator](/generators/fidget-spinners).
+`
+},
+{
   slug:'drone-frame-generator-launch',
   seo_title:'Free FPV Drone Frame Generator: Design and 3D Print Your Own Quad, Hexa or Cinewhoop',
   meta_description:'Design a 3D printable FPV drone frame in your browser: quads, cinewhoops, X8, tricopters, hexa and octocopters from 65 mm to 10-inch, with rounded joints, stiffening rims, bolt-on arms and a full build preview.',
