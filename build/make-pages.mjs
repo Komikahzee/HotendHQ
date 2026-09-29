@@ -171,10 +171,31 @@ setTimeout(function () {
 }
 
 /* ---------------- the hub ---------------- */
+// the two flagship generators get their own feature cards above the rest, each with its showcase article
+const FEATURED = [
+  { slug: 'pendant', img: '/assets/img/articles/pendant-coin.webp', article: '/guides/pendant-studio-2-launch/', open: 'Open the studio',
+    text: 'Turn a photo, logo or drawing into a pendant, coin, keychain, badge or lithophane. AI depth sculpts real bas-relief from any photo, with twelve outlines, lettering and colour-swap layers, and it prints without supports.' },
+  { slug: 'drone-frame', img: '/assets/img/articles/drone-hex.webp', article: '/guides/drone-frame-generator-launch/', open: 'Design a frame',
+    text: 'FPV quads, cinewhoops, tricopters, hexa and octocopters from 65 mm to 10-inch, with rounded joints and stiffening rims made for printing. See it built with motors and props, then download it laid out for your bed.' },
+];
+const feature = (f) => `      <div class="card gens-feature">
+        <a class="gens-feature-img" href="${url(f.slug)}" tabindex="-1" aria-hidden="true">
+          <img src="${f.img}" alt="" width="1200" height="750" decoding="async">
+        </a>
+        <div class="gens-feature-body">
+          <span class="eyebrow">Featured</span>
+          <h3>${esc(bySlug[f.slug].name)}</h3>
+          <p class="muted">${esc(f.text)}</p>
+          <div class="gens-feature-cta">
+            <a class="btn btn-ghost" href="${f.article}">See what it can do</a>
+            <a class="btn btn-primary" href="${url(f.slug)}">${esc(f.open)} ${ARROW}</a>
+          </div>
+        </div>
+      </div>`;
 function hub() {
   const items = { '@context': 'https://schema.org', '@type': 'ItemList', name: '3D model generators',
     itemListElement: GENERATORS.map((g, i) => ({ '@type': 'ListItem', position: i + 1, name: g.name, url: BASE + url(g.slug) })) };
-  const count = (k) => GENERATORS.filter(g => g.cat === k).length;
+  const rest = GENERATORS.filter(g => !FEATURED.some(f => f.slug === g.slug)), count = (k) => rest.filter(g => g.cat === k).length;
   return HEAD({ title: `3D Model Generators: ${GENERATORS.length} Free Parametric STL Makers`,
     desc: `${GENERATORS.length} free 3D model generators that run in your browser: Gridfinity, print-in-place chains, dice, stencils, layered signs, plant markers, drone frames, mic clips and more. Set your sizes and download STL or 3MF.`,
     canonical: '/generators', image: '/assets/img/articles/generators-spotlight.webp', extra: ld(items) + '\n' }) + `</head>
@@ -188,29 +209,19 @@ function hub() {
   </section>
 
   <section class="wrap section--tight gens-feature-wrap" aria-labelledby="gens-feature-title">
-    <div class="card gens-feature">
-      <a class="gens-feature-img" href="${url('pendant')}" tabindex="-1" aria-hidden="true">
-        <img src="/assets/img/articles/pendant-coin.webp" alt="" width="1200" height="750" decoding="async">
-      </a>
-      <div class="gens-feature-body">
-        <span class="eyebrow">Featured</span>
-        <h2 id="gens-feature-title">${esc(bySlug.pendant.name)}</h2>
-        <p class="muted">Turn a photo, logo or drawing into a pendant, coin, keychain, badge or lithophane. Ten relief styles, twelve outlines, lettering and colour-swap layers, and it prints without supports.</p>
-        <div class="gens-feature-cta">
-          <a class="btn btn-ghost" href="/guides/pendant-medallion-generator-guide/">Read the guide</a>
-          <a class="btn btn-primary" href="${url('pendant')}">Open the studio ${ARROW}</a>
-        </div>
-      </div>
+    <h2 id="gens-feature-title" class="sr-only">Featured generators</h2>
+    <div class="gens-features">
+${FEATURED.map(feature).join('\n')}
     </div>
   </section>
 
   <section class="wrap section--tight" style="padding-top:0">
     <div class="chips gens-filter" role="group" aria-label="Filter generators">
-      <button type="button" class="chip" data-f="all" aria-pressed="true">All <span class="faint">${GENERATORS.length}</span></button>
-${Object.entries(CATEGORIES).map(([k, v]) => `      <button type="button" class="chip" data-f="${k}" aria-pressed="false">${esc(v)} <span class="faint">${count(k)}</span></button>`).join('\n')}
+      <button type="button" class="chip" data-f="all" aria-pressed="true">All <span class="faint">${rest.length}</span></button>
+${Object.entries(CATEGORIES).filter(([k]) => count(k)).map(([k, v]) => `      <button type="button" class="chip" data-f="${k}" aria-pressed="false">${esc(v)} <span class="faint">${count(k)}</span></button>`).join('\n')}
     </div>
     <div class="grid g3 gens-grid" id="gens-grid">
-${GENERATORS.map(card).join('\n')}
+${rest.map(card).join('\n')}
     </div>
   </section>
 

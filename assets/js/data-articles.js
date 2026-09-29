@@ -6,6 +6,135 @@
    published rows from the database are shown first and these fill in behind. */
 window.HHQ_SEED_ARTICLES = [
 {
+  slug:'drone-frame-generator-launch',
+  seo_title:'Free FPV Drone Frame Generator: Design and 3D Print Your Own Quad, Hexa or Cinewhoop',
+  meta_description:'Design a 3D printable FPV drone frame in your browser: quads, cinewhoops, X8, tricopters, hexa and octocopters from 65 mm to 10-inch, with rounded joints, stiffening rims, bolt-on arms and a full build preview.',
+  title:'Design Your Own FPV Drone Frame, Made to Be Printed',
+  category:'News',
+  tags:['generators','drone','fpv','new feature'],
+  excerpt:'Quads, cinewhoops, tricopters, hexa and octocopters from 65 mm whoops to 10-inch long range. The new drone frame generator shapes frames for plastic, not carbon, and shows them built before you print.',
+  published_at:'2026-09-29',
+  author_name:'Hotend HQ',
+  cover_url:'/assets/img/articles/drone-hex.webp',
+  body:`
+Most printable drone frames are carbon fibre designs cut from plastic instead. They look right, but plastic bends far more than carbon and cracks at sharp corners, so they flex in the air and snap on the first hard landing. The [drone frame generator](/generators/drone-frame) is built the other way round: every frame is shaped for printing, sized to your parts and checked before you download it.
+
+It is free, it runs in your browser, and nothing is uploaded.
+
+![A 5-inch freestyle quad built up with motors, props, battery and an action camera](/assets/img/articles/drone-freestyle.webp)
+
+## Every kind of aircraft
+
+- **Quadcopters** in true X, stretched X, squashed X, H, plus and deadcat layouts, where the front arms sweep wide so the props stay out of the camera view.
+- **Cinewhoops** with bell-mouthed ducts round every prop.
+- **X8 coaxial cinelifters**, with a second motor under each arm.
+- **Tricopters** with a tilting tail motor on a hinged mount, driven by a 9 g servo for yaw.
+- **Y6, hexacopters and octocopters** for heavy lift and smooth footage.
+
+Sizes run from 65 mm tiny whoops to 10-inch long range. Pick a size and the typical motors, flight stack, camera and standoffs fill in for you.
+
+## Made for plastic
+
+This is what sets these frames apart. Two features are on for every frame:
+
+- **Rounded arm joints.** Smooth fillets where each arm meets the body and the motor pad spread crash loads out, instead of focusing them on one sharp corner where a crack starts.
+- **Stiffening rims.** A raised edge runs along each arm and round every weight-saving cutout, which turns the flat arm into a channel. The arms come out about two to three times stiffer for roughly a tenth more plastic, and the generator tells you the figure for your frame.
+
+![Rounded joints and raised rims on a printed arm](/assets/img/articles/drone-rims.webp)
+
+Arms can be straight, tapered, dogbone or flared, with round, square or teardrop motor pads and slots, round holes or truss cutouts. Or skip the settings: press **Randomize frame** for a new design from sixteen styles, from a slim race frame to a crash-proof basher with bumpers.
+
+## Bolt-on arms
+
+Choose **Bottom plate + replaceable arms** and each arm becomes its own part, held by two M3 bolts. A crash costs you one arm instead of a whole frame, and big frames print a part at a time on a normal bed.
+
+## Sized to your parts
+
+- **Motor mounts** for whoop motors, 9 × 9, 12 × 12, 16 × 16, 19 × 19 and 25 × 25 mm patterns, or your own.
+- **Flight stacks** from 16 × 16 to 30.5 × 30.5 mm, square or turned 45°, with bigger holes for soft-mount grommets and a second mount for a VTX or receiver.
+- **FPV camera mounts** for nano, micro and full-size cameras at any angle, with an optional bar over the top.
+- **Extras**: battery strap slots, a rear tab for the battery lead, a GPS pad, a rear antenna mount and a GoPro-style action camera mount on the top plate or on the battery strap.
+
+## Checked before you print
+
+The generator measures the gap between every pair of props and tells you the wheelbase you need if they get too close. It checks the camera fits between the plates at the angle you chose, warns when a strap is wider than the body and checks every part fits your printer's bed.
+
+![A cinewhoop with ducted props in the preview](/assets/img/articles/drone-cinewhoop.webp)
+
+Tap the parts list to add the top plate, motors, props, battery and electronics to the preview and see the finished drone. Then switch to **Print layout** and download an STL, or a 3MF that keeps every part as its own object.
+
+## Print settings that work
+
+Print flat, rims up, with 4 to 6 walls and 50 to 100% infill. PA-CF and PETG-CF make the best printed frames, PETG is a good start, and TPU is great for whoop ducts and camera mounts. Print a spare arm or two.
+
+Ready to build? [Open the drone frame generator](/generators/drone-frame).
+`
+},
+{
+  slug:'pendant-studio-2-launch',
+  seo_title:'Pendant & Medallion Studio 2.0: AI Bas-Relief From Any Photo',
+  meta_description:'Pendant & Medallion Studio 2.0 turns any photo into a sculpted, printable bas-relief: AI depth, an any-subject cut-out, portrait detail and graphics-card speed, all running privately in your browser.',
+  title:'Pendant & Medallion Studio 2.0: Sculpted Relief From Any Photo',
+  category:'News',
+  tags:['generators','jewelry','pendants','ai','new feature'],
+  excerpt:'The biggest update yet to our image-to-pendant studio. AI depth now sculpts a real bas-relief from any photo, the cut-out works on pets, objects and logos as well as people, and faces get proper detail.',
+  published_at:'2026-09-29',
+  author_name:'Hotend HQ',
+  cover_url:'/assets/img/articles/pendant-coin.webp',
+  body:`
+[Pendant & Medallion Studio](/generators/pendant/) turns a photo, logo or drawing into a pendant, coin, keychain, badge or lithophane you can print. Version 2.0 rebuilds how a flat picture becomes a 3D surface, so photos now come out as sculpted relief instead of a bumpy brightness map.
+
+It is still free, and everything, AI included, still runs on your own device. Your image is never uploaded.
+
+## What is new in 2.0
+
+### Sculpted bas-relief from AI depth
+
+The studio estimates the real depth of the scene with an AI depth model, then sculpts it the way a medal engraver would: near forms stand out, distant ones are compressed, and fine modelling survives on top. A nose sits in front of the cheeks and an arm crosses in front of the body, even though the whole piece is only a couple of millimetres deep.
+
+- **Full-precision depth** gives smooth surfaces with no pitted noise.
+- **Fine depth detail** re-reads the photo in zoomed-in tiles and blends in the extra detail, for sharper hair, fur and fabric.
+- **Rounded peaks**: the highest point of a relief rolls off smoothly instead of printing as a flat plateau.
+- **Faint modelling is lifted** to about half a layer, so the slicer keeps it instead of dropping it.
+
+### A cut-out that works on anything
+
+The new AI cut-out finds the subject of any picture: people, pets, objects and logos. Its edges are clean chamfers rather than stair steps, and the outline no longer picks up texture like wood grain from the background.
+
+For photos you do not cut out, **Calm background** quietens everything behind the subject, so a figure stands out from a smooth field instead of competing with it.
+
+### Faces with real detail
+
+**Portrait detail** finds faces and adds the modelling a sculptor would: eyes with lids, brows, a lip line and nostrils, each deep enough to print.
+
+### Faster, on your graphics card
+
+The AI now runs on your graphics card where your browser allows it, and falls back to the processor where it does not. The models download once and are kept, so the next visit starts straight away.
+
+### A clean start
+
+The studio now opens with just the emblem: no loop, no bail, no chain and no sample design. Add what you need and nothing you do not. Plain images without a cut-out no longer get an extra backing plate either.
+
+![A two-tone halftone pendant](/assets/img/articles/pendant-halftone.webp)
+
+## Still everything you had
+
+Ten relief styles, from coin and cameo to halftone, contours and line art. Twelve outlines, including one traced from your image. Arc and centre text in thirteen fonts, engraved back text, magnet pockets, loops, holes, tubes and decorative connector bails, colour-swap layers for multicolour prints on a single nozzle, and STL, 3MF and OBJ export.
+
+A new **Nozzle** setting sizes the printability checks to your nozzle, so thin outlines and small lettering are flagged before they fail, and the export suggests a matching resolution.
+
+![A heart lithophane with the backlight on](/assets/img/articles/pendant-lithophane.webp)
+
+## Tips for the best results
+
+- Use a sharp photo with one clear subject.
+- Pick the **Coin** or **Cameo** style for portraits and pets.
+- Print at 0.08 to 0.12 mm layers to bring out the relief. Silk PLA makes it look like cast metal.
+
+For a full walk-through of every setting, read the [complete studio guide](/guides/pendant-medallion-generator-guide/). Or jump straight in: [open Pendant & Medallion Studio](/generators/pendant/).
+`
+},
+{
   slug:'pendant-medallion-generator-guide',
   seo_title:'Pendant & Medallion Studio: Turn Any Image Into a 3D Printed Pendant',
   meta_description:'A complete guide to the free Hotend HQ Pendant & Medallion Studio: ten relief styles, twelve outlines, text, bails, colour-swap layers and print settings for pendants, coins, keychains, badges and lithophanes.',

@@ -23,11 +23,11 @@
 <link rel="manifest" href="/site.webmanifest">
 <link rel="stylesheet" href="/assets/css/fonts.css?v=1f7e92bbba">
 <link rel="stylesheet" href="/assets/css/theme.css?v=e097b43669">
-<link rel="stylesheet" href="/assets/css/pages.css?v=036907a30c">
+<link rel="stylesheet" href="/assets/css/pages.css?v=3d15fb6aeb">
 <script src="/assets/js/config.js?v=8c9cdf73c0" defer></script>
 <script src="/assets/js/nav.js?v=bf1aa5372b" defer></script>
 <script src="/assets/js/site.js?v=e98640a3e3" defer></script>
-<script src="/assets/js/data-articles.js?v=f24ccbde61" defer></script>
+<script src="/assets/js/data-articles.js?v=69a8c46996" defer></script>
 <script src="/assets/js/data-troubleshoot.js?v=86b65986b2" defer></script>
 <script src="/assets/js/data-filament.js?v=07561c8b31" defer></script>
 <script src="/assets/js/api.js?v=097762e5df" defer></script>
@@ -100,13 +100,38 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   /* pillars render from the nav model — one source of truth */
   const ICO = window.HHQ_NAV_ICONS || {};
-  $('#pillars').innerHTML = HHQ_NAV.primary.map(n => `
+  $('#pillars').innerHTML = HHQ_NAV.primary.map(n => n.href === '/news' ? `
+    <div class="card home-pillar home-news">
+      <a class="home-news-link" href="${n.href}"><div class="card-ico">${icon(ICO[n.label])}</div><h3>${n.label}</h3></a>
+      <p class="muted">${n.desc}</p>
+      <div class="home-news-row">
+        <a class="home-go" href="${n.href}">Open ${icon('arrow')}</a>
+        <button type="button" class="home-news-btn" id="news-btn" aria-expanded="false" aria-controls="news-pop">Latest news</button>
+      </div>
+      <div class="home-news-pop card" id="news-pop" hidden><div class="spin"></div></div>
+    </div>` : `
     <a class="card card--link home-pillar" href="${n.href}">
       <div class="card-ico">${icon(ICO[n.label])}</div>
       <h3>${n.label}</h3>
       <p class="muted">${n.desc}</p>
       <span class="home-go">Open ${icon('arrow')}</span>
     </a>`).join('');
+
+  /* news widget: the three most recent News posts, one tap from the News card */
+  const newsBtn = $('#news-btn'), newsPop = $('#news-pop');
+  if (newsBtn) {
+    const setOpen = (open) => { newsPop.hidden = !open; newsBtn.setAttribute('aria-expanded', String(open)); };
+    newsBtn.addEventListener('click', (e) => { e.stopPropagation(); setOpen(newsPop.hidden); });
+    document.addEventListener('click', (e) => { if (!newsPop.hidden && !newsPop.contains(e.target)) setOpen(false); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !newsPop.hidden) { setOpen(false); newsBtn.focus(); } });
+    HHQ_API.listArticles({ category: 'News', limit: 3 }).then(rows => {
+      newsPop.innerHTML = `<span class="eyebrow">Latest news</span>` + (rows.slice(0, 3).map(p => `
+        <a class="home-news-item" href="${articleUrl(p)}">
+          ${p.cover_url ? `<img src="${HHQ.esc(p.cover_url)}" alt="" loading="lazy">` : ''}
+          <span><b>${HHQ.esc(p.title)}</b><small>${HHQ.date(p.published_at)}</small></span>
+        </a>`).join('') || '<p class="muted">No news yet.</p>') + `<a class="home-go" href="/news">All news ${icon('arrow')}</a>`;
+    }, () => { newsPop.innerHTML = '<p class="muted">Could not load the news right now.</p>'; });
+  }
 
   /* latest articles: one row, the rest live on /news */
   try {
