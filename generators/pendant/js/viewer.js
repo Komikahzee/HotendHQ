@@ -138,7 +138,7 @@ export class Viewer {
     this.ring = new THREE.Mesh(new THREE.BufferGeometry(), this.chainMat); // jump ring
     this.ring.castShadow = true; this.ring.visible = false; this.pivot.add(this.ring);
 
-    this.state = { view: 'standing', look: null, chain: true, backlit: false };
+    this.state = { view: 'standing', look: null, chain: false, backlit: false };
     this.pend = null; this.conn = null; this._anchor = null;
     this._firstFit = true;
 

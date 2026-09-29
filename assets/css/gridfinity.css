@@ -145,7 +145,7 @@
   .gf-actions{flex-wrap:nowrap}
   .gf-actions .btn{padding:11px 12px}
   .gf-actions .btn-primary{flex:1 1 auto}
-  #gf-reset{display:none}
+  #gf-reset,#mk-reset{display:none}
   .gf-page{padding-bottom:76px}
   .gen-readout{font-size:.7rem;padding:6px 9px;right:10px;bottom:10px}
   .gen-badge{display:none}

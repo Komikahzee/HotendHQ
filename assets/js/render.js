@@ -81,7 +81,7 @@
       </div>
     </div>
     ${a.cover_url ? `<img src="${esc(a.cover_url)}" alt=""
-        style="max-width:860px;margin:0 auto 34px;border-radius:var(--r-lg);border:1px solid var(--border)">` : ''}
+        style="width:100%;max-width:860px;height:auto;display:block;margin:0 auto 34px;border-radius:var(--r-lg);border:1px solid var(--border)">` : ''}
     <div class="prose">${mdToHtml(a.body)}</div>
     <div class="prose" style="margin-top:38px">
       <div class="note note--info">${icon('info')}

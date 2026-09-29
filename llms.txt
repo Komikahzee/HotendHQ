@@ -4,7 +4,7 @@
 
 ## Model generators
 - [Gridfinity generator](https://hotendhq.com/generators/gridfinity): Bins with dividers, scoops, labels and magnets, plus baseplates, lids, tool holders and a drawer fitter.
-- [Pendant & medallion generator](https://hotendhq.com/generators/pendant/): Turn any image or logo into a pendant, medallion, keychain or badge: raised, engraved, coin, cameo and lithophane styles, text, bails and colour layers.
+- [Pendant & Medallion Studio](https://hotendhq.com/generators/pendant/): Turn any image or logo into a pendant, medallion, keychain or badge: raised, engraved, coin, cameo and lithophane styles, text, bails and colour layers.
 - [Chain generator](https://hotendhq.com/generators/chain): Print-in-place necklace chains in 34 styles, sized to your nozzle and bed, with clasps or as an endless loop.
 - [Layered sign generator](https://hotendhq.com/generators/layered-signs): Multicolour signs with raised or inlaid text, borders and mounting, with the colour-change heights worked out.
 - [Dice generator](https://hotendhq.com/generators/dice): d4, d6, d8, d10, d12, d20 and d100 with your own numbers, words or pips on every face.

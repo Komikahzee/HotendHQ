@@ -259,3 +259,15 @@
 @media (max-width:720px){.home-pillars{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.home-pillar{padding:16px 14px}}
 @media (max-width:420px){.home-pillars{grid-template-columns:1fr}.home-pillar{display:grid!important;grid-template-columns:auto 1fr;column-gap:14px;row-gap:2px;align-items:center}
   .home-pillar .card-ico{grid-row:span 2}.home-pillar h3{margin:0}.home-pillar p{grid-column:2}.home-go{display:none}}
+/* generators hub: featured generator */
+.gens-feature-wrap{padding-top:0}
+.gens-feature{padding:0;overflow:hidden;display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);align-items:stretch}
+.gens-feature-img{display:block;min-height:100%}
+.gens-feature-img img{display:block;width:100%;height:100%;aspect-ratio:8/5;object-fit:cover}
+.gens-feature-body{padding:clamp(20px,3vw,36px);display:flex;flex-direction:column;justify-content:center;gap:12px}
+.gens-feature-body h2{margin:0}
+.gens-feature-body p{margin:0}
+.gens-feature-cta{display:flex;flex-wrap:wrap;gap:10px;margin-top:6px}
+.gens-feature-cta .btn svg{width:16px;height:16px}
+@media (max-width:760px){.gens-feature{grid-template-columns:minmax(0,1fr)}.gens-feature-img img{height:auto}}
+@media (max-width:420px){.gens-feature-cta .btn{flex:1 1 100%;justify-content:center}}

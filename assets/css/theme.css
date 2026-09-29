@@ -312,3 +312,9 @@ tbody tr:hover{background:rgba(47,160,224,.05)}
 .tip-card .tip-cup{font-size:2.2rem}
 @keyframes tipIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 @media (max-width:560px){.tip-pop{left:12px;right:12px;max-width:none;bottom:80px}}
+/* touch screens: roomier tap targets for footer links and filter chips */
+@media (pointer:coarse){
+  .foot-col ul{gap:2px}
+  .foot-col a{display:inline-block;padding:9px 0}
+  .chip{min-height:38px}
+}

@@ -143,7 +143,7 @@ export const PARAMS = [
   R('border', 'footChamfer', 'Elephant-foot chamfer', 0, 1.2, 0.05, 0.3, 'mm', { help: 'Small chamfer on the bottom edge that cancels first-layer squish (elephant foot).' }),
 
   // ── Bail ────────────────────────────────────────────────
-  S('bail', 'bail', 'Type', [['none', 'None'], ['tab', 'Loop'], ['punched', 'Hole'], ['tube', 'Tube'], ['cord', 'Cord slot']], 'tab', { seg: true,
+  S('bail', 'bail', 'Type', [['none', 'None'], ['tab', 'Loop'], ['punched', 'Hole'], ['tube', 'Tube'], ['cord', 'Cord slot']], 'none', { seg: true,
     help: 'Loop: a ring grows from the edge (strongest; hang with a jump ring). Hole: punched inside the shape with a reinforcing collar. Tube: a horizontal chain tunnel — the chain threads straight through and the pendant faces forward, no jump ring needed. Cord slot: a wide slot for leather cord or ribbon.' }),
   { sec: 'bail', key: 'tabShape', label: 'Loop shape', type: 'select', seg: true, def: 'round', opts: [['round', 'Round'], ['oval', 'Oval'], ['drop', 'Drop'], ['heart', 'Heart'], ['bar', 'Ribbon bar'], ['double', 'Double'], ['hook', 'Clip hook'], ['flower', 'Flower'], ['star', 'Star'], ['hex', 'Hex']],
     show: is('bail', 'tab'), help: 'Oval gives chains room to move. Ribbon bar takes wide cords. Double = two stacked loops (charm + chain). Clip hook has a slot so it slides onto a chain without opening a ring.' },
