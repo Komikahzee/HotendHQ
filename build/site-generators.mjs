@@ -11,7 +11,7 @@ export const GENERATORS = [
     href: '/generators/pendant/', app: true,
     blurb: 'Turn any image or logo into a pendant, medallion, keychain or badge: raised, engraved, coin, cameo and lithophane styles, text, bails and colour layers.' },
   { slug: 'chain', name: 'Chain generator', cat: 'jewelry', tags: ['STL', '3MF', 'Print-in-place'],
-    blurb: 'Print-in-place necklace chains in 34 styles, sized to your nozzle and bed, with clasps or as an endless loop.' },
+    blurb: 'Print-in-place necklace chains in 37 styles, shown worn on a display bust, sized to your nozzle and bed, with clasps or as an endless loop.' },
   { slug: 'layered-signs', name: 'Layered sign generator', cat: 'crafts', tags: ['3MF', 'Multicolour'],
     blurb: 'Multicolour signs with raised or inlaid text, borders and mounting, with the colour-change heights worked out.' },
   { slug: 'dice', name: 'Dice generator', cat: 'games', tags: ['STL', '3MF', 'd4–d20'],

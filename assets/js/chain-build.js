@@ -54,6 +54,11 @@ Object.assign(STYLES, {
   marquise:    { name: 'Marquise',             group: 'Medium', kind: 'ring', shape: 'marquise', ratio: 1.8, twist: 45, flat: true, d: { linkL: 11, linkW: 6.4, wire: 1.5 } },
   flatmariner: { name: 'Flat mariner / Gucci', group: 'Medium', kind: 'ring', shape: 'stadium', ratio: 1.5, bar: true, profile: 'flat', twist: 45, flat: true, d: { linkL: 12, linkW: 8, wire: 1.6 } },
 });
+Object.assign(STYLES, {
+  cliprolo:    { name: 'Paperclip & rolo',     group: 'Easy',   kind: 'ring', shape: 'rrect', ratio: 2.8, rc: 0.34, unit: [{ lenMul: 1 }, { rolo: true, sMul: 1.2 }], d: { linkL: 16, linkW: 5.6, wire: 1.3 } },
+  shapedrolo:  { name: 'Shaped & rolo',        group: 'Easy',   kind: 'ring', shape: 'heart', ratio: 1.0, shapeSel: true, unit: [{ lenMul: 1 }, { rolo: true, sMul: 0.85 }], d: { linkL: 12, linkW: 11, wire: 1.3 } },
+  twistclip:   { name: 'Twisted paperclip',    group: 'Medium', kind: 'ring', shape: 'rrect', ratio: 2.6, rc: 0.34, twist: 45, flat: true, d: { linkL: 15, linkW: 6, wire: 1.4 } },
+});
 
 export const DEFAULTS = {
   style: 'oval', shape: 'heart', lengthMM: 18 * IN, wire: 1.6, linkL: 10, linkW: 6, profile: 'round',
@@ -97,7 +102,7 @@ export function buildChain(wasm, font, opts, polys = null) {
 function ringSpec(p, st, scale = 1, lenMul = 1) {
   const W = p.linkW * scale, rr = (p.wire / 2) * (st.heavy ? 1 : 1) * Math.sqrt(scale);
   let L = p.linkL * scale * lenMul;
-  let shape = st.style === 'shaped' ? (p.shape || 'heart') : st.shape;
+  let shape = st.style === 'shaped' || st.shapeSel ? (p.shape || 'heart') : st.shape;
   if (shape === 'circle') L = W;
   const spec = { shape: shape === 'circle' ? 'stadium' : shape, L, W, r: rr, profile: st.profile || p.profile || 'round' };
   if (st.rc) spec.rc = W * st.rc;
@@ -274,15 +279,24 @@ function buildRingChain(E, font, p, c, warn, st, polys) {
   if (endless) {
     if (target < 24 * IN - 1) warn.push(`An endless chain has to slip over your head. ${fmtIn(target)} is short for that; 24 in (610 mm) or longer is safer.`);
     const out = layoutClosed(E, placed, close, p, c, warn);
-    if (out) { addExtras(E, out, p, c, {}, warn); return out; }
+    if (out) { out.line = lineOf(placed, Hc, close.p); addExtras(E, out, p, c, {}, warn); return out; }
     // too big for one closed loop on this bed: print it open and close it with a jump ring
     const o = layoutOnBed(E, placed, p, c, warn, { r: baseSpec.r, ringBody: b0, closeRing: true });
+    o.line = lineOf(placed, Hc, close.p);
     warn.push(o.parts.filter(q => q.name !== 'jump-rings').length > 1
       ? 'Too long to print as one loop on this bed, so it prints in parts. Join them, and close the loop, with the jump rings included.'
       : 'This chain can\u2019t print as one closed loop on this bed, so it prints open. Close it with one of the jump rings included.');
     return o;
   }
-  return layoutOnBed(E, placed, p, c, warn, { r: baseSpec.r, ringBody: b0 });
+  const o = layoutOnBed(E, placed, p, c, warn, { r: baseSpec.r, ringBody: b0 });
+  o.line = lineOf(placed, Hc, 0);
+  return o;
+}
+/** The chain as one straight line (for the worn preview): every item's pose around a centreline
+    at height h, and its distance along the chain. close > 0 marks an endless loop (the closing pitch). */
+function lineOf(items, h, close) {
+  const x0 = items[0].x;
+  return { h, close, items: items.map(it => ({ body: it.body.key || it.body, color: it.color || 0, s: it.x - x0, m: it.pose ? it.pose.m : (it.m || mT(0, 0, 0)), t: it.tilt || 0, ring: it.type === 'ring', ext: !!it.ext })) };
 }
 const round2 = (v) => Math.round(v * 50) / 50;
 const fmtIn = (mm) => `${(mm / IN).toFixed(1).replace(/\.0$/, '')} in`;
@@ -879,6 +893,7 @@ function buildBall(E, p, c, warn) {
   }
   const out = linearParts(E, 'ball-chain', [bead, con], inst, (nB - 1) * s, p, warn);
   out.linkCount = nB; out.lengthMM = (nB - 1) * s + 2 * R;
+  out.line = lineOf(inst, zc, 0);
   addExtras(E, out, p, c, {}, warn);
   return out;
 }
@@ -929,6 +944,7 @@ function buildSnake(E, p, c, warn, st) {
   for (let i = 0; i < n; i++) inst.push({ body: key, x: i * pitch, color: p.twoTone ? i % 2 : 0 });
   const out = linearParts(E, flat ? 'herringbone' : 'snake-chain', [seg], inst, (n - 1) * pitch, p, warn);
   out.linkCount = n; out.lengthMM = n * pitch;
+  out.line = lineOf(inst, zc, 0);
   warn.push('The last segment ends in a free ball: add a jump ring through the neck, or pair it with a clasp from the clasp generator.');
   addExtras(E, out, p, c, {}, warn);
   return out;
@@ -964,6 +980,7 @@ function buildBike(E, p, c, warn) {
   if (n % 2 === 0) inst.push({ body: ik, x: n * P, color: 0 });
   const out = linearParts(E, 'roller-chain', [E.bodies.get(ik), E.bodies.get(ok)], inst, n * P, p, warn);
   out.linkCount = inst.length; out.lengthMM = n * P + h;
+  out.line = lineOf(inst, h / 2, 0);
   warn.push('Roller chain prints on its side and bends one way, like a real bike chain. Both ends are open bushings for jump rings.');
   addExtras(E, out, p, c, {}, warn);
   return out;

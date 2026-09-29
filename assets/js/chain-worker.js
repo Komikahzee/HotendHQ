@@ -1,6 +1,6 @@
 /* Hotend HQ — chain build worker (Manifold WASM + link engine off the main thread) */
 import Module from '../vendor/manifold/manifold.js?v=26779a4e84';
-import { buildChain, buildTestStrip, STYLES } from './chain-build.js?v=cef34e2a53';
+import { buildChain, buildTestStrip, STYLES } from './chain-build.js?v=1110be17c2';
 
 const ready = Module().then(w => { w.setup(); return w; });
 let fontP = null;
@@ -22,7 +22,7 @@ self.onmessage = async (e) => {
     });
     self.postMessage({
       id, ok: true, ms: Math.round(performance.now() - t0),
-      bodies, parts: res.parts, stats: res.stats, warn: res.warn, kitSteps: res.kitSteps || null, gaps: res.gaps || null,
+      bodies, parts: res.parts, stats: res.stats, warn: res.warn, kitSteps: res.kitSteps || null, line: res.line || null, gaps: res.gaps || null,
     }, transfer);
   } catch (err) {
     self.postMessage({ id, ok: false, error: String(err && err.message || err) });
