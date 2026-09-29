@@ -141,7 +141,9 @@ function cleanMask(A, data, w, h, p, soft = false) {
   const r = Math.max(1, Math.round(Math.max(w, h) / 600));
   // guide = the soft matte where one exists (AI), else the image; the refined value is used only in a
   // two-pixel band around the edge, so the 0.5 contour moves sub-pixel onto the true edge (no stair-steps)
-  const ref = guidedRefine(soft ? (() => { const s = new Float32Array(n); for (let i = 0; i < n; i++) s[i] = bin[i] ? Math.max(A[i], 0.5) : Math.min(A[i], 0.5); return s; })() : out, lum, w, h, r, 1e-3);
+  // an AI matte already carries a precise soft edge: it is only kept consistent with the cleaned-up mask (never
+  // snapped to the photo, which would copy its texture into the outline)
+  const ref = soft ? (() => { const s = new Float32Array(n); for (let i = 0; i < n; i++) s[i] = bin[i] ? Math.max(A[i], 0.5) : Math.min(A[i], 0.5); return s; })() : guidedRefine(out, lum, w, h, r, 1e-3);
   const band = new Uint8Array(n);
   for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
     const i = y * w + x;

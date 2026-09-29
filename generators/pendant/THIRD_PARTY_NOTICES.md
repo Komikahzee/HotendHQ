@@ -10,11 +10,11 @@ Hotend HQ includes or loads the following third-party software. Each remains und
 - Changes: the float32 weights are stored as float16, each followed by a Cast back to float32 (computation stays float32); nothing else.
 - Licence: Apache License 2.0 — https://www.apache.org/licenses/LICENSE-2.0
 
-### MODNet
-- File: `ai/modnet.onnx.wasm` — the ONNX export `Xenova/modnet` (`onnx/model_quantized.onnx`). The `.wasm` extension is only there so static hosts serve the file.
-- Source: https://huggingface.co/Xenova/modnet (original: https://github.com/ZHKKKe/MODNet)
+### IS-Net (general use)
+- Files: `ai/isnet.0.onnx.wasm` … `ai/isnet.3.onnx.wasm` — the ONNX export `isnet-general-use.onnx` distributed with rembg (MIT, https://github.com/danielgatis/rembg, release v0.0.0), split into four parts. The `.wasm` extension is only there so static hosts serve the files; they are ONNX model data.
+- Source: https://github.com/xuebinqin/DIS (Highly Accurate Dichotomous Image Segmentation, Qin et al., ECCV 2022)
 - Licence: Apache License 2.0 — https://www.apache.org/licenses/LICENSE-2.0
-- Changes: none (renamed only).
+- Changes: weights stored as symmetric per-channel int8, each followed by a DequantizeLinear back to float32 (computation stays float32); nothing else.
 
 ### ONNX Runtime Web 1.20.1
 - Files: `ai/ort.wasm.min.mjs`, `ai/ort-wasm-simd-threaded.mjs`, `ai/ort-wasm-simd-threaded.wasm`

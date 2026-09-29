@@ -31,7 +31,7 @@ function selfGuided(p, w, h, r, eps) {
   for (let i = 0; i < n; i++) q[i] = mA[i] * p[i] + mB[i];
   return q;
 }
-// Gaussian blur (three box passes).
+// Gaussian blur (three box passes); the border repeats the edge pixels.
 export function gauss(a, w, h, sigma) {
   if (sigma < 0.3) return Float32Array.from(a);
   const r = Math.max(1, Math.round(sigma * 0.95));
@@ -129,26 +129,6 @@ export function poisson(gx, gy, W, H, dx = 1, dy = 1) {
 }
 const pow2 = (v) => 1 << Math.max(3, Math.round(Math.log2(v)));
 
-// Distance (chamfer, steps sx / sy per pixel) from every inside pixel to the nearest outside one. The picture's
-// frame is not an outline: a subject cropped by it keeps its full height there.
-function chamfer(inside, w, h, sx = 1, sy = 1) {
-  const d = new Float32Array(w * h), dg = Math.hypot(sx, sy);
-  for (let i = 0; i < d.length; i++) d[i] = inside[i] ? 1e9 : 0;
-  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
-    const i = y * w + x; if (!d[i]) continue; let v = d[i];
-    if (x > 0) v = Math.min(v, d[i - 1] + sx);
-    if (y > 0) { v = Math.min(v, d[i - w] + sy); if (x > 0) v = Math.min(v, d[i - w - 1] + dg); if (x < w - 1) v = Math.min(v, d[i - w + 1] + dg); }
-    d[i] = v;
-  }
-  for (let y = h - 1; y >= 0; y--) for (let x = w - 1; x >= 0; x--) {
-    const i = y * w + x; if (!d[i]) continue; let v = d[i];
-    if (x < w - 1) v = Math.min(v, d[i + 1] + sx);
-    if (y < h - 1) { v = Math.min(v, d[i + w] + sy); if (x < w - 1) v = Math.min(v, d[i + w + 1] + dg); if (x > 0) v = Math.min(v, d[i + w - 1] + dg); }
-    d[i] = v;
-  }
-  return d;
-}
-
 function percentile(a, sel, q) {
   const v = []; const step = Math.max(1, Math.floor(a.length / 200000));
   for (let i = 0; i < a.length; i += step) if (!sel || sel[i]) v.push(a[i]);
@@ -196,9 +176,13 @@ export function sculptRelief(depth, lum, mask, w, h, { flatten = 0.55, detail = 
   for (let i = 0; i < n; i++) if (statSel[i] && mg0[i] <= p95) { sum += mg0[i]; cnt++; }
   const mean = Math.max(1e-6, sum / Math.max(1, cnt));
   const occ = 2.2 * mean, floor = 0.12 * mean, a = 0.08 * mean, bb = clamp(1 - flatten, 0.05, 1); // flatten 0.55 → exponent 0.45
+  // The attenuation is judged on a slightly blurred gradient magnitude, so it varies smoothly across an edge.
+  // Per-pixel factors on a jagged occlusion edge make a field no surface can match, and the solve then smears
+  // the mismatch into a comb of streaks along the edge.
+  const ms = gauss(mg0, ww, hh, 1.2);
   for (let i = 0; i < n; i++) {
-    let m = Math.hypot(gx[i], gy[i]);
-    if (m < 1e-9) { gx[i] = gy[i] = 0; continue; }
+    let m = ms[i];
+    if (m < 1e-9 || mg0[i] < 1e-9) { gx[i] = gy[i] = 0; continue; }
     let k = m > occ ? occ / m : 1; m = Math.min(m, occ);        // occlusion cliffs → a gentle step
     const m2 = Math.max(0, m - floor); k *= m2 / m; m = m2;     // noise floor
     if (m > a) k *= Math.pow(m / a, bb - 1);                     // compress big forms more than small ones
@@ -213,7 +197,15 @@ export function sculptRelief(depth, lum, mask, w, h, { flatten = 0.55, detail = 
     const mg = new Float32Array(n), ml = new Float32Array(n);
     for (let i = 0; i < n; i++) { mg[i] = Math.hypot(gx[i], gy[i]); ml[i] = Math.hypot(lx[i], ly[i]); }
     const ref = percentile(mg, sel, 0.9) / Math.max(1e-9, percentile(ml, sel, 0.9)), k = detail * ref;
-    for (let i = 0; i < n; i++) { gx[i] += k * lx[i]; gy[i] += k * ly[i]; }
+    // Not along occlusion edges or a cut-out's outline: there the photo's shading changes because one object
+    // ends and another begins (a saucer's rim against the table), and copying it would etch the neighbour's
+    // texture into the edge.
+    const Ein = M ? gauss(Float32Array.from(sel), ww, hh, Math.max(1.5, 0.006 / Math.min(dx, dy))) : null;
+    for (let i = 0; i < n; i++) {
+      let wgt = clamp(1 - (ms[i] / occ - 0.35) / 0.5, 0, 1);
+      if (Ein) wgt *= clamp((Ein[i] - 0.5) * 2, 0, 1);
+      gx[i] += k * wgt * lx[i]; gy[i] += k * wgt * ly[i];
+    }
   }
   // The background keeps its (compressed) gradients: the solve stays consistent across the whole picture, so
   // no halo forms round the subject, and the cut-out later replaces the background anyway.
@@ -221,12 +213,15 @@ export function sculptRelief(depth, lum, mask, w, h, { flatten = 0.55, detail = 
   { const lo = percentile(R, sel, 0.01), hi = percentile(R, sel, 0.995), k = 1 / Math.max(1e-6, hi - lo); for (let i = 0; i < n; i++) R[i] = clamp((R[i] - lo) * k, 0, 1); }
   // Cut-out subjects: near the outline the relief is eased down to a modest step (edgeStep of its height), the
   // way a medallist rolls a figure into the field. Without it a raised arm or shoulder ends in a cliff as tall
-  // as the whole relief. The ramp follows the true distance to the outline, so thin parts ease evenly.
+  // as the whole relief. The ramp comes from the blurred mask, so it is smooth even where the outline is ragged
+  // (a distance transform of a pixel staircase would print as a comb of ridges); the picture's frame is not an
+  // outline, so a subject cropped by it keeps its full height there.
   if (M && edgeStep < 1) {
-    const dist = chamfer(sel, ww, hh, dx / Math.min(dx, dy), dy / Math.min(dx, dy)), rw = edgeWidth / Math.min(dx, dy);
+    const f = new Float32Array(n); for (let i = 0; i < n; i++) f[i] = sel[i];
+    const rw = edgeWidth / Math.min(dx, dy), E = gauss(f, ww, hh, rw / 2); // the blur repeats border pixels
     for (let i = 0; i < n; i++) {
       if (!sel[i]) continue;
-      const t = Math.min(1, dist[i] / rw), e = 1 - (1 - t) * (1 - t);
+      const t = clamp((E[i] - 0.5) * 2, 0, 1), e = 1 - (1 - t) * (1 - t);
       R[i] *= edgeStep + (1 - edgeStep) * e;
     }
   }

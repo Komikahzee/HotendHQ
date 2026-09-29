@@ -442,7 +442,7 @@ function ensureSubject() {
   const p = state.p;
   if (p.shape !== 'silhouette' || !state.img || (p.bgMode !== 'none' && p.bgMode !== 'alpha') || hasTransparency(state.img)) return;
   p.bgMode = 'auto'; rows.bgMode?.sync();
-  toast('Background removed so the outline follows your subject — for photos of people, try “AI portrait cut-out”', 5000);
+  toast('Background removed so the outline follows your subject — for photos, try “AI cut-out”', 5000);
 }
 
 // ── AI subject cut-out ──────────────────────────────────────
