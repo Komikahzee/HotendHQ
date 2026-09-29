@@ -136,7 +136,7 @@ export const PARAMS = [
   R('relief', 'pillowW', 'Puffy width', 0.5, 15, 0.1, 4, 'mm', { show: (p) => p.pillow > 0 }),
 
   // ── Border ──────────────────────────────────────────────
-  S('border', 'rimStyle', 'Rim style', [['none', 'None'], ['flat', 'Flat'], ['rounded', 'Rounded'], ['bevel', 'Bevelled'], ['beaded', 'Beaded'], ['rope', 'Rope twist'], ['double', 'Double line'], ['stepped', 'Stepped'], ['milled', 'Coin milled']], 'rope'),
+  S('border', 'rimStyle', 'Rim style', [['none', 'None'], ['flat', 'Flat'], ['rounded', 'Rounded'], ['bevel', 'Bevelled'], ['beaded', 'Beaded'], ['rope', 'Rope twist'], ['double', 'Double line'], ['stepped', 'Stepped'], ['milled', 'Coin milled']], 'none'),
   R('border', 'rimWidth', 'Rim width', 0.8, 10, 0.05, 2.8, 'mm', { show: not('rimStyle', 'none') }),
   R('border', 'rimHeight', 'Rim height', 0, 8, 0.05, 2.4, 'mm', { show: not('rimStyle', 'none'), help: 'Rim top measured from the top of the base. Slightly above relief depth protects the design.' }),
   R('border', 'topBevel', 'Top edge bevel', 0, 2.5, 0.05, 0.4, 'mm', { help: 'Chamfers the top outer edge — softer feel, no sharp corner.' }),

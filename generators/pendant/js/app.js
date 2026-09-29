@@ -40,7 +40,8 @@ function loadLocal() {
   try {
     const s = JSON.parse(localStorage.getItem(LS_KEY) || 'null');
     if (!s) return false;
-    replaceParams({ ...DEFAULTS, ...s.p }); state.adv = !!s.adv; state.quality = s.quality || 'balanced';
+    // the design itself is not restored: every visit starts as a blank slate (Save / Open keep a project)
+    state.adv = !!s.adv; state.quality = s.quality || 'balanced';
     Object.assign(state.view, s.view || {}); Object.assign(state.open, s.open || {});
     return true;
   } catch { return false; }
@@ -1037,9 +1038,8 @@ function setupKeys() {
 
 // ── Boot ────────────────────────────────────────────────────
 hydrateIcons();
-const restored = loadLocal();
-if (!restored) Object.assign(state.p, PRESETS[0].p);
-Object.assign(state.p, NO_HANGER); state.view.chain = false; // every visit starts as the bare emblem
+loadLocal(); // interface preferences only
+state.view.chain = false; // every visit starts as a blank slate: plain shape, no image, text, rim, hanger or chain
 const viewer = new Viewer($('#three'));
 viewer.state.view = state.view.stage; viewer.state.chain = state.view.chain; viewer.controls.autoRotate = state.view.turntable;
 buildControls();
@@ -1097,5 +1097,5 @@ $('#btnExport').addEventListener('click', openExport);
 new ResizeObserver(() => draw2D()).observe($('#designWrap'));
 syncAll();
 pushHistory();
-useSample(PRESETS.find((x) => x.p.shape === state.p.shape)?.sample || 'compass');
+scheduleRegen(); // the plain shape, ready for an image
 window.hotendhq = { state, viewer, setParam, handleFile }; // handy for debugging in the console
