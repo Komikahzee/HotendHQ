@@ -171,12 +171,14 @@ setTimeout(function () {
 }
 
 /* ---------------- the hub ---------------- */
-// the two flagship generators get their own feature cards above the rest, each with its showcase article
+// the flagship generators get their own feature cards above the rest, each with its showcase article
 const FEATURED = [
   { slug: 'pendant', img: '/assets/img/articles/pendant-coin.webp', article: '/guides/pendant-studio-2-launch/', open: 'Open the studio',
     text: 'Turn a photo, logo or drawing into a pendant, coin, keychain, badge or lithophane. AI depth sculpts real bas-relief from any photo, with twelve outlines, lettering and colour-swap layers, and it prints without supports.' },
   { slug: 'drone-frame', img: '/assets/img/articles/drone-hex.webp', article: '/guides/drone-frame-generator-launch/', open: 'Design a frame',
     text: 'FPV quads, cinewhoops, tricopters, hexa and octocopters from 65 mm to 10-inch, with rounded joints and stiffening rims made for printing. See it built with motors and props, then download it laid out for your bed.' },
+  { slug: 'fidget-spinners', img: '/assets/img/articles/spinner-petal.webp', article: '/guides/fidget-spinner-generator-2/', open: 'Design a spinner',
+    text: 'Bearing and print-in-place spinners in eight shapes, weighted with bearings, nuts or coins, plus spinner rings. See it finished with the steel in place, check how much of the spin is in the weights, and roll a new design with one click.' },
 ];
 const feature = (f) => `      <div class="card gens-feature">
         <a class="gens-feature-img" href="${url(f.slug)}" tabindex="-1" aria-hidden="true">

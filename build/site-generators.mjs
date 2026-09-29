@@ -27,7 +27,7 @@ export const GENERATORS = [
   { slug: 'board-game-pieces', name: 'Board game pieces generator', cat: 'games', tags: ['STL', '3MF', 'Sets'],
     blurb: 'Numbered tokens and coins, pawns, meeples, resource cubes and card stands, made as whole sets.' },
   { slug: 'fidget-spinners', name: 'Fidget spinner generator', cat: 'games', tags: ['STL', 'Bearing or print-in-place'],
-    blurb: 'Spinners for 608, 688 and R188 bearings or with no bearing at all, plus spinning rings.' },
+    blurb: 'Spinners for 608, 688 and R188 bearings or with no bearing at all, in eight shapes with a randomizer, plus spinning rings.' },
   { slug: 'drone-frame', name: 'Drone frame generator', cat: 'hobby', tags: ['STL', '3MF', 'Whoop to 10″'],
     blurb: 'FPV quads, cinewhoops, tricopters, hexa and octocopters from 65 mm to 10-inch, shown built with motors and props, plus a randomizer.' },
   { slug: 'mic-accessories', name: 'Mic clip & stand accessory generator', cat: 'hobby', tags: ['STL', '5/8″ & 3/8″ threads'],
