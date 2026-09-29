@@ -1,10 +1,12 @@
 {
   // Hotend HQ — Cloudflare Workers config.
-  // Build command:  node build/build.mjs     (writes ./dist)
+  // Build: wrangler runs `node build/build.mjs` itself (the "build" field below), which writes ./dist,
+  // before every deploy or preview upload, so it works even when the dashboard's build command is empty.
   // Deploy command: npx wrangler deploy
   "name": "hotendhq",
   "main": "worker/index.js",
   "compatibility_date": "2026-09-18",
+  "build": { "command": "node build/build.mjs" },
   "assets": {
     "directory": "./dist",
     "binding": "ASSETS",
