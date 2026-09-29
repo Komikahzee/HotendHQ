@@ -8,3 +8,4 @@ supabase
 hotendhq updates
 .assetsignore
 wrangler.jsonc
+dist
