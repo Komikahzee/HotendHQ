@@ -1,0 +1,27 @@
+/* Support (/support) */
+.ct-hero{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:34px;align-items:center}
+.ct-hero h1{margin:.2em 0 .35em}
+.ct-mail{display:flex;flex-direction:column;gap:8px}
+.ct-mail-lbl{font-size:.72rem;letter-spacing:.11em;text-transform:uppercase;color:var(--text-faint);font-weight:700}
+.ct-mail-addr{font-size:clamp(1.2rem,2.6vw,1.55rem);font-weight:800;color:#fff;word-break:break-all}
+.ct-mail-addr:hover{color:var(--amber-300)}
+.ct-mail-btns{margin-top:8px;gap:10px}
+.ct-mail .ico svg,.ct-actions .ico svg{width:16px;height:16px}
+
+.ct-form{padding:26px;max-width:760px}
+.ct-form-title{margin:0 0 4px}
+.ct-form-note{margin:0 0 18px}
+.ct-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 16px}
+.ct-form input,.ct-form select,.ct-form textarea{width:100%}
+.ct-form textarea{min-height:160px}
+.ct-form .hint{margin:6px 0 0;font-size:.8rem;color:var(--bad)}
+.ct-star{color:var(--amber-300)}
+.ct-fallback{margin:14px 0 0}
+
+@media (max-width:860px){
+  .ct-hero{grid-template-columns:minmax(0,1fr)}
+}
+@media (max-width:560px){
+  .ct-grid{grid-template-columns:minmax(0,1fr)}
+  .ct-form{padding:20px}
+}

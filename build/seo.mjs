@@ -51,10 +51,10 @@ const PAGES = [
   { file: 'about.html', url: '/about', ld: () => [
     { '@context': 'https://schema.org', '@type': 'AboutPage', name: 'About Hotend HQ', url: BASE + '/about', mainEntity: ORG },
     crumbs([['Home', '/'], ['About', '/about']])] },
-  { file: 'contact.html', url: '/contact', ld: (h) => [
-    { '@context': 'https://schema.org', '@type': 'ContactPage', name: 'Contact & Support', url: BASE + '/contact',
+  { file: 'support.html', url: '/support', ld: () => [
+    { '@context': 'https://schema.org', '@type': 'ContactPage', name: 'Support', url: BASE + '/support',
       mainEntity: { ...ORG, contactPoint: { '@type': 'ContactPoint', contactType: 'customer support', email: 'hotendhq@gmail.com', availableLanguage: 'English' } } },
-    faqLd(faqOf(h)), crumbs([['Home', '/'], ['Contact & Support', '/contact']])] },
+    crumbs([['Home', '/'], ['Support', '/support']])] },
   { file: 'generators/chain.html', url: '/generators/chain', image: '/assets/img/generators/chain.webp', ld: (h) => [
     faqLd(faqOf(h)), crumbs([['Home', '/'], ['3D model generators', '/generators'], ['Chains', '/generators/chain']])] },
   { file: 'generators/gridfinity.html', url: '/generators/gridfinity', image: '/assets/img/generators/gridfinity.webp', ld: (h) => [

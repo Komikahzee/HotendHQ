@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Support — Hotend HQ</title>
+<meta name="description" content="Need help with Hotend HQ, or have a suggestion? Email hotendhq@gmail.com.">
+<!-- seo -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Hotend HQ">
+<meta property="og:title" content="Support">
+<meta property="og:description" content="Need help with Hotend HQ, or have a suggestion? Email hotendhq@gmail.com.">
+<meta property="og:url" content="https://hotendhq.com/support">
+<meta property="og:image" content="https://hotendhq.com/assets/img/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#00091c">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"ContactPage","name":"Support","url":"https://hotendhq.com/support","mainEntity":{"@type":"Organization","name":"Hotend HQ","url":"https://hotendhq.com/","logo":"https://hotendhq.com/assets/img/icon-512.png","contactPoint":{"@type":"ContactPoint","contactType":"customer support","email":"hotendhq@gmail.com","availableLanguage":"English"}}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://hotendhq.com/"},{"@type":"ListItem","position":2,"name":"Support","item":"https://hotendhq.com/support"}]}</script>
+<!-- /seo -->
+<link rel="canonical" href="https://hotendhq.com/support">
+<link rel="icon" href="/assets/img/favicon-32.png" sizes="32x32">
+<link rel="apple-touch-icon" href="/assets/img/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest">
+<link rel="stylesheet" href="/assets/css/fonts.css?v=1f7e92bbba">
+<link rel="stylesheet" href="/assets/css/theme.css?v=e097b43669">
+<link rel="stylesheet" href="/assets/css/pages.css?v=5cd8bab449">
+<link rel="stylesheet" href="/assets/css/support.css?v=506b56c546">
+<script src="/assets/js/config.js?v=fdd459de6a" defer></script>
+<script src="/assets/js/nav.js?v=743f0ab2c1" defer></script>
+<script src="/assets/js/site.js?v=e98640a3e3" defer></script>
+<script src="/assets/js/api.js?v=097762e5df" defer></script>
+<script src="/assets/js/support.js?v=bba72ecc6a" defer></script>
+</head>
+<body>
+<main id="main">
+
+  <section class="wrap section--tight ct-hero">
+    <div>
+      <span class="eyebrow">Support</span>
+      <h1>How can we help?</h1>
+      <p class="lede">Contact us if you need help with anything on Hotend HQ, or use it to send us your
+        suggestions. Ideas for new generators, guides and features are always welcome.</p>
+    </div>
+    <div class="card card--flame ct-mail">
+      <span class="ct-mail-lbl">Support email</span>
+      <a class="ct-mail-addr" href="mailto:hotendhq@gmail.com" data-support-mail>hotendhq@gmail.com</a>
+      <div class="row ct-mail-btns">
+        <a class="btn btn-primary btn-sm" href="mailto:hotendhq@gmail.com" data-support-mail data-keep-text><span class="ico" data-ico="arrow"></span>Email us</a>
+        <button type="button" class="btn btn-ghost btn-sm" id="ct-copy"><span class="ico" data-ico="check"></span><span>Copy address</span></button>
+      </div>
+    </div>
+  </section>
+
+  <section class="wrap section--tight" style="padding-top:0" id="ct-form">
+    <form class="card ct-form" id="support-form" action="mailto:hotendhq@gmail.com" method="post" enctype="text/plain" novalidate>
+      <h2 class="ct-form-title">Send us a message</h2>
+      <p class="faint ct-form-note">This opens your email app with the message ready to send to
+        <a href="mailto:hotendhq@gmail.com" data-support-mail>hotendhq@gmail.com</a>. Nothing is sent until you press send there.</p>
+
+      <div class="ct-grid">
+        <div class="field"><label for="c-name">Your name <span class="faint">(optional)</span></label>
+          <input type="text" id="c-name" name="name" maxlength="100" autocomplete="name"></div>
+        <div class="field"><label for="c-topic">What's it about?</label>
+          <select id="c-topic" name="topic">
+            <option value="help">I need help</option>
+            <option value="suggestion">I have a suggestion</option>
+          </select></div>
+      </div>
+
+      <div class="field"><label for="c-msg">Message <span class="ct-star">*</span></label>
+        <textarea id="c-msg" name="message" maxlength="5000" required placeholder="Tell us what you need help with, or what you'd like to see."></textarea>
+        <p class="hint" id="c-msg-hint" hidden>Write a short message first.</p></div>
+
+      <div class="row ct-actions">
+        <button type="submit" class="btn btn-primary"><span class="ico" data-ico="arrow"></span>Open in my email app</button>
+      </div>
+      <p class="faint ct-fallback" id="c-fallback" hidden>Email app didn't open? Copy the address above and
+        paste your message into any email.</p>
+    </form>
+  </section>
+
+</main>
+</body>
+</html>
