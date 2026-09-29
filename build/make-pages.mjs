@@ -193,12 +193,12 @@ function hub() {
         <img src="/assets/img/articles/pendant-coin.webp" alt="" width="1200" height="750" decoding="async">
       </a>
       <div class="gens-feature-body">
-        <span class="eyebrow">Featured generator</span>
+        <span class="eyebrow">Featured</span>
         <h2 id="gens-feature-title">${esc(bySlug.pendant.name)}</h2>
         <p class="muted">Turn a photo, logo or drawing into a pendant, coin, keychain, badge or lithophane. Ten relief styles, twelve outlines, lettering and colour-swap layers, and it prints without supports.</p>
         <div class="gens-feature-cta">
           <a class="btn btn-ghost" href="/guides/pendant-medallion-generator-guide/">Read the guide</a>
-          <a class="btn btn-primary" href="${url('pendant')}">Open the generator ${ARROW}</a>
+          <a class="btn btn-primary" href="${url('pendant')}">Open the studio ${ARROW}</a>
         </div>
       </div>
     </div>

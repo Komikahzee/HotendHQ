@@ -7,17 +7,17 @@
 window.HHQ_SEED_ARTICLES = [
 {
   slug:'pendant-medallion-generator-guide',
-  seo_title:'Pendant & Medallion Generator: Turn Any Image Into a 3D Printed Pendant',
-  meta_description:'A complete guide to the free Hotend HQ pendant and medallion generator: ten relief styles, twelve outlines, text, bails, colour-swap layers and print settings for pendants, coins, keychains, badges and lithophanes.',
-  title:'The Pendant & Medallion Generator: A Complete Guide',
+  seo_title:'Pendant & Medallion Studio: Turn Any Image Into a 3D Printed Pendant',
+  meta_description:'A complete guide to the free Hotend HQ Pendant & Medallion Studio: ten relief styles, twelve outlines, text, bails, colour-swap layers and print settings for pendants, coins, keychains, badges and lithophanes.',
+  title:'Pendant & Medallion Studio: A Complete Guide',
   category:'Guides',
   tags:['generators','jewelry','pendants','lithophane','multicolour'],
-  excerpt:'Turn a photo, logo or drawing into a pendant, coin, keychain, badge or lithophane that prints without supports. Here is how every part of the generator works, and the settings that give the cleanest prints.',
+  excerpt:'Turn a photo, logo or drawing into a pendant, coin, keychain, badge or lithophane that prints without supports. Here is how every part of the studio works, and the settings that give the cleanest prints.',
   published_at:'2026-09-28',
   author_name:'Hotend HQ',
   cover_url:'/assets/img/generators/pendant.webp',
   body:`
-The [pendant and medallion generator](/generators/pendant/) turns any image into a small 3D relief you can print. Load a photo of your dog, a club logo or a hand drawing, pick a shape and a style, and a minute later you have a pendant, a challenge coin, a keychain, a badge or a lithophane that is ready for your slicer.
+[Pendant & Medallion Studio](/generators/pendant/) turns any image into a small 3D relief you can print. Load a photo of your dog, a club logo or a hand drawing, pick a shape and a style, and a minute later you have a pendant, a challenge coin, a keychain, a badge or a lithophane that is ready for your slicer.
 
 It is free, it runs entirely in your browser, and your image never leaves your device. This guide walks through every part of it, in the order you will use them.
 
@@ -34,7 +34,7 @@ If you would rather start from something finished, the **Presets** button opens 
 
 ## A clean start: just the emblem
 
-When you open the generator you get the emblem on its own: no loop, no connector bail and no chain in the preview. That keeps the first thing you see simple, and it is the right starting point for coins, badges, magnets and anything else that does not hang.
+When you open the studio you get the emblem on its own: no loop, no connector bail and no chain in the preview. That keeps the first thing you see simple, and it is the right starting point for coins, badges, magnets and anything else that does not hang.
 
 When you want to wear it, open **Hanger / Bail** and choose one. You can switch on the chain in the preview whenever you like to see how it hangs.
 
@@ -42,7 +42,7 @@ When you want to wear it, open **Hanger / Bail** and choose one. You can switch 
 
 Drag an image onto the page or use **Open**. PNG, JPEG and WebP all work.
 
-- **Logos and drawings** work best as a PNG with a transparent background. The generator uses the transparency to cut the subject out cleanly.
+- **Logos and drawings** work best as a PNG with a transparent background. The studio uses the transparency to cut the subject out cleanly.
 - **Photos** work too. Under **Background removal** you can remove a light or dark background, use a smart colour-based cut-out, or use the **AI portrait cut-out** for people.
 - Drag the design preview to move the image, scroll to zoom and Shift-scroll to rotate it.
 
@@ -68,7 +68,7 @@ The **Background layer** option adds a flat plate behind the design that follows
 
 ![Bas-relief medal with a rope-twist rim](/assets/img/articles/pendant-coin.webp)
 
-This is where the generator earns its keep. Ten styles turn the same image into very different objects:
+This is where the studio earns its keep. Ten styles turn the same image into very different objects:
 
 - **Raised**: bright areas stand up from the base. The default, and right for most logos.
 - **Engraved**: the design is carved into a flat plate.
@@ -114,7 +114,7 @@ For a more decorative look, the **Connector Bail** section adds a separate bail 
 
 Pick the filament you will print in (matte, silk, PETG, metal-look, translucent or glow-in-the-dark) and a colour, and the preview renders it that way, so you can judge the look before you print.
 
-For multicolour pieces on a single-nozzle printer, switch **Colouring** to **Colour swap layers**. Choose up to six colours and the generator splits the relief into height bands, then lists the exact layer numbers where you pause and change filament. Turn on **Layer lines** in the preview to see how it will look at your layer height.
+For multicolour pieces on a single-nozzle printer, switch **Colouring** to **Colour swap layers**. Choose up to six colours and the studio splits the relief into height bands, then lists the exact layer numbers where you pause and change filament. Turn on **Layer lines** in the preview to see how it will look at your layer height.
 
 ![Heart lithophane with the backlight on](/assets/img/articles/pendant-lithophane.webp)
 
@@ -156,7 +156,7 @@ Every design is built to print face-up with a flat back, so it needs no supports
 
 **Which image works best?** A sharp picture with one clear subject and a plain background. For logos, a PNG with a transparent background is ideal.
 
-Ready to try it? [Open the pendant and medallion generator](/generators/pendant/). If you want something to hang it on, our [chain generator](/generators/chain) makes print-in-place necklace chains to match.
+Ready to try it? [Open Pendant & Medallion Studio](/generators/pendant/). If you want something to hang it on, our [chain generator](/generators/chain) makes print-in-place necklace chains to match.
 `
 },
 {
@@ -282,11 +282,11 @@ The [pen grip generator](/generators/pen-grips) makes adapters that hold your ow
 
 The [board game pieces generator](/generators/board-game-pieces) makes numbered tokens and coins, pawns, meeples and figures, resource cubes and gems, and card stands, as whole sets with a colour per player.
 
-## Pendant & medallion generator
+## Pendant & Medallion Studio
 
 ![Pendant made from an image](/assets/img/generators/pendant.webp)
 
-The [pendant & medallion generator](/generators/pendant/) turns any image or logo into a pendant, medallion, keychain or badge. Pick a style (raised, engraved, coin, cameo, lithophane, stencil, halftone and more), a shape and rim, add text and a loop or bail, and export STL, 3MF or OBJ, with colour-swap layers worked out for multicolour prints. It opens as a full-screen studio, and the depth and background-removal AI runs on your own device, so your images are never uploaded.
+[Pendant & Medallion Studio](/generators/pendant/) turns any image or logo into a pendant, medallion, keychain or badge. Pick a style (raised, engraved, coin, cameo, lithophane, stencil, halftone and more), a shape and rim, add text and a loop or bail, and export STL, 3MF or OBJ, with colour-swap layers worked out for multicolour prints. It opens as a full-screen studio, and the depth and background-removal AI runs on your own device, so your images are never uploaded.
 
 ## Fidget spinner generator
 

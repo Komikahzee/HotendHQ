@@ -7,7 +7,7 @@ export const CATEGORIES = {
 export const GENERATORS = [
   { slug: 'gridfinity', name: 'Gridfinity generator', cat: 'organize', tags: ['STL', '3MF', 'Splits for your bed'],
     blurb: 'Bins with dividers, scoops, labels and magnets, plus baseplates, lids, tool holders and a drawer fitter.' },
-  { slug: 'pendant', name: 'Pendant & medallion generator', cat: 'jewelry', tags: ['STL', '3MF', 'Image to relief'],
+  { slug: 'pendant', name: 'Pendant & Medallion Studio', cat: 'jewelry', tags: ['STL', '3MF', 'Image to relief'],
     href: '/generators/pendant/', app: true,
     blurb: 'Turn any image or logo into a pendant, medallion, keychain or badge: raised, engraved, coin, cameo and lithophane styles, text, bails and colour layers.' },
   { slug: 'chain', name: 'Chain generator', cat: 'jewelry', tags: ['STL', '3MF', 'Print-in-place'],
