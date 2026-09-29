@@ -7,6 +7,17 @@
 /assets/*
   Cache-Control: public, max-age=31536000, immutable
 
+# Pendant studio: cross-origin isolation lets the in-browser AI (depth and cut-out) run on several CPU threads.
+# "credentialless" keeps Google Fonts and other cross-origin files loading without CORS changes; browsers that
+# don't know it simply run the AI on one thread, as before.
+/generators/pendant
+  Cross-Origin-Opener-Policy: same-origin
+  Cross-Origin-Embedder-Policy: credentialless
+
+/generators/pendant/*
+  Cross-Origin-Opener-Policy: same-origin
+  Cross-Origin-Embedder-Policy: credentialless
+
 # Pendant studio: the AI models and runtime never change under the same name
 /generators/pendant/ai/*
   Cache-Control: public, max-age=2592000

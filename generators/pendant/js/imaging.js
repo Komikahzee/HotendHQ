@@ -1,4 +1,5 @@
 // Source image handling: loading, background removal (classic + AI), vector tracing and height-source mixing.
+import { sculptRelief } from './sculpt.js';
 
 const MAX_SRC = 1400;
 
@@ -140,7 +141,9 @@ function cleanMask(A, data, w, h, p, soft = false) {
   const r = Math.max(1, Math.round(Math.max(w, h) / 600));
   // guide = the soft matte where one exists (AI), else the image; the refined value is used only in a
   // two-pixel band around the edge, so the 0.5 contour moves sub-pixel onto the true edge (no stair-steps)
-  const ref = guidedRefine(soft ? (() => { const s = new Float32Array(n); for (let i = 0; i < n; i++) s[i] = bin[i] ? Math.max(A[i], 0.5) : Math.min(A[i], 0.5); return s; })() : out, lum, w, h, r, 1e-3);
+  // an AI matte already carries a precise soft edge: it is only kept consistent with the cleaned-up mask (never
+  // snapped to the photo, which would copy its texture into the outline)
+  const ref = soft ? (() => { const s = new Float32Array(n); for (let i = 0; i < n; i++) s[i] = bin[i] ? Math.max(A[i], 0.5) : Math.min(A[i], 0.5); return s; })() : guidedRefine(out, lum, w, h, r, 1e-3);
   const band = new Uint8Array(n);
   for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
     const i = y * w + x;
@@ -373,11 +376,11 @@ const _cache = new Map(); // small LRU: pendant image, connector template, custo
 // Returns a canvas (RGB = grey height preview, A = cleaned subject mask) carrying the full-precision data:
 //   _H  Float32 height source 0..1,  _A  Float32 subject mask 0..1,  _orig the colour image.
 // depth: { w, h, data } float map from the AI, or null.
-export function buildSource(orig, depth, p, imgId, aiMask = null) {
+export function buildSource(orig, depth, p, imgId, aiMask = null, faces = null, subject = null) {
   if (!orig) return null;
   const src = p.heightSource;
   const useDepth = (src === 'depth' || src === 'hybrid') && depth;
-  const key = [imgId, p.bgMode, p.bgTolerance, p.bgKeepLargest, p.bgFillHoles, p.bgSpeck, p.bgEdge, p.bgMode === 'ai' && aiMask ? 'ai' : '', useDepth ? src : 'b', src === 'hybrid' ? p.depthMix : 0].join('|');
+  const key = [imgId, p.bgMode, p.bgTolerance, p.bgKeepLargest, p.bgFillHoles, p.bgSpeck, p.bgEdge, p.bgMode === 'ai' && aiMask ? 'ai' : '', useDepth ? src : 'b', src === 'hybrid' ? p.depthMix : 0, useDepth ? [p.sculpt !== false, p.sculptFlatten, p.sculptDetail, subject ? p.sculptCalm : 0, depth.fine ? 'fine' : '', faces?.length ? [faces.length, p.portrait, p.layerH, p.depth].join(';') : 0].join(',') : ''].join('|');
   if (_cache.has(key)) { const cv = _cache.get(key); _cache.delete(key); _cache.set(key, cv); return cv; }
   const w = orig.width, h = orig.height, n = w * h;
   const data = orig.getContext('2d', { willReadFrequently: true }).getImageData(0, 0, w, h).data;
@@ -388,7 +391,13 @@ export function buildSource(orig, depth, p, imgId, aiMask = null) {
   let Hf = lum;
   if (useDepth) {
     const D = depth.w === w && depth.h === h ? depth.data : null;
-    if (D) {
+    if (D && p.sculpt !== false) {
+      // sculpted bas-relief: depth gives the forms, compressed like a sculptor would; Hybrid borrows more
+      // of the photo's own shading for fine detail (hair, fabric, engraving)
+      let cut = null; for (let i = 0; i < n; i++) if (A[i] < 0.5) { cut = A; break; }
+      const detail = src === 'depth' ? (p.sculptDetail ?? 0.15) : 0.8 * (1 - (p.depthMix ?? 0.65));
+      Hf = sculptRelief(D, lum, cut, w, h, { flatten: p.sculptFlatten ?? 0.55, detail, faces, portrait: p.portrait ?? 0.6, minStep: (p.layerH || 0.16) / Math.max(0.2, p.depth || 2), calm: p.sculptCalm ?? 0.5, subject });
+    } else if (D) {
       const mix = src === 'depth' ? 1 : p.depthMix;
       Hf = new Float32Array(n);
       for (let i = 0; i < n; i++) Hf[i] = lum[i] * (1 - mix) + D[i] * mix;
@@ -398,11 +407,11 @@ export function buildSource(orig, depth, p, imgId, aiMask = null) {
   const og = out.getContext('2d', { willReadFrequently: true }), od = og.createImageData(w, h), o = od.data;
   for (let i = 0; i < n; i++) { const v = Math.round(Hf[i] * 255); o[i * 4] = o[i * 4 + 1] = o[i * 4 + 2] = v; o[i * 4 + 3] = Math.round(A[i] * 255); }
   og.putImageData(od, 0, 0);
-  out._H = Hf; out._A = A; out._orig = orig;
+  out._H = Hf; out._A = A; out._orig = orig; out._depth = !!(useDepth && depth);
   _cache.set(key, out);
   if (_cache.size > 6) _cache.delete(_cache.keys().next().value);
   return out;
 }
 
-export { estimateDepth, removeBackgroundAI } from './ai.js';
+export { estimateDepth, removeBackgroundAI, detectFaces } from './ai.js';
 

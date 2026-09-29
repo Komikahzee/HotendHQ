@@ -460,13 +460,15 @@ function drawLines(ctx, text, size, family, bold, y, stroke, spacingEm = 0) {
 }
 
 // ── Image processing on the grid ───────────────────────────
-function processImage(lum, alpha, Sshape, p, L) {
+// soft ceiling: values above 0.9 approach 1 smoothly, so a relief's highest point keeps its rounded shape
+const knee = (v) => (v > 0.9 ? 0.9 + 0.1 * Math.tanh((v - 0.9) / 0.1) : v);
+function processImage(lum, alpha, Sshape, p, L, sculpted = false) {
   const { nx, ny, c } = L, n = nx * ny;
   const bgL = p.bgLevel;
   let v = new Float32Array(n);
   // auto levels over foreground pixels inside the shape
   let lo = 0, hi = 1;
-  if (p.autoLevels) {
+  if (p.autoLevels && !sculpted) { // a sculpted relief is already levelled, its peaks rolled off (sculpt.js); clipping its top 1 % would flatten a nose
     const hist = new Uint32Array(256); let cnt = 0;
     for (let k = 0; k < n; k++) if (alpha[k] > 0.5 && Sshape[k] < 0) { hist[(lum[k] * 255) | 0]++; cnt++; }
     if (cnt > 50) {
@@ -475,21 +477,29 @@ function processImage(lum, alpha, Sshape, p, L) {
       if (hi - lo < 0.05) { lo = 0; hi = 1; }
     }
   }
+  // A sculpted relief's cut-out edge is a wall 0.5-1.5 mm tall. As a one-cell cliff the grid can only draw it as
+  // a staircase (a beaded, zig-zag outline in the preview and the mesh); spread over a few cells it becomes a
+  // clean, smooth chamfer, still far narrower than a nozzle.
+  if (sculpted) { let part = false; for (let k = 0; k < n; k++) if (alpha[k] > 0.02 && alpha[k] < 0.98 && Sshape[k] < 0) { part = true; break; } if (part) alpha = blur(alpha, nx, ny, 1.5); }
   const inv = (p.mode === 'lithophane') !== !!p.invert;
   const g = 1 / p.gamma, con = 1 + p.contrast;
   for (let k = 0; k < n; k++) {
     let l = clamp((lum[k] - lo) / (hi - lo), 0, 1);
     if (inv) l = 1 - l;
-    l = clamp((l - 0.5) * con + 0.5 + p.brightness, 0, 1);
+    l = (l - 0.5) * con + 0.5 + p.brightness;
+    l = clamp(sculpted ? knee(l) : l, 0, 1); // sculpted: peaks roll off instead of clipping flat
     l = Math.pow(l, g);
     const a = alpha[k];
     v[k] = a * l + (1 - a) * bgL;
   }
   const cell = (mm) => mm / c;
   if (p.denoise > 0) {
-    const r = Math.max(1, Math.round(cell(p.denoise)));
-    v = guidedFilter(v, nx, ny, r, p.denoiseEdge * p.denoiseEdge);
-    if (r >= 3) v = guidedFilter(v, nx, ny, Math.max(1, r >> 1), p.denoiseEdge * p.denoiseEdge); // second, finer pass
+    // A sculpted AI relief is already noise-free, and its fine modelling (lids, fur, knuckles) is low in
+    // amplitude by design: a wide window would take it for noise and iron it flat. It only gets a fine pass
+    // (at most ~0.15 mm) against pixel-scale grain.
+    const r = Math.max(1, Math.round(cell(sculpted ? Math.min(p.denoise, 0.15) : p.denoise))), e = p.denoiseEdge * (sculpted ? 0.25 : 1);
+    v = guidedFilter(v, nx, ny, r, e * e);
+    if (r >= 3 && !sculpted) v = guidedFilter(v, nx, ny, Math.max(1, r >> 1), e * e); // second, finer pass
   }
   if (p.smoothing > 0) v = blur(v, nx, ny, cell(p.smoothing));
   if (p.sharpen > 0) { const b = blur(v, nx, ny, Math.max(1, cell(0.5))); for (let k = 0; k < n; k++) v[k] += p.sharpen * (v[k] - b[k]); }
@@ -502,6 +512,16 @@ function processImage(lum, alpha, Sshape, p, L) {
     }
     for (let k = 0; k < n; k++) v[k] += p.edgeBoost * Math.min(1, e[k]);
   }
+  if (sculpted && p.mode !== 'stencil' && !(p.posterize >= 2)) {
+    // Printable modelling: an AI relief's fine forms (lids, lips, fur, folds) are often a small fraction of the
+    // relief depth. Below about half a layer the slicer drops them, so where they are that faint they are
+    // lifted, just enough, and never by more than 2.2×.
+    const unit = (p.layerH || 0.16) / Math.max(0.2, p.depth || 2), b = blur(v, nx, ny, Math.max(1, cell(1)));
+    let s2 = 0, cnt = 0;
+    for (let k = 0; k < n; k++) if (alpha[k] > 0.5 && Sshape[k] < 0) { const d = v[k] - b[k]; s2 += d * d; cnt++; }
+    const rms = cnt > 50 ? Math.sqrt(s2 / cnt) : 0, target = 0.6 * unit;
+    if (rms > 1e-6 && rms < target) { const gain = Math.min(2.2, target / rms); for (let k = 0; k < n; k++) v[k] = b[k] + gain * (v[k] - b[k]); }
+  }
   if (p.mode === 'coin' || p.mode === 'cameo') {
     const det = p.styleDetail ?? 0.5, R = Math.max(c, p.styleRound ?? 2.5);
     // subject = foreground inside the outline; its distance field drives the rolled / puffed edges
@@ -512,7 +532,13 @@ function processImage(lum, alpha, Sshape, p, L) {
     const bv = blur(vc, nx, ny, cell(1.5)), bc = blur(cov, nx, ny, cell(1.5)), low = new Float32Array(n);
     for (let k = 0; k < n; k++) low[k] = bc[k] > 1e-3 ? bv[k] / bc[k] : v[k];
     let base = null, puff = null;
-    if (p.mode === 'coin') base = guidedFilter(v, nx, ny, Math.max(2, Math.round(cell(2.5))), 0.02); // large forms only
+    if (p.mode === 'coin') {
+      // Outside the subject the picture is replaced by the subject's own nearby level before splitting forms from
+      // detail: otherwise the jump to the background reads as "detail" all along the outline and, amplified,
+      // prints as a beaded ridge on the rolled edge.
+      for (let k = 0; k < n; k++) v[k] = cov[k] * v[k] + (1 - cov[k]) * low[k];
+      base = guidedFilter(v, nx, ny, Math.max(2, Math.round(cell(2.5))), 0.02); // large forms only
+    }
     else { const m = new Uint8Array(n); for (let k = 0; k < n; k++) m[k] = Ssub[k] < 0 ? 1 : 0; puff = inflate(m, nx, ny, c); }
     for (let k = 0; k < n; k++) {
       const t = Math.min(1, Math.max(0, -Ssub[k]) / R);
@@ -527,7 +553,7 @@ function processImage(lum, alpha, Sshape, p, L) {
       }
     }
   }
-  for (let k = 0; k < n; k++) v[k] = clamp(v[k], 0, 1);
+  for (let k = 0; k < n; k++) v[k] = clamp(sculpted ? knee(v[k]) : v[k], 0, 1);
   const raw = v.slice(); // smooth, pre-quantisation values: stepped boundaries are placed on these iso-lines
   if (p.mode === 'stencil') for (let k = 0; k < n; k++) v[k] = v[k] >= p.stencilThreshold ? 1 : 0;
   else if (p.posterize >= 2) { const N = p.posterize - 1; for (let k = 0; k < n; k++) v[k] = Math.round(v[k] * N) / N; }
@@ -1006,7 +1032,7 @@ export function buildField(p, src, res) {
     let lum, alpha;
     if (src._H) ({ lum, alpha } = sampleSource(src, p, L));
     else { ctx = canvasFor(nx, ny); placeImage(ctx, src, p, L); ({ lum, alpha } = readRGBA(ctx, L)); }
-    V = processImage(lum, alpha, Sshape, p, L);
+    V = processImage(lum, alpha, Sshape, p, L, !!src._depth);
     if (p.symmetry && p.symmetry !== 'none') { const raw = symmetrize(V.raw, L, p.symmetry, p.radialN); V = symmetrize(V, L, p.symmetry, p.radialN); V.raw = raw; }
   } else V = new Float32Array(n).fill(p.bgLevel);
   let steps = V.raw ? stepLevels(p) : null; // stepped relief → crisp terraces with true vertical walls
@@ -1053,7 +1079,8 @@ export function buildField(p, src, res) {
   // can draw cleanly — in neither case can an edge turn into a zig-zag.
   let vStep = V.raw || V;
   const kindPref = p.imgKind ?? 'auto';
-  if (!steps && V.raw && (p.mode === 'raised' || p.mode === 'engraved') && kindPref !== 'photo') {
+  // an AI-depth relief is always sculpted: its smooth plateaus must never be mistaken for a logo's flat colours
+  if (!steps && V.raw && (p.mode === 'raised' || p.mode === 'engraved') && kindPref !== 'photo' && (kindPref === 'graphic' || !src?._depth)) {
     const g = graphicLevels(V.raw, Sshape, L, imgStart, kindPref === 'graphic');
     if (g) { steps = g; vStep = blur(V.raw, nx, ny, 0.7); imgKind = { kind: 'graphic', levels: g.vals.length }; }
   }
