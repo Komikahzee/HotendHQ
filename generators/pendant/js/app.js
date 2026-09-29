@@ -4,7 +4,7 @@ import { buildPendant, buildConnector, tubeMesh, mergeMeshes, optimizeMesh } fro
 import { BAIL_TEMPLATES, drawTemplateIcon } from './bailTemplates.js';
 import { Viewer } from './viewer.js';
 import { toSTL, to3MFScene, toSTLZip, toOBJ, saveFiles } from './exporters.js';
-import { buildSource, loadImageFromBlob, loadImageFromURL, estimateDepth, removeBackgroundAI, hasTransparency, hasSolidBackground } from './imaging.js';
+import { buildSource, loadImageFromBlob, loadImageFromURL, estimateDepth, removeBackgroundAI, detectFaces, hasTransparency, hasSolidBackground } from './imaging.js';
 import { buildMeshLabeled } from './mesher2.js';
 import { SAMPLES } from './samples.js';
 import { icon, hydrateIcons } from './icons.js';
@@ -19,7 +19,7 @@ const LS_KEY = 'hotendhq.v1';
 const NO_HANGER = { bail: 'none', cbOn: false };
 const state = {
   p: { ...DEFAULTS },
-  img: null, imgId: 0, imgName: '', depth: null, depthFor: -1, aiMask: null, aiMaskFor: -1,
+  img: null, imgId: 0, imgName: '', depth: null, depthFor: -1, aiMask: null, aiMaskFor: -1, faces: null, facesFor: -1,
   cbImg: null, cbImgId: 0, cbImgName: '', C: null,
   adv: false, quality: 'balanced', designView: 'height',
   view: { layerLines: false, backlit: false, chain: false, wireframe: false, turntable: false, stage: 'standing' },
@@ -137,7 +137,8 @@ function onParamChanged(key, prev) {
     else if (prev === 'lithophane') { if (p.material === 'translucent') p.material = 'silk'; setView('backlit', false); }
     syncAll();
   }
-  if (key === 'heightSource' && p.heightSource !== 'brightness') runDepth();
+  if ((key === 'heightSource' || key === 'depthQuality') && p.heightSource !== 'brightness') runDepth();
+  if ((key === 'heightSource' || key === 'portrait') && p.heightSource !== 'brightness') runFaces();
   if (key === 'bgMode') state.autoBg = false; // the user's own choice sticks
   if (key === 'bgMode' && p.bgMode === 'ai') runCutout();
   if (key === 'shape') ensureSubject();
@@ -370,7 +371,8 @@ function currentSource() {
   if (!state.img) return null;
   const wantDepth = state.p.heightSource !== 'brightness' && state.depthFor === state.imgId;
   const ai = state.p.bgMode === 'ai' && state.aiMaskFor === state.imgId ? state.aiMask : null;
-  return buildSource(state.img, wantDepth ? state.depth : null, state.p, state.imgId, ai);
+  const faces = wantDepth && state.facesFor === state.imgId ? state.faces : null;
+  return buildSource(state.img, wantDepth ? state.depth : null, state.p, state.imgId, ai, faces);
 }
 
 let rq = false, running = false, again = false, busyT = 0, refineT = 0, gen = 0;
@@ -464,19 +466,36 @@ async function runCutout() {
 
 // ── AI depth ────────────────────────────────────────────────
 async function runDepth() {
-  if (!state.img || state.depthFor === state.imgId) return;
+  const q = state.p.depthQuality || 'auto';
+  if (!state.img || (state.depthFor === state.imgId && state.depthQ === q)) return;
   const badge = $('#aiBadge'), id = state.imgId;
   const status = (s) => { badge.hidden = !s; badge.innerHTML = `<span class="spin"></span>${s}`; };
   try {
-    const d = await estimateDepth(state.img, status);
-    if (id !== state.imgId) return;
-    state.depth = d; state.depthFor = id;
+    const d = await estimateDepth(state.img, status, { quality: q });
+    if (id !== state.imgId || q !== (state.p.depthQuality || 'auto')) return;
+    state.depth = d; state.depthFor = id; state.depthQ = q;
     toast('AI depth ready ✦'); scheduleRegen();
   } catch (e) {
     console.error(e); badge.hidden = true;
     toast('AI depth could not load (' + (e.message || 'network') + '). Using brightness.', 5000);
     setParam('heightSource', 'brightness');
   }
+}
+
+// ── Faces (portrait detail) ─────────────────────────────────
+// Quiet: no toast either way. A photo without faces, or a browser where the face finder can't load, simply
+// gets the plain sculpted relief.
+let facesBusy = -1;
+async function runFaces() {
+  if (!state.img || !(state.p.portrait > 0) || state.facesFor === state.imgId || facesBusy === state.imgId) return;
+  const id = state.imgId; facesBusy = id;
+  try {
+    const f = await detectFaces(state.img);
+    if (id !== state.imgId) return;
+    state.faces = f; state.facesFor = id;
+    if (f.length) scheduleRegen();
+  } catch (e) { console.warn('face finder unavailable', e); if (id === state.imgId) { state.faces = []; state.facesFor = id; } }
+  finally { if (facesBusy === id) facesBusy = -1; }
 }
 
 // ── 2D design preview ───────────────────────────────────────
@@ -598,11 +617,11 @@ function setupDesignInteractions() {
 
 // ── Images & files ──────────────────────────────────────────
 function setImage(cv, name, resetTransform = true) {
-  state.img = cv; state.imgId++; state.imgName = name || 'image'; state.depth = null; state.depthFor = -1; state.aiMask = null; state.aiMaskFor = -1;
+  state.img = cv; state.imgId++; state.imgName = name || 'image'; state.depth = null; state.depthFor = -1; state.aiMask = null; state.aiMaskFor = -1; state.faces = null; state.facesFor = -1;
   if (resetTransform) Object.assign(state.p, { imgX: 0, imgY: 0, imgZoom: 1, imgRotate: 0, imgFlip: false });
   ensureSubject();
   syncAll(); scheduleRegen(); pushHistory();
-  if (state.p.heightSource !== 'brightness') runDepth();
+  if (state.p.heightSource !== 'brightness') { runDepth(); runFaces(); }
   if (state.p.bgMode === 'ai') runCutout();
 }
 function setConnectorImage(cv, name) {
@@ -715,7 +734,7 @@ function checks() {
         : ['Join them', () => setParam('silMargin', +(p.silMargin + 1.5).toFixed(1))]);
   if (p.shape === 'silhouette' && F?.trace && F.trace.maskCoverage > 0.97)
     add('err', '<b>Outline is just the image rectangle</b> — the background hasn’t been removed.', ['Remove background', () => setParam('bgMode', 'auto')]);
-  if (p.shape === 'silhouette' && p.silStyle === 'outline' && p.silLineW < 1.2) add('warn', `<b>Outline ${p.silLineW} mm wide</b> — under 3 nozzle widths; fragile.`, ['Set 1.8 mm', () => setParam('silLineW', 1.8)]);
+  if (p.shape === 'silhouette' && p.silStyle === 'outline' && p.silLineW < 3 * (p.nozzle || 0.4)) add('warn', `<b>Outline ${p.silLineW} mm wide</b> — under 3 nozzle widths; fragile.`, ['Set ' + +(4.5 * (p.nozzle || 0.4)).toFixed(2) + ' mm', () => setParam('silLineW', +(4.5 * (p.nozzle || 0.4)).toFixed(2))]);
   if (p.mode === 'lithophane') {
     if (p.base < 0.6) add('warn', `<b>Thinnest point ${p.base} mm</b> — light areas may print with gaps.`, ['Set 0.8 mm', () => setParam('base', 0.8)]);
   } else if (p.base < 1.0) add('warn', `<b>Base ${p.base} mm</b> is fragile for a pendant.`, ['Set 1.4 mm', () => setParam('base', 1.4)]);
@@ -731,7 +750,7 @@ function checks() {
   if (p.textTop || p.textBottom || p.textCenter) {
     const clip = state.F?.textClip || 0;
     if (clip > 0.02) add('err', `<b>${Math.round(clip * 100)}% of the lettering</b> runs off the outline and won't print.`, ['Shrink & tuck in', () => { state.p.textInset = +(state.p.textInset + 1).toFixed(2); rows.textInset.sync(); setParam('textSize', +Math.max(2, state.p.textSize * 0.82).toFixed(1)); }]);
-    if (p.textSize < 3 && (p.textTop || p.textBottom)) add('warn', `<b>Arc text ${p.textSize} mm</b> — below ~3 mm letters blur with a 0.4 mm nozzle.`, ['Set 3.6 mm', () => setParam('textSize', 3.6)]);
+    if (p.textSize < 7.5 * (p.nozzle || 0.4) && (p.textTop || p.textBottom)) add('warn', `<b>Arc text ${p.textSize} mm</b> — below ~${+(7.5 * (p.nozzle || 0.4)).toFixed(1)} mm letters blur with a ${p.nozzle || 0.4} mm nozzle.`, ['Set ' + +(9 * (p.nozzle || 0.4)).toFixed(1) + ' mm', () => setParam('textSize', +(9 * (p.nozzle || 0.4)).toFixed(1))]);
     if (p.textHeight / p.layerH < 3) add('warn', `<b>Text only ${(p.textHeight / p.layerH).toFixed(1)} layers</b> — hard to read.`, ['4 layers', () => setParam('textHeight', +(p.layerH * 4).toFixed(2))]);
   }
   if (p.rimStyle !== 'none' && p.rimWidth < 1.2) add('warn', `<b>Rim ${p.rimWidth} mm</b> — narrower than 3 extrusion lines.`, ['Set 1.6 mm', () => setParam('rimWidth', 1.6)]);
@@ -922,7 +941,7 @@ function openExport() {
       const tolF = p.meshTol >= 0.05 ? 0.12 : p.meshTol >= 0.02 ? 0.2 : p.meshTol >= 0.01 ? 0.32 : p.meshTol > 0 ? 0.45 : 1;
       const tris = (state.M?.triCount || 60000) * (state.previewRes / p.exportRes) ** 1.4 * tolF * (p.exportFormat === '3mfmc' || p.exportFormat === 'stlzip' ? 1.5 : 1);
       const bytes = { stl: 50, stlzip: 30, obj: 30 }[p.exportFormat] || 14;
-      $('#exEst', root).innerHTML = `≈ ${fmtK(tris)} triangles · ~${(tris * bytes / 1e6).toFixed(1)} MB. ${p.exportRes <= 0.06 ? 'Maximum detail.' : p.exportRes <= 0.1 ? 'Recommended — finer than a 0.4 mm nozzle can resolve.' : 'Lighter file; fine detail softened.'}`;
+      $('#exEst', root).innerHTML = `≈ ${fmtK(tris)} triangles · ~${(tris * bytes / 1e6).toFixed(1)} MB. ${p.exportRes <= 0.06 ? 'Maximum detail.' : p.exportRes <= 0.1 ? `Recommended — finer than a ${p.nozzle || 0.4} mm nozzle can resolve.` : 'Lighter file; fine detail softened.'}`;
       $('#exFmtNote', root).textContent = NOTES[p.exportFormat] || '';
     };
     r.addEventListener('input', () => { p.exportRes = +r.value; upd(); });

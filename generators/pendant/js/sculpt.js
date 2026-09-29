@@ -137,11 +137,77 @@ function percentile(a, sel, q) {
   return v[clamp(Math.floor(q * (v.length - 1)), 0, v.length - 1)];
 }
 
+// ── Portrait features ─────────────────────────────────────
+// faces: [{ pts: 68 × [x, y] }] in picture pixels (the iBUG 68-point layout). Returns, on the ww × hh grid,
+// boost (0..1, where facial features are) and accent (relief offsets for eyes, lids, lips and nostrils).
+// A0 is the accent depth as a fraction of the relief: a few %, and never less than about one print layer.
+function faceFeatures(faces, ww, hh, dx, dy, S, A0) {
+  const n = ww * hh, boost = new Float32Array(n), accent = new Float32Array(n);
+  const P = (q) => [q[0] / S, q[1] / S]; // picture units (fractions of the long side), like the grid's dx, dy
+  const mean = (a) => [a.reduce((s, q) => s + q[0], 0) / a.length, a.reduce((s, q) => s + q[1], 0) / a.length];
+  // visit the grid cells within reach of a point set: f(i, u, v) with u, v the cell centre in picture units
+  const around = (pts, pad, f) => {
+    let u0 = Infinity, u1 = -Infinity, v0 = Infinity, v1 = -Infinity;
+    for (const [u, v] of pts) { u0 = Math.min(u0, u); u1 = Math.max(u1, u); v0 = Math.min(v0, v); v1 = Math.max(v1, v); }
+    const x0 = clamp(Math.floor((u0 - pad) / dx), 0, ww - 1), x1 = clamp(Math.ceil((u1 + pad) / dx), 0, ww - 1);
+    const y0 = clamp(Math.floor((v0 - pad) / dy), 0, hh - 1), y1 = clamp(Math.ceil((v1 + pad) / dy), 0, hh - 1);
+    for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) f(y * ww + x, (x + 0.5) * dx, (y + 0.5) * dy);
+  };
+  const segDist = (u, v, a, b) => { const ex = b[0] - a[0], ey = b[1] - a[1], L2 = ex * ex + ey * ey; const t = L2 > 0 ? clamp(((u - a[0]) * ex + (v - a[1]) * ey) / L2, 0, 1) : 0; return [Math.hypot(u - a[0] - t * ex, v - a[1] - t * ey), t]; };
+  for (const face of faces) {
+    const q = face.pts.map(P);
+    if (q.length < 68) continue;
+    const eyes = [q.slice(36, 42), q.slice(42, 48)], ce = eyes.map(mean), iod = Math.hypot(ce[1][0] - ce[0][0], ce[1][1] - ce[0][1]);
+    if (!(iod > 0)) continue;
+    const bump = (pts, r, amt) => around(pts, r * 2, (i, u, v) => {
+      let d = Infinity; for (let k = 0; k < pts.length; k++) d = Math.min(d, segDist(u, v, pts[k], pts[(k + 1) % pts.length])[0]);
+      boost[i] = Math.max(boost[i], amt * Math.exp(-0.5 * (d / r) ** 2));
+    });
+    // where detail is boosted: round the eyes and brows, the nose tip and the mouth
+    for (const e of eyes) bump(e, 0.18 * iod, 1);
+    bump(q.slice(17, 22), 0.12 * iod, 0.8); bump(q.slice(22, 27), 0.12 * iod, 0.8);
+    bump(q.slice(30, 36), 0.12 * iod, 0.7); bump(q.slice(48, 60), 0.15 * iod, 1);
+    // eyeballs: an elliptical mound over each eye opening
+    for (const e of eyes) {
+      const c = mean(e), ax = [e[3][0] - e[0][0], e[3][1] - e[0][1]], aw = Math.hypot(ax[0], ax[1]) / 2;
+      if (!(aw > 0)) continue;
+      const ux = ax[0] / (2 * aw), uy = ax[1] / (2 * aw);
+      const bh = Math.max(0.3 * aw, (Math.hypot(e[1][0] - e[5][0], e[1][1] - e[5][1]) + Math.hypot(e[2][0] - e[4][0], e[2][1] - e[4][1])) / 4) * 1.25;
+      around([c], aw * 1.3, (i, u, v) => {
+        const s1 = ((u - c[0]) * ux + (v - c[1]) * uy) / (aw * 1.15), s2 = (-(u - c[0]) * uy + (v - c[1]) * ux) / bh, r2 = s1 * s1 + s2 * s2;
+        if (r2 < 1) accent[i] += A0 * (1 - r2) * (1 - r2);
+      });
+    }
+    // upper lids: the engraver's incised line along the top of each eye opening
+    for (const e of [q.slice(36, 40), q.slice(42, 46)]) {
+      const lw = 0.03 * iod;
+      around(e, lw * 3, (i, u, v) => {
+        let best = Infinity, tt = 0;
+        for (let k = 0; k < 3; k++) { const [d, t] = segDist(u, v, e[k], e[k + 1]); if (d < best) { best = d; tt = (k + t) / 3; } }
+        accent[i] -= 0.8 * A0 * Math.sin(Math.PI * tt) ** 0.5 * Math.exp(-0.5 * (best / lw) ** 2);
+      });
+    }
+    // the line where the lips meet: a groove along the inner mouth's midline, fading out at the corners
+    const mid = [q[60], mean([q[61], q[67]]), mean([q[62], q[66]]), mean([q[63], q[65]]), q[64]], gw = 0.045 * iod;
+    around(mid, gw * 3, (i, u, v) => {
+      let best = Infinity, tt = 0;
+      for (let k = 0; k < 4; k++) { const [d, t] = segDist(u, v, mid[k], mid[k + 1]); if (d < best) { best = d; tt = (k + t) / 4; } }
+      accent[i] -= 0.8 * A0 * Math.sin(Math.PI * tt) ** 0.5 * Math.exp(-0.5 * (best / gw) ** 2);
+    });
+    // nostrils: small dimples just inside each wing of the nose
+    for (const c of [mean([q[31], q[32]]), mean([q[34], q[35]])]) {
+      const r = 0.05 * iod;
+      around([c], r * 3, (i, u, v) => { accent[i] -= 0.5 * A0 * Math.exp(-0.5 * (Math.hypot(u - c[0], v - c[1]) / r) ** 2); });
+    }
+  }
+  return { boost, accent };
+}
+
 // depth: Float32 0..1 (near = 1), lum: Float32 0..1 luminance, mask: Float32 0..1 subject (or null), all w×h.
 // opts.flatten 0..1: how strongly big forms are flattened (0 = raw depth, 1 = strongest bas-relief).
 // opts.detail 0..1: fine detail borrowed from the photo's shading.
 // Returns Float32 0..1 at w×h: the sculpted relief, background (mask < 0.5) at 0.
-export function sculptRelief(depth, lum, mask, w, h, { flatten = 0.55, detail = 0.2, edgeStep = 0.4, edgeWidth = 0.03, maxWork = 1024 } = {}) {
+export function sculptRelief(depth, lum, mask, w, h, { flatten = 0.55, detail = 0.2, edgeStep = 0.4, edgeWidth = 0.03, maxWork = 1024, faces = null, portrait = 0.6, minStep = 0 } = {}) {
   // working resolution: at most maxWork on the long side (the depth network's own resolution is ~518)
   // power-of-two grid (for the DCT solve) close to the picture's own pixel count; pixels may be non-square
   const s0 = Math.min(1, maxWork / Math.max(w, h)), ww = Math.min(pow2(w * s0), 2048), hh = Math.min(pow2(h * s0), 2048), n = ww * hh;
@@ -188,7 +254,10 @@ export function sculptRelief(depth, lum, mask, w, h, { flatten = 0.55, detail = 
     if (m > a) k *= Math.pow(m / a, bb - 1);                     // compress big forms more than small ones
     gx[i] *= k; gy[i] *= k;
   }
-  if (detail > 0 && L) {
+  // Faces: where eyes, brows, nose and mouth are, fine photo detail is borrowed far more strongly, so lids,
+  // irises and the line of the lips read crisply instead of melting into the soft depth of the face.
+  const FF = faces && faces.length && portrait > 0 ? faceFeatures(faces, ww, hh, dx, dy, S, Math.max(0.04, minStep)) : null;
+  if ((detail > 0 || FF) && L) {
     // photo detail: band-passed luminance, soft-limited so specular glints and dark pupils can't dig holes
     const sig = 2.5 * Math.max(ww, hh) / 512, lb = gauss(L, ww, hh, sig), hp = new Float32Array(n);
     for (let i = 0; i < n; i++) hp[i] = 0.08 * Math.tanh((L[i] - lb[i]) / 0.08);
@@ -204,13 +273,17 @@ export function sculptRelief(depth, lum, mask, w, h, { flatten = 0.55, detail = 
     for (let i = 0; i < n; i++) {
       let wgt = clamp(1 - (ms[i] / occ - 0.35) / 0.5, 0, 1);
       if (Ein) wgt *= clamp((Ein[i] - 0.5) * 2, 0, 1);
-      gx[i] += k * wgt * lx[i]; gy[i] += k * wgt * ly[i];
+      const kd = FF ? ref * Math.max(detail, detail + (0.7 - detail) * portrait * FF.boost[i]) : k;
+      gx[i] += kd * wgt * lx[i]; gy[i] += kd * wgt * ly[i];
     }
   }
   // The background keeps its (compressed) gradients: the solve stays consistent across the whole picture, so
   // no halo forms round the subject, and the cut-out later replaces the background anyway.
   let R = poisson(gx, gy, ww, hh, dx, dy);
   { const lo = percentile(R, sel, 0.01), hi = percentile(R, sel, 0.995), k = 1 / Math.max(1e-6, hi - lo); for (let i = 0; i < n; i++) R[i] = clamp((R[i] - lo) * k, 0, 1); }
+  // Faces, as a medallist would cut them: a gentle mound for each eyeball, a crisp line between the lips and
+  // small nostril dimples. Sizes follow the distance between the eyes; depths are a few % of the relief.
+  if (FF) for (let i = 0; i < n; i++) R[i] = clamp(R[i] + portrait * FF.accent[i], 0, 1);
   // Cut-out subjects: near the outline the relief is eased down to a modest step (edgeStep of its height), the
   // way a medallist rolls a figure into the field. Without it a raised arm or shoulder ends in a cliff as tall
   // as the whole relief. The ramp comes from the blurred mask, so it is smooth even where the outline is ragged

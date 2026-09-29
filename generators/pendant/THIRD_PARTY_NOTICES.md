@@ -17,9 +17,15 @@ Hotend HQ includes or loads the following third-party software. Each remains und
 - Changes: weights stored as symmetric per-channel int8, each followed by a DequantizeLinear back to float32 (computation stays float32); nothing else.
 
 ### ONNX Runtime Web 1.20.1
-- Files: `ai/ort.wasm.min.mjs`, `ai/ort-wasm-simd-threaded.mjs`, `ai/ort-wasm-simd-threaded.wasm`
+- Files: `ai/ort.wasm.min.mjs`, `ai/ort-wasm-simd-threaded.mjs`, `ai/ort-wasm-simd-threaded.wasm` (processor build) and `ai/ort.webgpu.min.mjs`, `ai/ort-wasm-simd-threaded.jsep.mjs`, `ai/ort-wasm-simd-threaded.jsep.wasm` (graphics-card build, used where WebGPU is available)
 - Source: https://github.com/microsoft/onnxruntime (npm package `onnxruntime-web@1.20.1`)
 - Licence: MIT — Copyright (c) Microsoft Corporation. https://github.com/microsoft/onnxruntime/blob/main/LICENSE
+
+### face-api 1.7.15 (with TensorFlow.js)
+- Files: `ai/face/face-api.esm.js`, `ai/face/tiny_face_detector_model*`, `ai/face/face_landmark_68_model*`
+- Source: https://github.com/vladmandic/face-api (npm package `@vladmandic/face-api@1.7.15`), a maintained fork of https://github.com/justadudewhohacks/face-api.js
+- Licence: MIT — Copyright (c) Vladimir Mandic; model weights MIT — Copyright (c) 2018 Vincent Mühler
+- Bundles TensorFlow.js — Apache License 2.0, Copyright Google LLC. https://github.com/tensorflow/tfjs/blob/master/LICENSE
 
 ## Loaded at runtime from cdn.jsdelivr.net
 

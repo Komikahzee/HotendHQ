@@ -487,11 +487,12 @@ function processImage(lum, alpha, Sshape, p, L, sculpted = false) {
   }
   const cell = (mm) => mm / c;
   if (p.denoise > 0) {
-    // a sculpted AI relief is already noise-free; its fine modelling is low in amplitude by design, so only
-    // ripples far below it are ironed out
-    const r = Math.max(1, Math.round(cell(p.denoise))), e = p.denoiseEdge * (sculpted ? 0.25 : 1);
+    // A sculpted AI relief is already noise-free, and its fine modelling (lids, fur, knuckles) is low in
+    // amplitude by design: a wide window would take it for noise and iron it flat. It only gets a fine pass
+    // (at most ~0.15 mm) against pixel-scale grain.
+    const r = Math.max(1, Math.round(cell(sculpted ? Math.min(p.denoise, 0.15) : p.denoise))), e = p.denoiseEdge * (sculpted ? 0.25 : 1);
     v = guidedFilter(v, nx, ny, r, e * e);
-    if (r >= 3) v = guidedFilter(v, nx, ny, Math.max(1, r >> 1), e * e); // second, finer pass
+    if (r >= 3 && !sculpted) v = guidedFilter(v, nx, ny, Math.max(1, r >> 1), e * e); // second, finer pass
   }
   if (p.smoothing > 0) v = blur(v, nx, ny, cell(p.smoothing));
   if (p.sharpen > 0) { const b = blur(v, nx, ny, Math.max(1, cell(0.5))); for (let k = 0; k < n; k++) v[k] += p.sharpen * (v[k] - b[k]); }
@@ -504,6 +505,16 @@ function processImage(lum, alpha, Sshape, p, L, sculpted = false) {
     }
     for (let k = 0; k < n; k++) v[k] += p.edgeBoost * Math.min(1, e[k]);
   }
+  if (sculpted && p.mode !== 'stencil' && !(p.posterize >= 2)) {
+    // Printable modelling: an AI relief's fine forms (lids, lips, fur, folds) are often a small fraction of the
+    // relief depth. Below about half a layer the slicer drops them, so where they are that faint they are
+    // lifted, just enough, and never by more than 2.2×.
+    const unit = (p.layerH || 0.16) / Math.max(0.2, p.depth || 2), b = blur(v, nx, ny, Math.max(1, cell(1)));
+    let s2 = 0, cnt = 0;
+    for (let k = 0; k < n; k++) if (alpha[k] > 0.5 && Sshape[k] < 0) { const d = v[k] - b[k]; s2 += d * d; cnt++; }
+    const rms = cnt > 50 ? Math.sqrt(s2 / cnt) : 0, target = 0.6 * unit;
+    if (rms > 1e-6 && rms < target) { const gain = Math.min(2.2, target / rms); for (let k = 0; k < n; k++) v[k] = b[k] + gain * (v[k] - b[k]); }
+  }
   if (p.mode === 'coin' || p.mode === 'cameo') {
     const det = p.styleDetail ?? 0.5, R = Math.max(c, p.styleRound ?? 2.5);
     // subject = foreground inside the outline; its distance field drives the rolled / puffed edges
@@ -514,7 +525,13 @@ function processImage(lum, alpha, Sshape, p, L, sculpted = false) {
     const bv = blur(vc, nx, ny, cell(1.5)), bc = blur(cov, nx, ny, cell(1.5)), low = new Float32Array(n);
     for (let k = 0; k < n; k++) low[k] = bc[k] > 1e-3 ? bv[k] / bc[k] : v[k];
     let base = null, puff = null;
-    if (p.mode === 'coin') base = guidedFilter(v, nx, ny, Math.max(2, Math.round(cell(2.5))), 0.02); // large forms only
+    if (p.mode === 'coin') {
+      // Outside the subject the picture is replaced by the subject's own nearby level before splitting forms from
+      // detail: otherwise the jump to the background reads as "detail" all along the outline and, amplified,
+      // prints as a beaded ridge on the rolled edge.
+      for (let k = 0; k < n; k++) v[k] = cov[k] * v[k] + (1 - cov[k]) * low[k];
+      base = guidedFilter(v, nx, ny, Math.max(2, Math.round(cell(2.5))), 0.02); // large forms only
+    }
     else { const m = new Uint8Array(n); for (let k = 0; k < n; k++) m[k] = Ssub[k] < 0 ? 1 : 0; puff = inflate(m, nx, ny, c); }
     for (let k = 0; k < n; k++) {
       const t = Math.min(1, Math.max(0, -Ssub[k]) / R);

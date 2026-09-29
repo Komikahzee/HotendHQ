@@ -376,11 +376,11 @@ const _cache = new Map(); // small LRU: pendant image, connector template, custo
 // Returns a canvas (RGB = grey height preview, A = cleaned subject mask) carrying the full-precision data:
 //   _H  Float32 height source 0..1,  _A  Float32 subject mask 0..1,  _orig the colour image.
 // depth: { w, h, data } float map from the AI, or null.
-export function buildSource(orig, depth, p, imgId, aiMask = null) {
+export function buildSource(orig, depth, p, imgId, aiMask = null, faces = null) {
   if (!orig) return null;
   const src = p.heightSource;
   const useDepth = (src === 'depth' || src === 'hybrid') && depth;
-  const key = [imgId, p.bgMode, p.bgTolerance, p.bgKeepLargest, p.bgFillHoles, p.bgSpeck, p.bgEdge, p.bgMode === 'ai' && aiMask ? 'ai' : '', useDepth ? src : 'b', src === 'hybrid' ? p.depthMix : 0, useDepth ? [p.sculpt !== false, p.sculptFlatten, p.sculptDetail].join(',') : ''].join('|');
+  const key = [imgId, p.bgMode, p.bgTolerance, p.bgKeepLargest, p.bgFillHoles, p.bgSpeck, p.bgEdge, p.bgMode === 'ai' && aiMask ? 'ai' : '', useDepth ? src : 'b', src === 'hybrid' ? p.depthMix : 0, useDepth ? [p.sculpt !== false, p.sculptFlatten, p.sculptDetail, depth.fine ? 'fine' : '', faces?.length ? [faces.length, p.portrait, p.layerH, p.depth].join(';') : 0].join(',') : ''].join('|');
   if (_cache.has(key)) { const cv = _cache.get(key); _cache.delete(key); _cache.set(key, cv); return cv; }
   const w = orig.width, h = orig.height, n = w * h;
   const data = orig.getContext('2d', { willReadFrequently: true }).getImageData(0, 0, w, h).data;
@@ -396,7 +396,7 @@ export function buildSource(orig, depth, p, imgId, aiMask = null) {
       // of the photo's own shading for fine detail (hair, fabric, engraving)
       let cut = null; for (let i = 0; i < n; i++) if (A[i] < 0.5) { cut = A; break; }
       const detail = src === 'depth' ? (p.sculptDetail ?? 0.15) : 0.8 * (1 - (p.depthMix ?? 0.65));
-      Hf = sculptRelief(D, lum, cut, w, h, { flatten: p.sculptFlatten ?? 0.55, detail });
+      Hf = sculptRelief(D, lum, cut, w, h, { flatten: p.sculptFlatten ?? 0.55, detail, faces, portrait: p.portrait ?? 0.6, minStep: (p.layerH || 0.16) / Math.max(0.2, p.depth || 2) });
     } else if (D) {
       const mix = src === 'depth' ? 1 : p.depthMix;
       Hf = new Float32Array(n);
@@ -413,5 +413,5 @@ export function buildSource(orig, depth, p, imgId, aiMask = null) {
   return out;
 }
 
-export { estimateDepth, removeBackgroundAI } from './ai.js';
+export { estimateDepth, removeBackgroundAI, detectFaces } from './ai.js';
 
