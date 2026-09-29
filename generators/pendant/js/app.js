@@ -4,7 +4,7 @@ import { buildPendant, buildConnector, tubeMesh, mergeMeshes, optimizeMesh } fro
 import { BAIL_TEMPLATES, drawTemplateIcon } from './bailTemplates.js';
 import { Viewer } from './viewer.js';
 import { toSTL, to3MFScene, toSTLZip, toOBJ, saveFiles } from './exporters.js';
-import { buildSource, loadImageFromBlob, loadImageFromURL, estimateDepth, removeBackgroundAI, hasTransparency } from './imaging.js';
+import { buildSource, loadImageFromBlob, loadImageFromURL, estimateDepth, removeBackgroundAI, hasTransparency, hasSolidBackground } from './imaging.js';
 import { buildMeshLabeled } from './mesher2.js';
 import { SAMPLES } from './samples.js';
 import { icon, hydrateIcons } from './icons.js';
@@ -137,6 +137,7 @@ function onParamChanged(key, prev) {
     syncAll();
   }
   if (key === 'heightSource' && p.heightSource !== 'brightness') runDepth();
+  if (key === 'bgMode') state.autoBg = false; // the user's own choice sticks
   if (key === 'bgMode' && p.bgMode === 'ai') runCutout();
   if (key === 'shape') ensureSubject();
   if (key === 'cbJoin' && p.cbJoin === 'peg' && (p.bail === 'tab' || p.bail === 'punched')) {
@@ -615,8 +616,15 @@ async function handleFile(file) {
   try {
     if (/json|hotendhq|emberforge/i.test(file.type + file.name)) return loadProject(JSON.parse(await file.text()));
     if (!file.type.startsWith('image/')) throw new Error('Unsupported file type');
-    setImage(await loadImageFromBlob(file), file.name.replace(/\.[^.]+$/, ''));
-    toast(`Loaded ${file.name}`);
+    const cv = await loadImageFromBlob(file);
+    // a logo or drawing on a plain background: drop the background instead of modelling it as a raised plate
+    // (only when we'd otherwise use the image as is; switched back for the next image if it has no plain background)
+    if (state.autoBg && state.p.bgMode === 'auto') state.p.bgMode = 'alpha';
+    const plainBg = state.p.bgMode === 'alpha' && hasSolidBackground(cv);
+    state.autoBg = plainBg;
+    if (plainBg) state.p.bgMode = 'auto';
+    setImage(cv, file.name.replace(/\.[^.]+$/, ''));
+    toast(plainBg ? `Loaded ${file.name}. Its plain background was removed; to keep it, set Background removal to None.` : `Loaded ${file.name}`, plainBg ? 5000 : 2600);
   } catch (e) { toast(e.message, 4000); }
 }
 function setupFiles() {

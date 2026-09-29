@@ -31,6 +31,21 @@ export function hasTransparency(cv) {
   return t / (d.length / 16) > 0.02;
 }
 
+// True when an opaque image sits on a plain, single-colour background (a logo or drawing on white, say):
+// most of its border is one colour. Photos, and images that already have transparency, return false.
+export function hasSolidBackground(cv) {
+  if (hasTransparency(cv)) return false;
+  const w = cv.width, h = cv.height, d = cv.getContext('2d', { willReadFrequently: true }).getImageData(0, 0, w, h).data;
+  const rw = Math.max(1, Math.round(Math.min(w, h) * 0.01)), px = [];
+  const take = (x, y) => { const o = (y * w + x) * 4; px.push([d[o], d[o + 1], d[o + 2]]); };
+  const stepX = Math.max(1, Math.floor(w / 400)), stepY = Math.max(1, Math.floor(h / 400));
+  for (let x = 0; x < w; x += stepX) for (let k = 0; k < rw; k++) { take(x, k); take(x, h - 1 - k); }
+  for (let y = 0; y < h; y += stepY) for (let k = 0; k < rw; k++) { take(k, y); take(w - 1 - k, y); }
+  const med = [0, 1, 2].map((c) => px.map((q) => q[c]).sort((a, b) => a - b)[px.length >> 1]);
+  const close = px.filter((q) => Math.abs(q[0] - med[0]) + Math.abs(q[1] - med[1]) + Math.abs(q[2] - med[2]) < 36).length;
+  return close / px.length > 0.9;
+}
+
 // ── Colour helpers ─────────────────────────────────────────
 function toLab(data, n) {
   const L = new Float32Array(n * 3);
@@ -177,6 +192,12 @@ function autoMask(data, w, h, p) {
   const pop = () => { const c = hk[0], v = hv[0], lc = hk.pop(), lv = hv.pop(); if (hk.length) { hk[0] = lc; hv[0] = lv; let i = 0; for (;;) { const l = 2 * i + 1, r = l + 1; let m = i; if (l < hk.length && hk[l] < hk[m]) m = l; if (r < hk.length && hk[r] < hk[m]) m = r; if (m === i) break; [hk[m], hk[i]] = [hk[i], hk[m]]; [hv[m], hv[i]] = [hv[i], hv[m]]; i = m; } } return [c, v]; };
   for (let i = 0; i < n; i++) if (rgba[i * 4 + 3] < 20) { G[i] = 0; push(0, i); } // transparent pixels are background
   for (const i of ring) if (G[i] > 0 && palD(i) < T2) { G[i] = 0; push(0, i); }
+  // A plain one-colour background (a logo on white): areas of that exact colour enclosed by the design — inside
+  // a ring, between letters — are background as well, not something to raise. Photos never qualify.
+  const tight = (0.45 * T) ** 2;
+  if (pal.length === 1 && opaqueRing.filter((i) => palD(i) < tight).length > 0.9 * opaqueRing.length) {
+    for (let i = 0; i < n; i++) if (G[i] > 0 && palD(i) < tight) { G[i] = 0; push(0, i); }
+  }
   // Step cost = the colour change crossed (minus a noise floor) + a toll for every pixel whose colour is unlike
   // the background palette. The toll stops paths that sneak across an edge in tiny steps along a smeared
   // (JPEG chroma) transition; background gradients sampled by the border stay free.
