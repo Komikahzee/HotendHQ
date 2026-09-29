@@ -460,13 +460,15 @@ function drawLines(ctx, text, size, family, bold, y, stroke, spacingEm = 0) {
 }
 
 // ── Image processing on the grid ───────────────────────────
+// soft ceiling: values above 0.9 approach 1 smoothly, so a relief's highest point keeps its rounded shape
+const knee = (v) => (v > 0.9 ? 0.9 + 0.1 * Math.tanh((v - 0.9) / 0.1) : v);
 function processImage(lum, alpha, Sshape, p, L, sculpted = false) {
   const { nx, ny, c } = L, n = nx * ny;
   const bgL = p.bgLevel;
   let v = new Float32Array(n);
   // auto levels over foreground pixels inside the shape
   let lo = 0, hi = 1;
-  if (p.autoLevels) {
+  if (p.autoLevels && !sculpted) { // a sculpted relief is already levelled, its peaks rolled off (sculpt.js); clipping its top 1 % would flatten a nose
     const hist = new Uint32Array(256); let cnt = 0;
     for (let k = 0; k < n; k++) if (alpha[k] > 0.5 && Sshape[k] < 0) { hist[(lum[k] * 255) | 0]++; cnt++; }
     if (cnt > 50) {
@@ -480,7 +482,8 @@ function processImage(lum, alpha, Sshape, p, L, sculpted = false) {
   for (let k = 0; k < n; k++) {
     let l = clamp((lum[k] - lo) / (hi - lo), 0, 1);
     if (inv) l = 1 - l;
-    l = clamp((l - 0.5) * con + 0.5 + p.brightness, 0, 1);
+    l = (l - 0.5) * con + 0.5 + p.brightness;
+    l = clamp(sculpted ? knee(l) : l, 0, 1); // sculpted: peaks roll off instead of clipping flat
     l = Math.pow(l, g);
     const a = alpha[k];
     v[k] = a * l + (1 - a) * bgL;
@@ -546,7 +549,7 @@ function processImage(lum, alpha, Sshape, p, L, sculpted = false) {
       }
     }
   }
-  for (let k = 0; k < n; k++) v[k] = clamp(v[k], 0, 1);
+  for (let k = 0; k < n; k++) v[k] = clamp(sculpted ? knee(v[k]) : v[k], 0, 1);
   const raw = v.slice(); // smooth, pre-quantisation values: stepped boundaries are placed on these iso-lines
   if (p.mode === 'stencil') for (let k = 0; k < n; k++) v[k] = v[k] >= p.stencilThreshold ? 1 : 0;
   else if (p.posterize >= 2) { const N = p.posterize - 1; for (let k = 0; k < n; k++) v[k] = Math.round(v[k] * N) / N; }

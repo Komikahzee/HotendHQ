@@ -280,7 +280,10 @@ export function sculptRelief(depth, lum, mask, w, h, { flatten = 0.55, detail = 
   // The background keeps its (compressed) gradients: the solve stays consistent across the whole picture, so
   // no halo forms round the subject, and the cut-out later replaces the background anyway.
   let R = poisson(gx, gy, ww, hh, dx, dy);
-  { const lo = percentile(R, sel, 0.01), hi = percentile(R, sel, 0.995), k = 1 / Math.max(1e-6, hi - lo); for (let i = 0; i < n; i++) R[i] = clamp((R[i] - lo) * k, 0, 1); }
+  // The nearest 0.5 % (a cat's nose, a fingertip) is rolled off smoothly instead of cut flat, so it keeps its
+  // shape instead of printing as a plateau.
+  { const lo = percentile(R, sel, 0.01), hi = percentile(R, sel, 0.995), k = 1 / Math.max(1e-6, hi - lo);
+    for (let i = 0; i < n; i++) { let v = (R[i] - lo) * k; if (v > 0.9) v = 0.9 + 0.1 * Math.tanh((v - 0.9) / 0.1); R[i] = clamp(v, 0, 1); } }
   // Faces, as a medallist would cut them: a gentle mound for each eyeball, a crisp line between the lips and
   // small nostril dimples. Sizes follow the distance between the eyes; depths are a few % of the relief.
   if (FF) for (let i = 0; i < n; i++) R[i] = clamp(R[i] + portrait * FF.accent[i], 0, 1);
