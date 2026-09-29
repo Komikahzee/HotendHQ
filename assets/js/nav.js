@@ -19,7 +19,7 @@ window.HHQ_NAV = {
     ]},
     { title:'Site', links:[
       { href:'/about', label:'About' },
-      { href:'/about#contact', label:'Contact' },
+      { href:'/contact', label:'Contact & Support' },
       { href:'/about#disclosure', label:'Affiliate Disclosure' },
       { href:'/about#privacy', label:'Privacy' }
     ]}
