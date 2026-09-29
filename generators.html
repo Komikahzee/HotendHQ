@@ -37,7 +37,9 @@
 
   <section class="wrap section--tight gens-feature-wrap" aria-labelledby="gens-feature-title">
     <h2 id="gens-feature-title" class="sr-only">Featured generators</h2>
-    <div class="gens-features">
+    <div class="gens-rail">
+    <button type="button" class="gens-rail-btn" data-dir="-1" aria-label="Previous featured generators" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg></button>
+    <div class="gens-features" id="gens-features" tabindex="0" aria-label="Featured generators, scroll right for more">
       <div class="card gens-feature">
         <a class="gens-feature-img" href="/generators/pendant/" tabindex="-1" aria-hidden="true">
           <img src="/assets/img/articles/pendant-coin.webp" alt="" width="1200" height="750" decoding="async">
@@ -94,6 +96,8 @@
           </div>
         </div>
       </div>
+    </div>
+    <button type="button" class="gens-rail-btn" data-dir="1" aria-label="More featured generators" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
     </div>
   </section>
 
@@ -254,6 +258,18 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('w1').innerHTML = icon('calc');
   document.getElementById('w2').innerHTML = icon('bolt');
   document.getElementById('w3').innerHTML = icon('check');
+  const rail = document.getElementById('gens-features'), railBtns = document.querySelectorAll('.gens-rail-btn');
+  const railSync = () => {
+    const max = rail.scrollWidth - rail.clientWidth - 2;
+    railBtns.forEach(b => { b.hidden = b.dataset.dir === '1' ? rail.scrollLeft >= max : rail.scrollLeft <= 2; });
+  };
+  railBtns.forEach(b => b.addEventListener('click', () => {
+    const card = rail.querySelector('.gens-feature'), step = card.offsetWidth + parseFloat(getComputedStyle(rail).columnGap);
+    rail.scrollBy({ left: step * +b.dataset.dir });
+  }));
+  rail.addEventListener('scroll', railSync, { passive: true });
+  window.addEventListener('resize', railSync);
+  railSync();
   const chips = document.querySelectorAll('.gens-filter .chip'), cards = document.querySelectorAll('#gens-grid .gens-card');
   chips.forEach(c => c.addEventListener('click', () => {
     chips.forEach(x => x.setAttribute('aria-pressed', String(x === c)));
