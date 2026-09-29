@@ -460,7 +460,7 @@ function drawLines(ctx, text, size, family, bold, y, stroke, spacingEm = 0) {
 }
 
 // ── Image processing on the grid ───────────────────────────
-function processImage(lum, alpha, Sshape, p, L) {
+function processImage(lum, alpha, Sshape, p, L, sculpted = false) {
   const { nx, ny, c } = L, n = nx * ny;
   const bgL = p.bgLevel;
   let v = new Float32Array(n);
@@ -487,9 +487,11 @@ function processImage(lum, alpha, Sshape, p, L) {
   }
   const cell = (mm) => mm / c;
   if (p.denoise > 0) {
-    const r = Math.max(1, Math.round(cell(p.denoise)));
-    v = guidedFilter(v, nx, ny, r, p.denoiseEdge * p.denoiseEdge);
-    if (r >= 3) v = guidedFilter(v, nx, ny, Math.max(1, r >> 1), p.denoiseEdge * p.denoiseEdge); // second, finer pass
+    // a sculpted AI relief is already noise-free; its fine modelling is low in amplitude by design, so only
+    // ripples far below it are ironed out
+    const r = Math.max(1, Math.round(cell(p.denoise))), e = p.denoiseEdge * (sculpted ? 0.25 : 1);
+    v = guidedFilter(v, nx, ny, r, e * e);
+    if (r >= 3) v = guidedFilter(v, nx, ny, Math.max(1, r >> 1), e * e); // second, finer pass
   }
   if (p.smoothing > 0) v = blur(v, nx, ny, cell(p.smoothing));
   if (p.sharpen > 0) { const b = blur(v, nx, ny, Math.max(1, cell(0.5))); for (let k = 0; k < n; k++) v[k] += p.sharpen * (v[k] - b[k]); }
@@ -1006,7 +1008,7 @@ export function buildField(p, src, res) {
     let lum, alpha;
     if (src._H) ({ lum, alpha } = sampleSource(src, p, L));
     else { ctx = canvasFor(nx, ny); placeImage(ctx, src, p, L); ({ lum, alpha } = readRGBA(ctx, L)); }
-    V = processImage(lum, alpha, Sshape, p, L);
+    V = processImage(lum, alpha, Sshape, p, L, !!src._depth);
     if (p.symmetry && p.symmetry !== 'none') { const raw = symmetrize(V.raw, L, p.symmetry, p.radialN); V = symmetrize(V, L, p.symmetry, p.radialN); V.raw = raw; }
   } else V = new Float32Array(n).fill(p.bgLevel);
   let steps = V.raw ? stepLevels(p) : null; // stepped relief → crisp terraces with true vertical walls
@@ -1053,7 +1055,8 @@ export function buildField(p, src, res) {
   // can draw cleanly — in neither case can an edge turn into a zig-zag.
   let vStep = V.raw || V;
   const kindPref = p.imgKind ?? 'auto';
-  if (!steps && V.raw && (p.mode === 'raised' || p.mode === 'engraved') && kindPref !== 'photo') {
+  // an AI-depth relief is always sculpted: its smooth plateaus must never be mistaken for a logo's flat colours
+  if (!steps && V.raw && (p.mode === 'raised' || p.mode === 'engraved') && kindPref !== 'photo' && (kindPref === 'graphic' || !src?._depth)) {
     const g = graphicLevels(V.raw, Sshape, L, imgStart, kindPref === 'graphic');
     if (g) { steps = g; vStep = blur(V.raw, nx, ny, 0.7); imgKind = { kind: 'graphic', levels: g.vals.length }; }
   }

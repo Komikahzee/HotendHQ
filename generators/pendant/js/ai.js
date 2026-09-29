@@ -2,17 +2,21 @@
 // so AI depth and AI cut-out work on any static host and inside sandboxed pages that may only load their
 // own files. Nothing is sent anywhere; the images never leave the browser.
 //
-//   Depth Anything V2 Small (Apache-2.0) — relative depth, run with flip test-time augmentation.
+//   Depth Anything V2 Small (Apache-2.0) — relative depth, run with flip test-time augmentation. Its weights are
+//   stored as float16 and widened to float32 when the session starts, so it computes in full precision: the older
+//   int8-quantised export pitted every surface with a fine noise that printed as a sandpaper texture.
 //   MODNet (Apache-2.0) — portrait matting.
 //   onnxruntime-web 1.20.1 (MIT).
 //
-// Both return float maps at the source image's resolution, edge-snapped to the image with a guided filter.
+// Both return float maps at the source image's resolution. The matte is edge-snapped to the image with a guided
+// filter; depth is not (that copied the photo's texture and colour edges into the shape). sculpt.js turns depth
+// into the final relief.
 
 const BASE = new URL('../ai/', import.meta.url).href;
 // ONNX model files, split into chunks under 15 MB. They carry a .wasm extension only so that strict static
 // hosts serve them (the bytes are read with fetch, never instantiated as WebAssembly).
 const MODELS = {
-  depth: { parts: ['depth.0.onnx.wasm', 'depth.1.onnx.wasm'], size: 27258801, label: 'depth model' },
+  depth: { parts: ['depth2.0.onnx.wasm', 'depth2.1.onnx.wasm', 'depth2.2.onnx.wasm', 'depth2.3.onnx.wasm'], size: 49765779, label: 'depth model' },
   matte: { parts: ['modnet.onnx.wasm'], size: 6632188, label: 'cut-out model' },
 };
 
@@ -134,11 +138,7 @@ export async function estimateDepth(img, onStatus) {
   const sorted = Float32Array.from(avg).sort(), lo = sorted[Math.floor(sorted.length * 0.005)], hi = sorted[Math.floor(sorted.length * 0.995)];
   const k = 1 / Math.max(1e-6, hi - lo);
   for (let i = 0; i < avg.length; i++) avg[i] = Math.min(1, Math.max(0, (avg[i] - lo) * k));
-  onStatus?.('Snapping depth to the image…'); await tick();
-  const up = upsample(avg, dw, dh, W, H);
-  const r = Math.max(2, Math.round(Math.max(W, H) / dw * 1.5));
-  const out = guided(up, luminance(img), W, H, r, 1e-3);
-  for (let i = 0; i < out.length; i++) out[i] = Math.min(1, Math.max(0, out[i]));
+  const out = upsample(avg, dw, dh, W, H);
   onStatus?.('');
   return { w: W, h: H, data: out };
 }
