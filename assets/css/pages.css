@@ -286,12 +286,26 @@
 .gens-feature-body p{margin:0}
 .gens-feature-cta{display:flex;flex-wrap:wrap;gap:10px;margin-top:6px}
 .gens-feature-cta .btn svg{width:16px;height:16px}
-.gens-features{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}
+/* featured rail: three cards in view, the rest one scroll (or arrow) to the right */
+.gens-rail{position:relative}
+.gens-features{--per:3;display:grid;grid-auto-flow:column;grid-auto-columns:calc((100% - (var(--per) - 1) * 20px) / var(--per));gap:20px;
+  overflow-x:auto;scroll-snap-type:x mandatory;overscroll-behavior-x:contain;scroll-behavior:smooth;scrollbar-width:thin;scrollbar-color:var(--border-strong) transparent;padding-bottom:14px}
+.gens-features>.gens-feature{scroll-snap-align:start}
+.gens-features::-webkit-scrollbar{height:6px}
+.gens-features::-webkit-scrollbar-thumb{background:var(--border-strong);border-radius:99px}
+.gens-rail-btn{position:absolute;z-index:2;top:calc(50% - 30px);width:44px;height:44px;border-radius:50%;display:grid;place-items:center;cursor:pointer;
+  background:var(--bg-raised);border:1px solid var(--border-strong);color:var(--text);box-shadow:0 10px 26px rgba(0,0,0,.45);transition:opacity .2s,border-color .2s}
+.gens-rail-btn:hover{border-color:var(--blue-400)}
+.gens-rail-btn svg{width:20px;height:20px}
+.gens-rail-btn[data-dir="-1"]{left:-14px}
+.gens-rail-btn[data-dir="1"]{right:-14px}
+.gens-rail-btn[hidden]{display:none}
+@media (max-width:980px){.gens-features{--per:2}}
+@media (max-width:700px){.gens-features{--per:1;grid-auto-columns:86%}.gens-rail-btn{display:none}}
 .gens-features .gens-feature{grid-template-columns:minmax(0,1fr);grid-template-rows:auto 1fr}
 .gens-features .gens-feature-img img{height:auto}
 .gens-features .gens-feature-body{justify-content:flex-start;padding:clamp(18px,2.4vw,28px)}
 .gens-features .gens-feature-body h3{margin:0;font-size:1.35rem}
 .gens-features .gens-feature-body p{flex:1}
-@media (max-width:700px){.gens-features{grid-template-columns:minmax(0,1fr)}}
 @media (max-width:760px){.gens-feature{grid-template-columns:minmax(0,1fr)}.gens-feature-img img{height:auto}}
 @media (max-width:420px){.gens-feature-cta .btn{flex:1 1 100%;justify-content:center}}
