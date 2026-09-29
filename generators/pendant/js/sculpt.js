@@ -127,6 +127,12 @@ export function poisson(gx, gy, W, H, dx = 1, dy = 1) {
   dct2d(b, W, H, true);
   return Float32Array.from(b);
 }
+function maxFilter(a, w, h, r) {
+  const t = new Float32Array(a.length), o = new Float32Array(a.length);
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { let m = -Infinity; for (let d = -r; d <= r; d++) { const xx = clamp(x + d, 0, w - 1); m = Math.max(m, a[y * w + xx]); } t[y * w + x] = m; }
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { let m = -Infinity; for (let d = -r; d <= r; d++) { const yy = clamp(y + d, 0, h - 1); m = Math.max(m, t[yy * w + x]); } o[y * w + x] = m; }
+  return o;
+}
 const pow2 = (v) => 1 << Math.max(3, Math.round(Math.log2(v)));
 
 function percentile(a, sel, q) {
@@ -207,7 +213,7 @@ function faceFeatures(faces, ww, hh, dx, dy, S, A0) {
 // opts.flatten 0..1: how strongly big forms are flattened (0 = raw depth, 1 = strongest bas-relief).
 // opts.detail 0..1: fine detail borrowed from the photo's shading.
 // Returns Float32 0..1 at w×h: the sculpted relief, background (mask < 0.5) at 0.
-export function sculptRelief(depth, lum, mask, w, h, { flatten = 0.55, detail = 0.2, edgeStep = 0.4, edgeWidth = 0.03, maxWork = 1024, faces = null, portrait = 0.6, minStep = 0 } = {}) {
+export function sculptRelief(depth, lum, mask, w, h, { flatten = 0.55, detail = 0.2, edgeStep = 0.4, edgeWidth = 0.03, maxWork = 1024, faces = null, portrait = 0.6, minStep = 0, calm = 0, subject = null } = {}) {
   // working resolution: at most maxWork on the long side (the depth network's own resolution is ~518)
   // power-of-two grid (for the DCT solve) close to the picture's own pixel count; pixels may be non-square
   const s0 = Math.min(1, maxWork / Math.max(w, h)), ww = Math.min(pow2(w * s0), 2048), hh = Math.min(pow2(h * s0), 2048), n = ww * hh;
@@ -220,6 +226,15 @@ export function sculptRelief(depth, lum, mask, w, h, { flatten = 0.55, detail = 
   // normalise over the subject, then iron out the network's faint patch pattern (edges survive)
   { const lo = percentile(D, sel, 0.01), hi = percentile(D, sel, 0.99), k = 1 / Math.max(1e-6, hi - lo); for (let i = 0; i < n; i++) D[i] = (D[i] - lo) * k; }
   D = selfGuided(D, ww, hh, Math.max(1, Math.round(Math.max(ww, hh) / 400)), 0.003 ** 2);
+  // Calm background (photos without a cut-out): a medallist lets the field behind a figure recede into a quiet
+  // surface so the subject reads at a glance. The subject comes from the AI cut-out model's matte (subject),
+  // widened a few pixels so the step up to the subject is kept; modelling everywhere else is turned down.
+  let bgW = null;
+  if (!M && subject && calm > 0) {
+    const Sm = maxFilter(resample(subject, w, h, ww, hh), ww, hh, Math.max(2, Math.round(Math.max(ww, hh) / 200))), Sg = gauss(Sm, ww, hh, 2);
+    bgW = new Float32Array(n);
+    for (let i = 0; i < n; i++) { const t = clamp((Sg[i] - 0.25) / 0.5, 0, 1); bgW[i] = 1 - calm * 0.85 * (1 - t * t * (3 - 2 * t)); }
+  }
   const gx = new Float32Array(n), gy = new Float32Array(n);
   for (let y = 0; y < hh; y++) for (let x = 0; x < ww; x++) {
     const i = y * ww + x;
@@ -252,6 +267,7 @@ export function sculptRelief(depth, lum, mask, w, h, { flatten = 0.55, detail = 
     let k = m > occ ? occ / m : 1; m = Math.min(m, occ);        // occlusion cliffs → a gentle step
     const m2 = Math.max(0, m - floor); k *= m2 / m; m = m2;     // noise floor
     if (m > a) k *= Math.pow(m / a, bb - 1);                     // compress big forms more than small ones
+    if (bgW) k *= bgW[i];
     gx[i] *= k; gy[i] *= k;
   }
   // Faces: where eyes, brows, nose and mouth are, fine photo detail is borrowed far more strongly, so lids,
@@ -274,6 +290,7 @@ export function sculptRelief(depth, lum, mask, w, h, { flatten = 0.55, detail = 
       let wgt = clamp(1 - (ms[i] / occ - 0.35) / 0.5, 0, 1);
       if (Ein) wgt *= clamp((Ein[i] - 0.5) * 2, 0, 1);
       const kd = FF ? ref * Math.max(detail, detail + (0.7 - detail) * portrait * FF.boost[i]) : k;
+      if (bgW) wgt *= bgW[i];
       gx[i] += kd * wgt * lx[i]; gy[i] += kd * wgt * ly[i];
     }
   }

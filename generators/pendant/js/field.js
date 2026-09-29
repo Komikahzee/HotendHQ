@@ -477,6 +477,10 @@ function processImage(lum, alpha, Sshape, p, L, sculpted = false) {
       if (hi - lo < 0.05) { lo = 0; hi = 1; }
     }
   }
+  // A sculpted relief's cut-out edge is a wall 0.5-1.5 mm tall. As a one-cell cliff the grid can only draw it as
+  // a staircase (a beaded, zig-zag outline in the preview and the mesh); spread over a few cells it becomes a
+  // clean, smooth chamfer, still far narrower than a nozzle.
+  if (sculpted) { let part = false; for (let k = 0; k < n; k++) if (alpha[k] > 0.02 && alpha[k] < 0.98 && Sshape[k] < 0) { part = true; break; } if (part) alpha = blur(alpha, nx, ny, 1.5); }
   const inv = (p.mode === 'lithophane') !== !!p.invert;
   const g = 1 / p.gamma, con = 1 + p.contrast;
   for (let k = 0; k < n; k++) {

@@ -139,6 +139,7 @@ function onParamChanged(key, prev) {
   }
   if ((key === 'heightSource' || key === 'depthQuality') && p.heightSource !== 'brightness') runDepth();
   if ((key === 'heightSource' || key === 'portrait') && p.heightSource !== 'brightness') runFaces();
+  if ((key === 'heightSource' || key === 'sculptCalm') && p.heightSource !== 'brightness') runSubject();
   if (key === 'bgMode') state.autoBg = false; // the user's own choice sticks
   if (key === 'bgMode' && p.bgMode === 'ai') runCutout();
   if (key === 'shape') ensureSubject();
@@ -372,7 +373,8 @@ function currentSource() {
   const wantDepth = state.p.heightSource !== 'brightness' && state.depthFor === state.imgId;
   const ai = state.p.bgMode === 'ai' && state.aiMaskFor === state.imgId ? state.aiMask : null;
   const faces = wantDepth && state.facesFor === state.imgId ? state.faces : null;
-  return buildSource(state.img, wantDepth ? state.depth : null, state.p, state.imgId, ai, faces);
+  const subject = wantDepth && !ai && state.aiMaskFor === state.imgId ? state.aiMask : null;
+  return buildSource(state.img, wantDepth ? state.depth : null, state.p, state.imgId, ai, faces, subject);
 }
 
 let rq = false, running = false, again = false, busyT = 0, refineT = 0, gen = 0;
@@ -480,6 +482,21 @@ async function runDepth() {
     toast('AI depth could not load (' + (e.message || 'network') + '). Using brightness.', 5000);
     setParam('heightSource', 'brightness');
   }
+}
+
+// ── Subject for "Calm background" ───────────────────────────
+// The cut-out model's matte, found quietly: it is not used to cut anything away, only to tell the sculpt which
+// part of the scene is the subject. If it can't load, the relief is simply left uncalmed.
+let subjBusy = -1;
+async function runSubject() {
+  if (!state.img || !(state.p.sculptCalm > 0) || state.p.bgMode === 'ai' || state.aiMaskFor === state.imgId || subjBusy === state.imgId) return;
+  const id = state.imgId; subjBusy = id;
+  try {
+    const m = await removeBackgroundAI(state.img);
+    if (id !== state.imgId) return;
+    state.aiMask = m; state.aiMaskFor = id; scheduleRegen();
+  } catch (e) { console.warn('subject finder unavailable', e); }
+  finally { if (subjBusy === id) subjBusy = -1; }
 }
 
 // ── Faces (portrait detail) ─────────────────────────────────
@@ -621,7 +638,7 @@ function setImage(cv, name, resetTransform = true) {
   if (resetTransform) Object.assign(state.p, { imgX: 0, imgY: 0, imgZoom: 1, imgRotate: 0, imgFlip: false });
   ensureSubject();
   syncAll(); scheduleRegen(); pushHistory();
-  if (state.p.heightSource !== 'brightness') { runDepth(); runFaces(); }
+  if (state.p.heightSource !== 'brightness') { runDepth(); runFaces(); runSubject(); }
   if (state.p.bgMode === 'ai') runCutout();
 }
 function setConnectorImage(cv, name) {
