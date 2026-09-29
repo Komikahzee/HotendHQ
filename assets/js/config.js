@@ -51,6 +51,6 @@ window.HHQ_CONFIG = {
   social: {
     tiktok: 'https://www.tiktok.com/@hotendhq',
     youtube: '',
-    email: 'cobornassets@gmail.com'
+    email: 'hotendhq@gmail.com'   // support address: footer, /contact, About, article footers
   }
 };

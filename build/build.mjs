@@ -111,7 +111,7 @@ async function loadArticles() {
 
 /* ---------------- HTML helpers ---------------- */
 const PAGES = ['index', 'news', 'troubleshoot', 'generator', 'generators', 'gridfinity', 'chain',
-  'storage-box', 'grid-organiser', 'cable-clip', 'spool-holder', 'wall-bracket', 'tools', 'gear', 'order', 'about',
+  'storage-box', 'grid-organiser', 'cable-clip', 'spool-holder', 'wall-bracket', 'tools', 'gear', 'order', 'about', 'support',
   'login', 'admin', 'article', '404'];
 /* Every generator is served under /generators/<name>; /generators itself is the index page. */
 const GENERATORS = SITE_GENERATORS.filter(g => !g.app).map(g => g.slug);
@@ -249,7 +249,7 @@ if (SOURCE) {
     fs.writeFileSync(path.join(gdir, a.slug, 'index.html'), finishPage(guidePage(a, seed), `/guides/${a.slug}/`));
   }
   const day = d => (iso(d) || '').slice(0, 10), today = new Date().toISOString().slice(0, 10);
-  const pages = ['index', 'news', 'troubleshoot', 'generators', ...GENERATORS, 'tools', 'order', 'about'];   // gear is paused
+  const pages = ['index', 'news', 'troubleshoot', 'generators', ...GENERATORS, 'tools', 'order', 'about', 'support'];   // gear is paused
   const urls = [
     ...pages.map(p => `  <url><loc>${BASE}${clean(p)}</loc><lastmod>${today}</lastmod><priority>${p === 'index' ? '1.0' : ['generators', 'gridfinity', 'chain', 'order'].includes(p) ? '0.9' : '0.8'}</priority></url>`),
     ...APPS.map(a => `  <url><loc>${a.loc}</loc><lastmod>${today}</lastmod><priority>0.9</priority></url>`),
@@ -329,7 +329,7 @@ log(`cache-busted ${assetHash.size} asset URL(s) across ${htmlFiles.length} page
 
 /* ---------------- sitemap + robots ---------------- */
 const day = d => (iso(d) || '').slice(0, 10);
-const staticPages = ['index', 'news', 'troubleshoot', 'generators', ...GENERATORS, 'tools', 'order', 'about'];   // gear is paused
+const staticPages = ['index', 'news', 'troubleshoot', 'generators', ...GENERATORS, 'tools', 'order', 'about', 'support'];   // gear is paused
 const fileOf = p => (GENERATORS.includes(p) ? `generators/${p}.html` : `${p}.html`);
 /* A URL only goes in the sitemap if the page at that URL names itself as canonical.
    Anything that doesn't is left out and logged, so the sitemap never sends mixed signals. */
