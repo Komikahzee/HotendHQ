@@ -156,6 +156,10 @@ export default {
           S('pad', 'Motor pad', [['round', 'Round'], ['square', 'Square'], ['tear', 'Teardrop (blends into the arm)']], 'tear'),
           S('holes', 'Weight-saving cutouts', [['none', 'None (strongest)'], ['slots', 'Slots'], ['circles', 'Round holes'], ['truss', 'Truss (triangles)']], 'truss'),
           R('chamfer', 'Edge chamfer', 0, 1.2, 0.1, 0.4, 'mm', { hint: 'Softens the top and bottom edges. 0 for sharp edges.' }),
+          B('fillets', 'Rounded arm joints', true, { hint: 'Smooth fillets where the arms meet the body and the motor pads, so crash loads spread out instead of cracking a sharp corner.' }),
+          R('filletR', 'Fillet radius', 0, 20, 0.5, 0, 'mm', { show: s => s.fillets, hint: '0 picks one for the arm width.' }),
+          B('rims', 'Stiffening rims on the arms', true, { show: s => !isWhoop(s) && !(isQuad(s) && s.type === 'h'), hint: 'Raised edges along each arm and round every cutout turn the flat arm into a channel: two to three times stiffer for about a fifth more plastic.' }),
+          R('rimH', 'Rim height', 0, 8, 0.1, 0, 'mm', { show: s => s.rims && !isWhoop(s) && !(isQuad(s) && s.type === 'h'), hint: '0 picks about the arm thickness.' }),
           B('wireHole', 'Motor wire pass-through', true, { show: s => !isWhoop(s), hint: 'A slot beside each motor to route the wires under the arm.' }),
           S('guards', 'Motor guards', [['none', 'None'], ['bumper', 'Bumpers around the motors'], ['ring', 'Full prop guard rings']], 'none', { show: s => !isWhoop(s) }),
           R('guardH', 'Guard height', 2, 14, 0.5, 6, 'mm', { show: s => s.guards !== 'none' && !isWhoop(s) }),
@@ -314,6 +318,31 @@ export default {
     const rin = Math.max(stackHalf + 2.5, (wf(0) / 2 + 1) / Math.sin(minSep / 2), 8);
     const boltSp = Math.max(7, armW * 0.9);
 
+    /* ---------- print strength: fillets and arm rims ----------
+       Plastic cracks at sharp inside corners and flexes where carbon would not, so the
+       arm joints are rounded (a morphological closing of the outline) and each arm can
+       carry raised rims along its edges and round its cutouts, turning a flat plate into
+       a channel section. The rims ramp in and out and stay clear of the motor bell.       */
+    const filR = p.fillets ? (p.filletR || clamp(armW * 0.7, 3, 14)) : 0;
+    const fillet = (cs) => (filR > 0.05 ? cs.offset(filR, 'Round').offset(-filR, 'Round') : cs);
+    const rimOn = p.rims && !whoop && !hFrame;
+    const rimW = clamp(armW * 0.13, 1.6, 2.6), rimH = p.rimH || clamp(armT * 0.8, 1.5, 6);
+    const bellR = (mk === 'custom' ? Math.max(12, mS * 1.7) : BELL[mk][0]) / 2, motorClear = Math.max(padR, bellR) + 1.5;
+    /** rims for one arm in its own frame (arm along +x), from xa out towards the motor, standing on z0:
+        a raised border round that stretch of arm (a pocketed arm) plus a flange round each cutout */
+    let rimsMade = false;
+    const rimsFor = (outline, holes, xa, L, z0) => {
+      const xb = L - Math.max(motorClear, p.pad === 'tear' ? padR * 1.7 : 0);      // stop before a teardrop pad flares out; the bending load is at the root anyway
+      if (xb - xa < 3 * rimH + 6) return null;
+      const zone = outline.intersect(K.rect(xb - xa, 1000).translate([(xa + xb) / 2, 0])).subtract(K.circle(motorClear, 64).translate([L, 0]));
+      const inner = zone.offset(-rimW, 'Round');
+      if (zone.isEmpty() || inner.isEmpty()) return null;
+      let ring = zone.subtract(inner.offset(-0.6, 'Round').offset(0.6, 'Round'));
+      for (const h of holes) ring = ring.add(h.offset(rimW, 'Round').subtract(h));
+      ring = soft(ring.intersect(zone), 0.5);
+      return K.softSlab(ring, rimH + 0.01, Math.min(0.6, rimW * 0.3), { bottom: false, chamfer: true, steps: 2 }).translate([0, 0, z0 - 0.01]);
+    };
+
     /* ---------- body ---------- */
     const bodyShape = p.bodyShape === 'auto' ? (quadLike ? 'rect' : 'round') : p.bodyShape;
     let bodyW, bodyL;
@@ -451,7 +480,7 @@ export default {
     const zArm0 = sandwich ? plateT : 0, zArmTop = zArm0 + armT, zStand = sandwich ? plateT + armT : plateT, zTop = zStand + soH;
     const lighten = (arm) => {
       const x0 = sandwich ? rin : 0, e = edgeDist(arm.a);
-      return cutouts(Math.max(e, sandwich ? rin + 3 + boltSp + 3.5 : e) + armW * 0.35, arm.L - padR - (p.wireHole ? 5 : 1.5) - armW * 0.2, x0, arm.L);
+      return cutouts(Math.max(e, sandwich ? rin + 3 + boltSp + 3.5 : e + filR * 0.6) + armW * 0.35, arm.L - padR - (p.wireHole ? 5 : 1.5) - armW * 0.2, x0, arm.L);
     };
     const holesBody = [];
     if (sS) {
@@ -489,7 +518,7 @@ export default {
       const prof = [[ri, 0], [ri + dW, 0], [Math.max(ri + dW + lip * 0.6, ri + lip + dW * 0.9), dH]];
       for (let i = 0; i <= 8; i++) { const a = (90 + 90 * i / 8) * D2R; prof.push([ri + lip + lip * Math.cos(a), dH - lip + lip * Math.sin(a)]); }
       const duct = K.revolve(K.poly(prof), 96);
-      let body = bodyPlus.add(K.CS.union(arms.map(a => place(armPoly(0, a.L, false).add(K.circle(padR, 48).translate([a.L, 0])), a))));
+      let body = fillet(bodyPlus.add(K.CS.union(arms.map(a => place(armPoly(0, a.L, false).add(K.circle(padR, 48).translate([a.L, 0])), a)))));
       const spokes = [];
       for (const a of arms) for (let i = 0; i < +p.spokes; i++) {
         const ang = a.a / D2R + 180 / +p.spokes + i * 360 / +p.spokes;
@@ -505,21 +534,27 @@ export default {
       let rails = K.CS.union([-1, 1].map(sx => K.rect(rw, Math.abs(arms[0].y - arms[3].y) + rw).translate([sx * rx0, (arms[0].y + arms[3].y) / 2])));
       for (const sy of [-1, 1]) rails = rails.add(K.rect(rx0 * 2, rw).translate([0, sy * bodyL * 0.3]));
       for (const a of arms) rails = rails.add(K.rect(Math.abs(a.x) - rx0, rw).translate([Math.sign(a.x) * (rx0 + Math.abs(a.x)) / 2, a.y])).add(place(padCS(a.L), a));
-      const armsL = rails.subtract(K.CS.union(arms.flatMap(a => motorHoles(a.L).map(h => place(h, a)))));
+      const armsL = fillet(rails).subtract(K.CS.union(arms.flatMap(a => motorHoles(a.L).map(h => place(h, a)))));
       frame = slab(armsL, armT).add(slab(bodyPlus.subtract(K.CS.union(holesBody)), plateT));
     } else if (!sandwich) {
       /* one piece: arms from the centre, body over them */
       let armsL = null;
-      const cuts = [];
+      const cuts = [], rims = [];
       arms.forEach((a, i) => {
         const tail = i === tailIdx;
-        const cs = place(tail ? K.rect(tailLen(a), tailArmW).translate([tailLen(a) / 2, 0]) : armPoly(0, a.L, false).add(padCS(a.L)), a);
+        const local = tail ? K.rect(tailLen(a), tailArmW).translate([tailLen(a) / 2, 0]) : armPoly(0, a.L, false).add(padCS(a.L));
+        const cs = place(local, a);
         armsL = armsL ? armsL.add(cs) : cs;
-        if (tail) cuts.push(...servoCut(a).map(h => place(h, a)));
-        else cuts.push(...motorHoles(a.L).map(h => place(h, a)), ...lighten(a).map(h => place(h, a)));
+        if (tail) { cuts.push(...servoCut(a).map(h => place(h, a))); return; }
+        const lh = lighten(a);
+        cuts.push(...motorHoles(a.L).map(h => place(h, a)), ...lh.map(h => place(h, a)));
+        const r = rimOn && rimsFor(local, lh, edgeDist(a.a) + 2, a.L, armT);
+        if (r) { rims.push(r.rotate([0, 0, a.a / D2R])); rimsMade = true; }
       });
+      if (filR) armsL = fillet(armsL.add(bodyPlus)).subtract(bodyPlus.offset(-0.5, 'Round')).add(armsL);      // fillets where the arms meet the body (overlapping it a little, so no slivers)
       frame = slab(armsL.subtract(K.CS.union(cuts.concat(holesBody))), armT)
         .add(slab(bodyPlus.subtract(K.CS.union(holesBody)), plateT));
+      if (rims.length) frame = frame.add(K.union(rims));
       if (tailIdx >= 0) frame = frame.add(earsFor(arms[tailIdx], 0));
     } else {
       /* bottom plate; the arms are their own parts */
@@ -536,10 +571,12 @@ export default {
     if (sandwich) arms.forEach((a, i) => {
       const tail = i === tailIdx, rs = Math.hypot(so[i][0], so[i][1]);
       const cs = tail ? K.rect(tailLen(a) - rin, tailArmW).translate([(tailLen(a) + rin) / 2, 0]).add(K.circle(tailArmW / 2, 40).translate([rin, 0]))
-        : armPoly(rin, a.L, true).add(padCS(a.L));
-      const cuts = [K.circle(1.6, 24).translate([rs, 0]), K.circle(1.6, 24).translate([rs - boltSp, 0])];
-      if (tail) cuts.push(...servoCut(a)); else cuts.push(...motorHoles(a.L), ...lighten(a));
+        : fillet(armPoly(rin, a.L, true).add(padCS(a.L)));
+      const cuts = [K.circle(1.6, 24).translate([rs, 0]), K.circle(1.6, 24).translate([rs - boltSp, 0])], lh = tail ? [] : lighten(a);
+      if (tail) cuts.push(...servoCut(a)); else cuts.push(...motorHoles(a.L), ...lh);
       let m = slab(cs.subtract(K.CS.union(cuts)), armT);
+      const r = !tail && rimOn && rimsFor(cs, lh, rs + 4.5, a.L, armT);       // clear of the standoff on the outer bolt
+      if (r) { m = m.add(r); rimsMade = true; }
       if (!tail && p.guards !== 'none') { const g = guardCS(a.L); if (g) m = m.add(K.extrude(g, Math.max(armT, p.guardH))); }
       m = m.rotate([0, 0, a.a / D2R]).translate([0, 0, zArm0]);
       if (tail) m = m.add(earsFor(a, zArm0));
@@ -711,6 +748,15 @@ export default {
     if (isFinite(minGap) && minGap >= p.propGap) info.facts.push(`${minGap.toFixed(0)} mm prop gap`);
     if (coax) info.lines.push('Coaxial: a second motor bolts under each arm with its prop facing down, spinning the other way.');
     if (sandwich) info.lines.push('Bolted arms: two M3 bolts hold each arm to the bottom plate; the outer one is the standoff screw. Print a spare arm or two.');
+    if (rimsMade) {
+      // bending stiffness of the rimmed arm section against a flat one of the same thickness (plate plus two edge rims)
+      const aP = armW * armT, aR = 2 * rimW * rimH, zc = (aP * armT / 2 + aR * (armT + rimH / 2)) / (aP + aR);
+      const iRim = armW * armT ** 3 / 12 + aP * (zc - armT / 2) ** 2 + 2 * rimW * rimH ** 3 / 12 + aR * (armT + rimH / 2 - zc) ** 2;
+      const k = iRim / (armW * armT ** 3 / 12);
+      info.facts.push(`arms ${k.toFixed(1)}× stiffer`);
+      info.lines.push(`Stiffening rims: ${rimH.toFixed(1)} mm raised edges make each arm about ${k.toFixed(1)}× stiffer in bending than a flat arm of the same thickness. Print with the rims facing up.`);
+    }
+    if (filR) info.lines.push(`Rounded joints (${filR.toFixed(1)} mm fillets) where the arms meet the body and the motor pads: sharp inside corners are where printed frames crack.`);
     info.lines.push('Print flat with 4–6 walls and 50–100% infill. PA-CF, PETG-CF or PETG survive crashes far better than PLA.');
     info.lines.push('A printed frame is heavier and flexier than carbon fibre: great for learning, cinewhoops and spares, but expect to reprint arms after hard crashes.');
     return { parts, warn, info };
