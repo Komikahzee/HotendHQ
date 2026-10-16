@@ -4,7 +4,7 @@
    toSvg(): indexed image -> SVG (vectorize.js)
    Shared by the worker and the Node tests.
    ============================================================ */
-import * as P from './prep.js?v=81e02ae157';
+import * as P from './prep.js?v=4f4f30580f';
 import { vectorize as trace } from './vectorize.js?v=4b7c9fe7ea';
 
 /** Working size: small images are enlarged (edges land between pixels, so curves come out smooth),
@@ -63,7 +63,7 @@ export function prepare(rgba, w, h, o) {
       if (keep.length < palette.length) { palette = keep; lbl = P.label(labBig, big, W, H, palette, Math.max(2, Math.ceil(s) + 1)); }
     }
   }
-  const detail = o.detail == null || o.detail === 'auto' ? (noise > 4.5 ? 3 : 1) : +o.detail;
+  const detail = o.detail == null || o.detail === 'auto' ? (noise > 4.5 ? 8 : 2) : +o.detail;
   const minArea = Math.max(1, Math.round(detail * s * s));
   P.despeckle(lbl, W, H, minArea);
   // pixel share per colour (after clean-up), used for ordering and the palette chips

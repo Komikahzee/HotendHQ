@@ -11,7 +11,8 @@ const statusEl = $('st-status'), readout = $('st-readout');
 
 /* ---------------- settings ---------------- */
 const MERGE = [26, 22, 19, 16, 14, 12, 10, 8.5, 7, 5.5, 4];             // colour detail 0..10 -> merge ΔE
-const SPECK = ['auto', 1, 2, 4, 6, 9, 12, 16, 25, 36, 50, 75, 100];      // px² in the original image
+const SPECK = ['auto', 1, 2, 3, 4, 5, 6, 8, 10, 12, 15, 20, 25, 30, 40];   // speck side in original-image px (area = side²)
+const speckText = (v) => v ? `${SPECK[v]}×${SPECK[v]} px` : 'auto';
 const DEFAULTS = { mode: 'color', auto: true, merge: 5, count: 8, thrAuto: true, thr: 50, invert: false, smooth: 5, corners: 5,
   speck: 0, nobg: false, nobgBw: true, layout: 'stacked', quality: 'high', denoise: 'auto' };
 const S = { ...DEFAULTS, palette: null, hidden: new Set(), recolor: {} };
@@ -21,7 +22,7 @@ let last = null;          // last trace result
 let view = { z: 1, tx: 0, ty: 0, split: 0.5, mode: 'split' };
 
 /* ---------------- worker ---------------- */
-const worker = new Worker(new URL('./worker.js?v=298ab30a0b', import.meta.url), { type: 'module' });
+const worker = new Worker(new URL('./worker.js?v=22a3ea8bfc', import.meta.url), { type: 'module' });
 let reqId = 0, busy = false, queued = false, timer = 0;
 const waiting = new Map();     // id -> purpose
 worker.onmessage = (e) => {
@@ -41,7 +42,7 @@ worker.onerror = () => { busy = false; stage.classList.remove('is-busy'); status
 function prepOpts() {
   const bw = S.mode === 'bw';
   return {
-    mode: S.mode, quality: S.quality, denoise: S.denoise, detail: SPECK[S.speck],
+    mode: S.mode, quality: S.quality, denoise: S.denoise, detail: S.speck ? SPECK[S.speck] ** 2 : 'auto',
     colors: bw ? null : (S.auto ? 0 : S.count), merge: bw ? null : MERGE[S.merge], palette: bw ? null : S.palette,
     threshold: bw ? (S.thrAuto ? 'auto' : S.thr) : null, invert: bw ? S.invert : null,
   };
@@ -220,7 +221,7 @@ bindRange('st-merge', 'merge', (v) => v === 5 ? 'Normal' : v < 5 ? `Fewer (${v})
 bindRange('st-count', 'count', (v) => v, () => { S.palette = null; S.hidden.clear(); S.recolor = {}; });
 bindRange('st-smooth', 'smooth');
 bindRange('st-corners', 'corners');
-bindRange('st-speck', 'speck', (v) => v ? SPECK[v] + ' px' : 'auto');
+bindRange('st-speck', 'speck', speckText);
 bindRange('st-thr', 'thr', (v) => v, () => { S.thrAuto = false; $('st-thr-auto').checked = false; });
 const bindTog = (id, key, after) => $(id).addEventListener('change', (e) => { S[key] = e.target.checked; after && after(); schedule(0); });
 bindTog('st-auto', 'auto', () => { S.palette = null; S.hidden.clear(); S.recolor = {}; syncUI(); });
@@ -245,7 +246,7 @@ function syncUI() {
   $('st-count').value = S.count; $('st-count-out').textContent = S.count;
   $('st-smooth').value = S.smooth; $('st-smooth-out').textContent = S.smooth;
   $('st-corners').value = S.corners; $('st-corners-out').textContent = S.corners;
-  $('st-speck').value = S.speck; $('st-speck-out').textContent = S.speck ? SPECK[S.speck] + ' px' : 'auto';
+  $('st-speck').value = S.speck; $('st-speck-out').textContent = speckText(S.speck);
   $('st-thr-auto').checked = S.thrAuto; $('st-invert').checked = S.invert;
   if (!S.thrAuto) { $('st-thr').value = S.thr; $('st-thr-out').textContent = S.thr; }
   $('st-nobg').checked = S.mode === 'bw' ? S.nobgBw : S.nobg;

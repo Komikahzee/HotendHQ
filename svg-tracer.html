@@ -31,7 +31,7 @@
 <script src="/assets/js/nav.js?v=697dfb3133" defer></script>
 <script src="/assets/js/site.js?v=e98640a3e3" defer></script>
 <script src="/assets/js/api.js?v=097762e5df" defer></script>
-<script type="module" src="/assets/js/svg-tracer/app.js?v=e114326c9a"></script>
+<script type="module" src="/assets/js/svg-tracer/app.js?v=22bd889829"></script>
 </head>
 <body>
 <main id="main" class="gf-page st-page">
@@ -122,8 +122,8 @@
             </div>
             <div class="gf-row">
               <div class="gf-lab"><label for="st-speck">Remove specks up to</label><span class="gf-num"><output id="st-speck-out">auto</output></span></div>
-              <input type="range" id="st-speck" min="0" max="12" step="1" value="0">
-              <p class="hint">Drops dust and noise smaller than this many pixels. Leave it at auto for most images.</p>
+              <input type="range" id="st-speck" min="0" max="14" step="1" value="0">
+              <p class="hint">Merges any blob smaller than this square into the colour around it. Raise it to clean up dust, noise and stray dots.</p>
             </div>
           </div>
         </details>

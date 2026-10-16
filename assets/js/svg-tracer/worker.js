@@ -3,7 +3,7 @@
    Holds the image, caches the slow clean-up step, and turns it into
    SVG off the main thread.
    ============================================================ */
-import { prepare, toSvg } from './trace.js?v=aae04bab5f';
+import { prepare, toSvg } from './trace.js?v=897bfa7670';
 
 let img = null;          // { rgba, w, h }
 let prep = null, prepKey = '';

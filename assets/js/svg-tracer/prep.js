@@ -466,39 +466,64 @@ export function labelBW(lab, rgba, n, threshold, invert = false) {
 /** Merge every connected patch smaller than minArea into the neighbouring colour it shares most border with. */
 export function despeckle(lbl, W, H, minArea) {
   if (minArea < 2) return lbl;
-  for (let round = 0; round < 3; round++) {
-    const n = W * H, comp = new Int32Array(n).fill(-1), sizes = [], colour = [];
-    const stack = new Int32Array(n);
+  const n = W * H;
+  for (let round = 0; round < 4; round++) {
+    // 4-connected areas of one colour
+    const comp = new Int32Array(n).fill(-1), stack = new Int32Array(n);
+    const size = [], colour = [];
     for (let s = 0; s < n; s++) {
       if (comp[s] >= 0) continue;
-      const id = sizes.length, l = lbl[s];
-      let sp = 0, size = 0; stack[sp++] = s; comp[s] = id;
+      const id = size.length, l = lbl[s];
+      let sp = 0, sz = 0; stack[sp++] = s; comp[s] = id;
       while (sp) {
-        const i = stack[--sp]; size++;
+        const i = stack[--sp]; sz++;
         const x = i % W;
         if (x > 0 && comp[i - 1] < 0 && lbl[i - 1] === l) { comp[i - 1] = id; stack[sp++] = i - 1; }
         if (x < W - 1 && comp[i + 1] < 0 && lbl[i + 1] === l) { comp[i + 1] = id; stack[sp++] = i + 1; }
         if (i >= W && comp[i - W] < 0 && lbl[i - W] === l) { comp[i - W] = id; stack[sp++] = i - W; }
         if (i < n - W && comp[i + W] < 0 && lbl[i + W] === l) { comp[i + W] = id; stack[sp++] = i + W; }
       }
-      sizes.push(size); colour.push(l);
+      size.push(sz); colour.push(l);
     }
-    const small = new Map();
-    const touch = (ci, other) => { let m = small.get(ci); if (!m) small.set(ci, m = new Map()); m.set(other, (m.get(other) || 0) + 1); };
+    const m = size.length;
+    let any = false; for (let c = 0; c < m; c++) if (size[c] < minArea && colour[c] !== TRANSPARENT) { any = true; break; }
+    if (!any) break;
+    // shared border length between neighbouring areas
+    const adj = new Array(m);
+    const link = (a, b) => {
+      let ma = adj[a]; if (!ma) adj[a] = ma = new Map(); ma.set(b, (ma.get(b) || 0) + 1);
+      let mb = adj[b]; if (!mb) adj[b] = mb = new Map(); mb.set(a, (mb.get(a) || 0) + 1);
+    };
     for (let i = 0; i < n; i++) {
-      const c = comp[i]; const x = i % W;
-      for (const j of [x < W - 1 ? i + 1 : -1, i < n - W ? i + W : -1]) {
-        if (j < 0) continue; const d = comp[j]; if (d === c) continue;
-        if (sizes[c] < minArea) touch(c, lbl[j]);
-        if (sizes[d] < minArea) touch(d, lbl[i]);
-      }
+      const c = comp[i], x = i % W;
+      if (x < W - 1 && comp[i + 1] !== c) link(c, comp[i + 1]);
+      if (i < n - W && comp[i + W] !== c) link(c, comp[i + W]);
     }
-    if (!small.size) break;
-    const target = new Map();
-    for (const [c, m] of small) { let best = -1, bc = 0; for (const [l, cnt] of m) if (cnt > bc && l !== colour[c]) { bc = cnt; best = l; } if (best >= 0) target.set(c, best); }
+    // smallest first: each speck joins the neighbour it shares the longest border with.
+    // Merges happen one at a time, so two touching specks can't just swap colours.
+    const parent = new Int32Array(m); for (let c = 0; c < m; c++) parent[c] = c;
+    const find = (c) => { while (parent[c] !== c) { parent[c] = parent[parent[c]]; c = parent[c]; } return c; };
+    const order = []; for (let c = 0; c < m; c++) if (size[c] < minArea && colour[c] !== TRANSPARENT) order.push(c);
+    order.sort((a, b) => size[a] - size[b]);
     let changed = 0;
-    for (let i = 0; i < n; i++) { const t = target.get(comp[i]); if (t !== undefined) { lbl[i] = t; changed++; } }
+    for (const c0 of order) {
+      const c = find(c0);
+      if (size[c] >= minArea || !adj[c]) continue;
+      let best = -1, bl = 0, bs = 0;
+      for (const [d0, len] of adj[c]) {
+        const d = find(d0); if (d === c || colour[d] === TRANSPARENT) continue;
+        if (len > bl || (len === bl && size[d] > bs)) { bl = len; bs = size[d]; best = d; }
+      }
+      if (best < 0) continue;
+      // fold c into best (keep the bigger adjacency map)
+      parent[c] = best; size[best] += size[c]; changed++;
+      let big = adj[best], small = adj[c];
+      if (small.size > big.size) { [big, small] = [small, big]; }
+      for (const [k, v] of small) big.set(k, (big.get(k) || 0) + v);
+      big.delete(c); big.delete(best); adj[best] = big; adj[c] = null;
+    }
     if (!changed) break;
+    for (let i = 0; i < n; i++) { const r = find(comp[i]); if (r !== comp[i]) lbl[i] = colour[r]; }
   }
   return lbl;
 }
