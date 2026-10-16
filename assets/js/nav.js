@@ -6,7 +6,8 @@ window.HHQ_NAV = {
     { href:'/troubleshoot',label:'Troubleshoot', desc:'Diagnose any print failure step by step' },
     { href:'/generators',  label:'Generators', desc:'Gridfinity, chains, pendants, drone frames and more, made to your size',
       also:['gridfinity','chain','storage-box','grid-organiser','cable-clip','spool-holder','wall-bracket','generator'] },
-    { href:'/tools',       label:'Tools',     desc:'Calculators, the SVG tracer and reference databases', also:['svg-tracer'] },
+    { href:'/svg-tracer',  label:'SVG Tracer', desc:'Turn artwork and logos into clean, multicolour SVG files in your browser' },
+    { href:'/tools',       label:'Tools',     desc:'Calculators and reference databases' },
     { href:'/order',       label:'Print My Order', desc:'Send a file or a photo and get a free quote to have it printed' }
   ],
   footer: [
