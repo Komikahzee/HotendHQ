@@ -1,0 +1,264 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SVG Tracer: Convert Images to Clean Vector SVG — Hotend HQ</title>
+<meta name="description" content="Free image to SVG converter. Trace logos, decals and artwork into smooth, gap-free multi-colour or black and white vectors, right in your browser. Nothing is uploaded.">
+<!-- seo -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Hotend HQ">
+<meta property="og:title" content="SVG Tracer: Convert Images to Clean Vector SVG">
+<meta property="og:description" content="Free image to SVG converter. Trace logos, decals and artwork into smooth, gap-free multi-colour or black and white vectors, right in your browser. Nothing is uploaded.">
+<meta property="og:url" content="https://hotendhq.com/svg-tracer">
+<meta property="og:image" content="https://hotendhq.com/assets/img/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#00091c">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Hotend HQ SVG Tracer","url":"https://hotendhq.com/svg-tracer","applicationCategory":"DesignApplication","operatingSystem":"Any (runs in the browser)","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"publisher":{"@type":"Organization","name":"Hotend HQ","url":"https://hotendhq.com/","logo":"https://hotendhq.com/assets/img/icon-512.png"},"description":"Convert PNG and JPG logos, decals and artwork into clean multicolour or black and white SVG vectors in the browser.","featureList":["Multicolour and black and white tracing","Gap-free shapes with shared edges","Smooth curves with sharp corners kept","Pick, recolour, hide or remove colours","One SVG per colour for cutters and multicolour prints","Runs locally, nothing uploaded"]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Which images trace best?","acceptedAnswer":{"@type":"Answer","text":"Flat-colour artwork such as logos, decals, badges, stickers, icons and line drawings. The bigger and sharper the image, the more detail survives, so use the largest version you have. Photos work too, but they turn into poster-style colour areas."}},{"@type":"Question","name":"A small colour went missing. How do I get it back?","acceptedAnswer":{"@type":"Answer","text":"Use Pick a missing colour and click that colour on the image. It is added to the palette and the image is traced again. You can also raise Colour detail, or switch off automatic colours and set the number yourself."}},{"@type":"Question","name":"How do I change or remove a colour?","acceptedAnswer":{"@type":"Answer","text":"Click a swatch to give that colour a new value in the SVG. The eye button hides a colour so it is left out of the file, and the cross removes it so its areas are taken over by the colours around them."}},{"@type":"Question","name":"Stacked or separate pieces?","acceptedAnswer":{"@type":"Answer","text":"Stacked fills holes under the shapes on top, which hides the hairline seams some viewers show between touching shapes. Separate pieces never overlap, which is what cutting machines and multicolour 3D printing need. Use Layers to download one SVG per colour."}},{"@type":"Question","name":"How do I make a 3D print from the SVG?","acceptedAnswer":{"@type":"Answer","text":"Most slicers, including Bambu Studio, OrcaSlicer and PrusaSlicer, can import an SVG and extrude it. For a layered sign or a stencil, our layered sign and stencil generators take an image directly."}},{"@type":"Question","name":"Is my image uploaded anywhere?","acceptedAnswer":{"@type":"Answer","text":"No. The whole trace happens in your browser. Nothing is sent to a server."}}]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://hotendhq.com/"},{"@type":"ListItem","position":2,"name":"Tools","item":"https://hotendhq.com/tools"},{"@type":"ListItem","position":3,"name":"SVG Tracer","item":"https://hotendhq.com/svg-tracer"}]}</script>
+<!-- /seo -->
+<link rel="canonical" href="https://hotendhq.com/svg-tracer">
+<link rel="icon" href="/assets/img/favicon-32.png" sizes="32x32">
+<link rel="apple-touch-icon" href="/assets/img/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest">
+<link rel="stylesheet" href="/assets/css/fonts.css?v=1f7e92bbba">
+<link rel="stylesheet" href="/assets/css/theme.css?v=e097b43669">
+<link rel="stylesheet" href="/assets/css/pages.css?v=0df26b3f2f">
+<link rel="stylesheet" href="/assets/css/gridfinity.css?v=7a19fc5534">
+<link rel="stylesheet" href="/assets/css/svg-tracer.css?v=37cbc69143">
+<script src="/assets/js/config.js?v=fdd459de6a" defer></script>
+<script src="/assets/js/nav.js?v=697dfb3133" defer></script>
+<script src="/assets/js/site.js?v=e98640a3e3" defer></script>
+<script src="/assets/js/api.js?v=097762e5df" defer></script>
+<script type="module" src="/assets/js/svg-tracer/app.js?v=e114326c9a"></script>
+</head>
+<body>
+<main id="main" class="gf-page st-page">
+  <section class="wrap gf-hero">
+    <nav class="crumbs" aria-label="Breadcrumb"><a href="/tools">Tools</a><span aria-hidden="true">/</span><span>SVG Tracer</span></nav>
+    <h1>SVG Tracer</h1>
+    <p class="lede">Turn a logo, decal or piece of artwork into a clean vector SVG with smooth curves, crisp corners
+      and no gaps between colours. It all runs in your browser, so your image never leaves your device.</p>
+  </section>
+
+  <section class="wrap gf-wrap" aria-label="SVG Tracer">
+    <div class="gf">
+      <div class="gf-panel" id="st-panel">
+        <label class="st-drop" id="st-drop">
+          <input type="file" id="st-file" accept="image/png,image/jpeg,image/webp,image/gif,image/bmp,image/avif">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg>
+          <span class="st-drop-main" id="st-drop-main">Choose an image or drop it here</span>
+          <span class="st-drop-sub" id="st-drop-sub">PNG, JPG or WebP. You can also paste one.</span>
+        </label>
+        <p class="st-sample">No image handy? <button type="button" class="gf-link" id="st-sample">Try a sample</button></p>
+
+        <div class="gf-tabs st-tabs" role="group" aria-label="Tracing mode">
+          <button type="button" data-mode="color" aria-pressed="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="13.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="12.5" r="2.5"/><circle cx="8.5" cy="7.5" r="2.5"/><circle cx="6.5" cy="13.5" r="2.5"/><path d="M12 22a10 10 0 1 1 10-10c0 2-1.5 3-3.5 3H16a2 2 0 0 0-1.5 3.3A2 2 0 0 1 13 22z"/></svg>
+            Colour</button>
+          <button type="button" data-mode="bw" aria-pressed="false">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor"/></svg>
+            Black &amp; white</button>
+        </div>
+
+        <!-- colours -->
+        <details class="gf-group" open data-for="color">
+          <summary><span>Colours</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></summary>
+          <div class="gf-body">
+            <div class="st-pal" id="st-pal" aria-live="polite"><p class="hint">The colours found in your image show up here.</p></div>
+            <div class="st-pal-tools">
+              <button type="button" class="btn btn-ghost btn-sm" id="st-pick" aria-pressed="false">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 22l1-1h3l9-9"/><path d="M3 21v-3l9-9"/><path d="M15 6l3.4-3.4a2.1 2.1 0 1 1 3 3L18 9l.4.4a2.1 2.1 0 1 1-3 3l-3.8-3.8a2.1 2.1 0 1 1 3-3z"/></svg>
+                Pick a missing colour</button>
+              <button type="button" class="gf-link hidden" id="st-pal-reset">Reset colours</button>
+            </div>
+            <div class="gf-row">
+              <label class="gf-tog"><input type="checkbox" id="st-auto" checked><span class="gf-sw"></span>Find the colours automatically</label>
+            </div>
+            <div class="gf-row" id="st-merge-row">
+              <div class="gf-lab"><label for="st-merge">Colour detail</label><span class="gf-num"><output id="st-merge-out">Normal</output></span></div>
+              <input type="range" id="st-merge" min="0" max="10" step="1" value="5">
+              <p class="hint">Higher keeps subtle shades apart. Lower merges them into fewer colours.</p>
+            </div>
+            <div class="gf-row hidden" id="st-count-row">
+              <div class="gf-lab"><label for="st-count">Number of colours</label><span class="gf-num"><output id="st-count-out">8</output></span></div>
+              <input type="range" id="st-count" min="2" max="32" step="1" value="8">
+            </div>
+          </div>
+        </details>
+
+        <!-- black & white -->
+        <details class="gf-group hidden" open data-for="bw">
+          <summary><span>Black &amp; white</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></summary>
+          <div class="gf-body">
+            <div class="gf-row">
+              <label class="gf-tog"><input type="checkbox" id="st-thr-auto" checked><span class="gf-sw"></span>Pick the threshold automatically</label>
+            </div>
+            <div class="gf-row">
+              <div class="gf-lab"><label for="st-thr">Threshold</label><span class="gf-num"><output id="st-thr-out">auto</output></span></div>
+              <input type="range" id="st-thr" min="2" max="98" step="1" value="50">
+              <p class="hint">Anything darker than this becomes black.</p>
+            </div>
+            <div class="gf-row">
+              <label class="gf-tog"><input type="checkbox" id="st-invert"><span class="gf-sw"></span>Invert (trace the light parts)</label>
+            </div>
+          </div>
+        </details>
+
+        <!-- shapes -->
+        <details class="gf-group" open>
+          <summary><span>Shapes</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></summary>
+          <div class="gf-body">
+            <div class="gf-row">
+              <div class="gf-lab"><label for="st-smooth">Smoothness</label><span class="gf-num"><output id="st-smooth-out">5</output></span></div>
+              <input type="range" id="st-smooth" min="0" max="10" step="1" value="5">
+              <p class="hint">Higher gives longer, calmer curves and fewer nodes. Lower follows the pixels more closely.</p>
+            </div>
+            <div class="gf-row">
+              <div class="gf-lab"><label for="st-corners">Corners</label><span class="gf-num"><output id="st-corners-out">5</output></span></div>
+              <input type="range" id="st-corners" min="0" max="10" step="1" value="5">
+              <p class="hint">Higher keeps more sharp corners. Lower rounds them off.</p>
+            </div>
+            <div class="gf-row">
+              <div class="gf-lab"><label for="st-speck">Remove specks up to</label><span class="gf-num"><output id="st-speck-out">auto</output></span></div>
+              <input type="range" id="st-speck" min="0" max="12" step="1" value="0">
+              <p class="hint">Drops dust and noise smaller than this many pixels. Leave it at auto for most images.</p>
+            </div>
+          </div>
+        </details>
+
+        <!-- output -->
+        <details class="gf-group">
+          <summary><span>Output &amp; quality</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></summary>
+          <div class="gf-body">
+            <div class="gf-row">
+              <label class="gf-tog"><input type="checkbox" id="st-nobg"><span class="gf-sw"></span>Remove the background</label>
+              <p class="hint" id="st-nobg-hint">Leaves the background colour out, so the SVG is transparent there.</p>
+            </div>
+            <div class="gf-row">
+              <label for="st-layout">Shape layout</label>
+              <select id="st-layout">
+                <option value="stacked">Stacked: best for screens and printing on paper</option>
+                <option value="cutout">Separate pieces: no overlaps, for cutters and multicolour 3D prints</option>
+              </select>
+            </div>
+            <div class="gf-row">
+              <label for="st-quality">Quality</label>
+              <select id="st-quality">
+                <option value="fast">Fast</option>
+                <option value="high" selected>High</option>
+                <option value="max">Maximum (slower, for big detailed art)</option>
+              </select>
+            </div>
+            <div class="gf-row">
+              <label for="st-denoise">Noise clean-up</label>
+              <select id="st-denoise">
+                <option value="auto" selected>Automatic</option>
+                <option value="0">Off</option>
+                <option value="1">Light (JPEG artwork)</option>
+                <option value="2">Medium</option>
+                <option value="3">Strong (photos, scans)</option>
+              </select>
+            </div>
+            <button type="button" class="gf-link" id="st-reset">Reset all settings</button>
+          </div>
+        </details>
+      </div>
+
+      <div class="gf-view">
+        <div class="gf-stage st-stage is-empty" id="st-stage" data-bg="check">
+          <div class="st-canvas" id="st-canvas">
+            <div class="st-art" id="st-art">
+              <img id="st-orig" alt="Your image" draggable="false">
+              <div id="st-out" role="img" aria-label="Traced SVG"></div>
+            </div>
+          </div>
+          <div class="st-split" id="st-split" aria-hidden="true"><span class="st-split-handle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 7l-5 5 5 5M15 7l5 5-5 5"/></svg></span></div>
+          <div class="st-empty" id="st-empty">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20 L10 8 L14 14 L16 11 L20 20Z"/><circle cx="17" cy="6" r="2"/></svg>
+            <p><strong>Drop an image here</strong><br>or choose one on the left</p>
+          </div>
+          <div class="gf-tools">
+            <button type="button" class="gf-tool" id="st-zin" aria-label="Zoom in" title="Zoom in">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3M11 8v6M8 11h6"/></svg></button>
+            <button type="button" class="gf-tool" id="st-zout" aria-label="Zoom out" title="Zoom out">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3M8 11h6"/></svg></button>
+            <button type="button" class="gf-tool" id="st-fit" aria-label="Fit to view" title="Fit to view">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg></button>
+            <button type="button" class="gf-tool" id="st-bg" aria-label="Change the background" title="Change the background">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 12h18M12 3v18" stroke-dasharray="3 3"/></svg></button>
+            <button type="button" class="gf-tool" id="st-full" aria-label="Full screen" title="Full screen">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
+          </div>
+          <div class="st-view" id="st-view" role="group" aria-label="What to show">
+            <button type="button" data-view="split" aria-pressed="true">Compare</button>
+            <button type="button" data-view="result" aria-pressed="false">SVG</button>
+            <button type="button" data-view="orig" aria-pressed="false">Original</button>
+            <button type="button" data-view="lines" aria-pressed="false">Outlines</button>
+          </div>
+          <div class="gen-readout st-readout" id="st-readout"></div>
+          <div class="gf-busy" aria-hidden="true"><span class="spin"></span></div>
+        </div>
+        <p id="st-status" class="gf-status" role="status" aria-live="polite">Choose an image to start.</p>
+        <div class="gf-bar">
+          <div class="gf-actions">
+            <button class="btn btn-primary" id="st-dl" type="button" disabled>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M7 11l5 5 5-5"/><path d="M4 20h16"/></svg>Download SVG</button>
+            <button class="btn btn-ghost" id="st-zip" type="button" disabled title="One SVG per colour, in a ZIP">Layers</button>
+            <button class="btn btn-ghost" id="st-copy" type="button" disabled>Copy code</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="wrap section--tight">
+    <div class="g3 grid">
+      <div class="card">
+        <h2 class="st-h3">Built for artwork</h2>
+        <p class="gf-card-p">Logos, decals, emblems, stickers and line art come out as smooth curves with sharp corners kept
+          sharp. Anti-aliased and JPEG edges are cleaned up first, so you get no coloured fringes or slivers.</p>
+      </div>
+      <div class="card">
+        <h2 class="st-h3">No gaps between colours</h2>
+        <p class="gf-card-p">Each edge between two colours is traced once and shared by both shapes, so they always meet
+          exactly. Pick separate pieces for vinyl cutters, laser cutters and multicolour 3D prints.</p>
+      </div>
+      <div class="card">
+        <h2 class="st-h3">Private and free</h2>
+        <p class="gf-card-p">The tracing runs on your own device. Your image is never uploaded, and there is no sign-up,
+          watermark or limit.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="wrap section--tight">
+    <h2>Tips for the cleanest trace</h2>
+    <div class="gf-faq">
+      <details><summary>Which images trace best?</summary>
+        <p>Flat-colour artwork such as logos, decals, badges, stickers, icons and line drawings. The bigger and sharper the
+          image, the more detail survives, so use the largest version you have. Photos work too, but they turn into
+          poster-style colour areas.</p></details>
+      <details><summary>A small colour went missing. How do I get it back?</summary>
+        <p>Use <strong>Pick a missing colour</strong> and click that colour on the image. It is added to the palette and the
+          image is traced again. You can also raise <strong>Colour detail</strong>, or switch off automatic colours and set
+          the number yourself.</p></details>
+      <details><summary>How do I change or remove a colour?</summary>
+        <p>Click a swatch to give that colour a new value in the SVG. The eye button hides a colour so it is left out of the
+          file, and the cross removes it so its areas are taken over by the colours around them.</p></details>
+      <details><summary>Stacked or separate pieces?</summary>
+        <p>Stacked fills holes under the shapes on top, which hides the hairline seams some viewers show between
+          touching shapes. Separate pieces never overlap, which is what cutting machines and multicolour 3D printing
+          need. Use <strong>Layers</strong> to download one SVG per colour.</p></details>
+      <details><summary>How do I make a 3D print from the SVG?</summary>
+        <p>Most slicers, including Bambu Studio, OrcaSlicer and PrusaSlicer, can import an SVG and extrude it. For a
+          layered sign or a stencil, our <a href="/generators/layered-signs">layered sign</a> and
+          <a href="/generators/stencils">stencil</a> generators take an image directly.</p></details>
+      <details><summary>Is my image uploaded anywhere?</summary>
+        <p>No. The whole trace happens in your browser. Nothing is sent to a server.</p></details>
+    </div>
+  </section>
+</main>
+</body>
+</html>
