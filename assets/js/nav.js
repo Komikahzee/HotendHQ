@@ -6,7 +6,7 @@ window.HHQ_NAV = {
     { href:'/troubleshoot',label:'Troubleshoot', desc:'Diagnose any print failure step by step' },
     { href:'/generators',  label:'Generators', desc:'Gridfinity, chains, pendants, drone frames and more, made to your size',
       also:['gridfinity','chain','storage-box','grid-organiser','cable-clip','spool-holder','wall-bracket','generator'] },
-    { href:'/tools',       label:'Tools',     desc:'Calculators and reference databases' },
+    { href:'/tools',       label:'Tools',     desc:'Calculators, the SVG tracer and reference databases', also:['svg-tracer'] },
     { href:'/order',       label:'Print My Order', desc:'Send a file or a photo and get a free quote to have it printed' }
   ],
   footer: [
@@ -15,6 +15,7 @@ window.HHQ_NAV = {
       { href:'/troubleshoot', label:'Troubleshooting' },
       { href:'/generators', label:'3D Model Generators' },
       { href:'/tools', label:'Calculators' },
+      { href:'/svg-tracer', label:'SVG Tracer' },
       { href:'/order', label:'Print My Order (free quotes)' }
     ]},
     { title:'Site', links:[

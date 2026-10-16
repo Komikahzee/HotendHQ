@@ -42,6 +42,12 @@ const PAGES = [
     { '@context': 'https://schema.org', '@type': 'WebApplication', name: 'Hotend HQ 3D printing calculators', url: BASE + '/tools', applicationCategory: 'UtilitiesApplication',
       operatingSystem: 'Any (runs in the browser)', isAccessibleForFree: true, offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' } },
     crumbs([['Home', '/'], ['Tools', '/tools']])] },
+  { file: 'svg-tracer.html', url: '/svg-tracer', ld: (h) => [
+    { '@context': 'https://schema.org', '@type': 'WebApplication', name: 'Hotend HQ SVG Tracer', url: BASE + '/svg-tracer', applicationCategory: 'DesignApplication',
+      operatingSystem: 'Any (runs in the browser)', isAccessibleForFree: true, offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' }, publisher: ORG,
+      description: 'Convert PNG and JPG logos, decals and artwork into clean multicolour or black and white SVG vectors in the browser.',
+      featureList: ['Multicolour and black and white tracing', 'Gap-free shapes with shared edges', 'Smooth curves with sharp corners kept', 'Pick, recolour, hide or remove colours', 'One SVG per colour for cutters and multicolour prints', 'Runs locally, nothing uploaded'] },
+    faqLd(faqOf(h.slice(h.indexOf('class="gf-faq"')))), crumbs([['Home', '/'], ['Tools', '/tools'], ['SVG Tracer', '/svg-tracer']])] },
   { file: 'gear.html', noindex: true },          // paused until the affiliate links are ready
   { file: 'order.html', url: '/order', ld: (h) => [
     { '@context': 'https://schema.org', '@type': 'Service', name: 'Custom 3D printing', serviceType: '3D printing to order', url: BASE + '/order',
