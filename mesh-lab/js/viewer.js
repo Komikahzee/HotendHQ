@@ -66,18 +66,39 @@ export class Viewer {
     return gltf;
   }
   // Print-ready solid in printer coordinates (mm, Z up).
-  showPrint(positions, indices, color) {
+  // Print-ready solid in printer coordinates (mm, Z up). With labels + palette it is shown in its
+  // filament colours, one colour per triangle, as the slicer will print it.
+  showPrint(positions, indices, color, labels, palette) {
     this.clear();
-    const geo = new THREE.BufferGeometry();
+    let geo = new THREE.BufferGeometry();
     geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
     geo.setIndex(new THREE.BufferAttribute(indices, 1));
     geo.computeVertexNormals();
-    if (color) this.clay.color.set(color);
-    this.clay.wireframe = this.wire;
-    const m = new THREE.Mesh(geo, this.clay); m.castShadow = true; m.receiveShadow = true;
+    let mat = this.clay;
+    if (labels && palette) {
+      const nF = indices.length / 3, nrm = geo.attributes.normal.array;
+      const P = new Float32Array(nF * 9), N = new Float32Array(nF * 9), C = new Float32Array(nF * 9);
+      const lin = palette.map((c) => new THREE.Color(c[0] / 255, c[1] / 255, c[2] / 255).convertSRGBToLinear());
+      for (let f = 0; f < nF; f++) {
+        const col = lin[labels[f]] || lin[0];
+        for (let k = 0; k < 3; k++) {
+          const v = indices[f * 3 + k] * 3, o = f * 9 + k * 3;
+          P[o] = positions[v]; P[o + 1] = positions[v + 1]; P[o + 2] = positions[v + 2];
+          N[o] = nrm[v]; N[o + 1] = nrm[v + 1]; N[o + 2] = nrm[v + 2];
+          C[o] = col.r; C[o + 1] = col.g; C[o + 2] = col.b;
+        }
+      }
+      geo.dispose(); geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.BufferAttribute(P, 3));
+      geo.setAttribute('normal', new THREE.BufferAttribute(N, 3));
+      geo.setAttribute('color', new THREE.BufferAttribute(C, 3));
+      mat = this.paint ||= new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.55, metalness: 0 });
+    } else if (color) this.clay.color.set(color);
+    mat.wireframe = this.wire;
+    const m = new THREE.Mesh(geo, mat); m.castShadow = true; m.receiveShadow = true;
     m.rotation.x = -Math.PI / 2; // Z up -> Y up
     this.root.add(m); this.mode = 'print';
-    this.frame(new THREE.Box3().setFromObject(m));
+    if (!this.keepView) this.frame(new THREE.Box3().setFromObject(m));
   }
   // Raw model without its texture: shows the real geometry the AI made.
   setClay(on) {
@@ -107,6 +128,8 @@ export class Viewer {
 }
 
 // All triangles of a loaded glTF, in world space (glTF Y up), merged into one indexed mesh.
+// All triangles of a loaded glTF, in world space (glTF Y up), merged into one indexed mesh, with an sRGB
+// colour per vertex read from the base-colour texture (or vertex colours / material colour).
 export function trianglesOf(gltf) {
   const parts = []; let nv = 0, ni = 0;
   gltf.scene.updateMatrixWorld(true);
@@ -116,10 +139,38 @@ export function trianglesOf(gltf) {
     const P = new Float32Array(n * 3), v = new THREE.Vector3();
     for (let i = 0; i < n; i++) { v.fromBufferAttribute(p, i).applyMatrix4(o.matrixWorld); P[i * 3] = v.x; P[i * 3 + 1] = v.y; P[i * 3 + 2] = v.z; }
     const I = g.index ? Uint32Array.from(g.index.array) : Uint32Array.from({ length: n }, (_, i) => i);
-    parts.push({ P, I, base: nv }); nv += n; ni += I.length;
+    parts.push({ P, I, C: vertexColours(o, n), base: nv }); nv += n; ni += I.length;
   });
-  const positions = new Float32Array(nv * 3), indices = new Uint32Array(ni);
+  const positions = new Float32Array(nv * 3), indices = new Uint32Array(ni), colors = new Uint8Array(nv * 3);
   let o = 0;
-  for (const pt of parts) { positions.set(pt.P, pt.base * 3); for (let i = 0; i < pt.I.length; i++) indices[o++] = pt.I[i] + pt.base; }
-  return { positions, indices };
+  for (const pt of parts) { positions.set(pt.P, pt.base * 3); colors.set(pt.C, pt.base * 3); for (let i = 0; i < pt.I.length; i++) indices[o++] = pt.I[i] + pt.base; }
+  return { positions, indices, colors };
+}
+const texCache = new WeakMap();
+function texPixels(tex) {
+  if (texCache.has(tex)) return texCache.get(tex);
+  const img = tex.image; let out = null;
+  if (img && img.width) {
+    const cv = document.createElement('canvas'); cv.width = img.width; cv.height = img.height;
+    const ctx = cv.getContext('2d', { willReadFrequently: true }); ctx.drawImage(img, 0, 0);
+    out = { w: img.width, h: img.height, d: ctx.getImageData(0, 0, img.width, img.height).data };
+  }
+  texCache.set(tex, out); return out;
+}
+function vertexColours(mesh, n) {
+  const C = new Uint8Array(n * 3), mat = Array.isArray(mesh.material) ? mesh.material[0] : mesh.material, g = mesh.geometry;
+  const base = mat?.color ? mat.color.clone().convertLinearToSRGB() : new THREE.Color(0.8, 0.8, 0.8);
+  const uv = g.attributes.uv, tex = mat?.map ? texPixels(mat.map) : null, vc = g.attributes.color;
+  for (let i = 0; i < n; i++) {
+    let r = base.r, gg = base.g, b = base.b;
+    if (tex && uv) {
+      let u = uv.getX(i), w = uv.getY(i);
+      u = u - Math.floor(u); w = w - Math.floor(w);
+      if (mat.map.flipY) w = 1 - w;
+      const x = Math.min(tex.w - 1, (u * tex.w) | 0), y = Math.min(tex.h - 1, (w * tex.h) | 0), k = (y * tex.w + x) * 4;
+      r *= tex.d[k] / 255; gg *= tex.d[k + 1] / 255; b *= tex.d[k + 2] / 255;
+    } else if (vc) { r *= vc.getX(i); gg *= vc.getY(i); b *= vc.getZ(i); }
+    C[i * 3] = Math.round(r * 255); C[i * 3 + 1] = Math.round(gg * 255); C[i * 3 + 2] = Math.round(b * 255);
+  }
+  return C;
 }

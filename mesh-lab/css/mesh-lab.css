@@ -62,3 +62,5 @@ input:focus{border-color:var(--ac2)}
 .exp{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:14px}.exp .btn{padding:10px}
 [hidden]{display:none!important}
 @media (max-width:1100px){.lab{grid-template-columns:1fr;height:auto}.col{border:0;border-bottom:1px solid var(--b)}.center{height:70vh;order:-1}.view{min-height:0}}
+.pal{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}.pal label{display:flex;align-items:center;gap:5px;font-size:11.5px;color:var(--td);cursor:pointer}
+.pal input[type=color]{width:28px;height:28px;border:1px solid var(--bs);border-radius:7px;padding:0;background:none;cursor:pointer}

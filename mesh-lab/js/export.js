@@ -22,24 +22,37 @@ export function toSTL(P, I, name = 'mesh-lab') {
 const CT = '<?xml version="1.0" encoding="UTF-8"?>\n<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="model" ContentType="application/vnd.ms-package.3dmanufacturing-3dmodel+xml"/></Types>';
 const RELS = '<?xml version="1.0" encoding="UTF-8"?>\n<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Target="/3D/3dmodel.model" Id="rel0" Type="http://schemas.microsoft.com/3dmanufacturing/2013/01/3dmodel"/></Relationships>';
 
-export function to3MF(P, I, name = 'mesh-lab', color = '#C9C4BC') {
-  const parts = ['<?xml version="1.0" encoding="UTF-8"?>\n<model unit="millimeter" xml:lang="en-US" xmlns="http://schemas.microsoft.com/3dmanufacturing/core/2015/02">\n',
+// One object. With labels + palette, every triangle carries its filament colour three ways, so each slicer
+// reads it: core-spec basematerials (pid/p1), Bambu Studio / OrcaSlicer paint_color, PrusaSlicer
+// mmu_segmentation. Slot n in the palette = filament n.
+export function to3MF(P, I, name = 'mesh-lab', color = '#C9C4BC', labels = null, palette = null) {
+  const multi = !!(labels && palette && palette.length > 1);
+  const mats = multi ? palette.map((c, i) => `<base name="Filament ${i + 1}" displaycolor="${hexOf(c)}FF"/>`).join('') : `<base name="${name}" displaycolor="${color.toUpperCase()}FF"/>`;
+  const parts = ['<?xml version="1.0" encoding="UTF-8"?>\n<model unit="millimeter" xml:lang="en-US" xmlns="http://schemas.microsoft.com/3dmanufacturing/core/2015/02" xmlns:slic3rpe="http://schemas.slic3r.org/3mf/2017/06">\n',
     `<metadata name="Title">${name}</metadata>\n<metadata name="Application">HotendHq Mesh Lab</metadata>\n<resources>\n`,
-    `<basematerials id="1"><base name="${name}" displaycolor="${color.toUpperCase()}FF"/></basematerials>\n<object id="2" type="model" name="${name}" pid="1" pindex="0"><mesh><vertices>\n`];
+    `<basematerials id="1">${mats}</basematerials>\n<object id="2" type="model" name="${name}" pid="1" pindex="0"><mesh><vertices>\n`];
   let s = '';
   for (let i = 0; i < P.length; i += 3) {
     s += `<vertex x="${P[i].toFixed(4)}" y="${P[i + 1].toFixed(4)}" z="${P[i + 2].toFixed(4)}"/>`;
     if (s.length > 1 << 20) { parts.push(s); s = ''; }
   }
   parts.push(s, '\n</vertices><triangles>\n'); s = '';
+  const codes = multi ? palette.map((_, i) => paintCode(i + 1)) : null;
   for (let t = 0; t < I.length; t += 3) {
-    s += `<triangle v1="${I[t]}" v2="${I[t + 1]}" v3="${I[t + 2]}"/>`;
+    if (multi) {
+      const L = labels[t / 3], c = codes[L];
+      s += `<triangle v1="${I[t]}" v2="${I[t + 1]}" v3="${I[t + 2]}" pid="1" p1="${L}" paint_color="${c}" slic3rpe:mmu_segmentation="${c}"/>`;
+    } else s += `<triangle v1="${I[t]}" v2="${I[t + 1]}" v3="${I[t + 2]}"/>`;
     if (s.length > 1 << 20) { parts.push(s); s = ''; }
   }
   parts.push(s, '\n</triangles></mesh></object>\n</resources>\n<build><item objectid="2"/></build>\n</model>\n');
   const model = strToU8(parts.join(''));
   return new Blob([zipSync({ '[Content_Types].xml': strToU8(CT), '_rels/.rels': strToU8(RELS), '3D/3dmodel.model': model }, { level: 6 })], { type: 'model/3mf' });
 }
+const hexOf = (c) => c.map((v) => v.toString(16).padStart(2, '0')).join('').toUpperCase().replace(/^/, '#');
+// Slicer paint encoding for a whole (unsplit) triangle in state n (= filament n): states 1-2 are one nibble
+// n<<2, higher states are the nibble 0xC followed by n-3; the nibbles are written in reverse order.
+function paintCode(n) { return n <= 2 ? (n << 2).toString(16).toUpperCase() : (n - 3).toString(16).toUpperCase() + 'C'; }
 
 export function download(blob, filename) {
   const a = document.createElement('a');

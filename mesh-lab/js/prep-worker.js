@@ -18,18 +18,18 @@ const say = (msg, pct) => post('progress', { msg, pct });
 self.onmessage = (e) => {
   try {
     const out = prep(e.data);
-    post('done', out, [out.positions.buffer, out.indices.buffer]);
+    post('done', out, [out.positions.buffer, out.indices.buffer, out.isBase.buffer].concat(out.colors ? [out.colors.buffer] : []));
   } catch (err) {
     post('error', { msg: String(err && err.message || err) });
   }
 };
 
-function prep({ positions, indices, opt }) {
+function prep({ positions, indices, colors, opt }) {
   const t0 = performance.now();
   const o = Object.assign({
     heightMM: 120, res: 288, sealMM: 1.2, rayFill: true, keepLargest: true,
     base: 'plinth', cutMM: 2, plinthH: 12, plinthScale: 1.0, chamfer: 1.2,
-    hollow: false, wallMM: 2.4, drainMM: 6, smooth: 2, snap: true,
+    hollow: false, wallMM: 2.4, drainMM: 6, smooth: 2, snap: true, denoise: 4, denoiseSigma: 0.5, sharpen: 0.3,
     rotX: 0, rotY: 0, rotZ: 0, upAxis: 'y',
   }, opt || {});
 
@@ -72,7 +72,7 @@ function prep({ positions, indices, opt }) {
 
   // ---- 2. narrow-band signed distance ---------------------------------------------------------------
   say(`Measuring the surface (${(nt / 1000).toFixed(0)}k triangles, ${nx}×${ny}×${nz} voxels)`, 4);
-  const F = new Float32Array(N).fill(BAND); // BAND = far, sign unknown
+  let F = new Float32Array(N).fill(BAND); // BAND = far, sign unknown
   const tri = new Float64Array(9), q = new Float64Array(3);
   const step = Math.max(1, Math.floor(nt / 40));
   for (let t = 0; t < nt; t++) {
@@ -110,7 +110,7 @@ function prep({ positions, indices, opt }) {
   // No triangle normals are trusted: AI meshes have double walls and flipped patches, and normal-based
   // signs turn those into a worm-like noise on the print.
   const SKIN = 0.51 * h;
-  const surf = new Uint8Array(N);
+  let surf = new Uint8Array(N);
   for (let i = 0; i < N; i++) if (F[i] < SKIN) surf[i] = 1;
   const kSeal = Math.max(0, Math.round(o.sealMM / h));
   // blocked = skin grown by the seal distance (chamfer distance transform, 3-4-5 metric)
@@ -126,7 +126,7 @@ function prep({ positions, indices, opt }) {
   const zc = plinthH; // top of the plinth = bottom of the cut model
   const kLid = o.base === 'none' ? -1 : clampI(Math.floor((zc - org[2]) / h - 0.5), -1, nz - 1);
   if (kLid >= 0) { if (blocked === surf) blocked = surf.slice(); blocked.fill(1, 0, (kLid + 1) * sxy); }
-  const outside = floodBoundary(blocked, nx, ny, nz); // 1 = reached from outside
+  let outside = floodBoundary(blocked, nx, ny, nz); // 1 = reached from outside
   blocked = null;
   if (kSeal > 0) regrow(outside, surf, nx, ny, nz, kSeal); // win back the ring the seal took off the outside
   // AI skins are full of holes and double walls, so the flood alone often leaks inside. Ray vote: from each
@@ -145,7 +145,7 @@ function prep({ positions, indices, opt }) {
     axes = sliceVote(sw, nx, ny, nz);
   }
   const need = o.rayNeed ?? 24;
-  const solid = new Uint8Array(N);
+  let solid = new Uint8Array(N);
   for (let i = 0; i < N; i++) solid[i] = (surf[i] || !outside[i] || (vote && (vote[i] >= need || axes[i] >= 2))) ? 1 : 0;
   axes = null;
   vote = null;
@@ -235,17 +235,23 @@ function prep({ positions, indices, opt }) {
   // ---- 5. surface nets ------------------------------------------------------------------------------
   say('Building the surface', 66);
   let { V, I } = surfaceNets(F, nx, ny, nz, org, h);
+  F = surf = outside = solid = null; // free the voxel grids (hundreds of MB) before the mesh passes
   const nV = V.length / 3;
   if (o.smooth > 0) { say('Smoothing', 76); taubin(V, I, o.smooth); }
   let snapped = 0;
-  if (o.snap) {
-    say('Snapping to the AI surface', 80);
-    snapped = snapToRaw(V, I, P, T, h, (x, y, z) => {
-      // leave the base, the cut face, the drain and the hollow alone
-      if (o.base !== 'none' && z < zc + 1.2 * h) return false;
-      return true;
-    });
+  const nV0 = V.length / 3, isBase = new Uint8Array(nV0);
+  if (o.base !== 'none') for (let v = 0; v < nV0; v++) if (V[v * 3 + 2] < zc + 1.2 * h) isBase[v] = 1;
+  let vcol = null;
+  if (colors) { vcol = new Uint8Array(nV0 * 3); vcol.has = new Uint8Array(nV0); }
+  if (o.snap || vcol) {
+    say(o.snap ? 'Snapping to the AI surface' : 'Reading the AI colours', 80);
+    // leave the base, the cut face, the drain and the hollow alone
+    snapped = snapToRaw(V, I, P, T, h, (x, y, z, v) => !isBase[v], colors, vcol, o.snap);
   }
+  if (snapped) despike(V, I, h, isBase);
+  if (o.denoise > 0) { say('Cleaning the surface', 84); bilateralDenoise(V, I, o.denoise, o.denoiseSigma ?? 0.5); }
+  if (o.sharpen > 0) { say('Boosting detail', 88); sharpen(V, I, o.sharpen); }
+  if (vcol) fillColours(vcol, I, nV0);
 
   // ---- 6. checks ------------------------------------------------------------------------------------
   say('Checking the mesh', 92);
@@ -264,7 +270,7 @@ function prep({ positions, indices, opt }) {
   for (let i = 0; i < nV; i++) { V[i * 3] -= ox; V[i * 3 + 1] -= oy; V[i * 3 + 2] -= bz0; }
   say('Done', 100);
   return {
-    positions: V, indices: I,
+    positions: V, indices: I, colors: vcol, isBase,
     stats: {
       triangles: I.length / 3, vertices: nV, voxel: h, grid: [nx, ny, nz],
       size: [bx1 - bx0, by1 - by0, bz1 - bz0], volume: vol / 1000, // cm³
@@ -662,7 +668,7 @@ function taubin(V, I, iters) {
 }
 
 // Move each vertex onto the closest point of the raw AI surface when it is within a voxel of it.
-function snapToRaw(V, VI, P, T, h, allow) {
+function snapToRaw(V, VI, P, T, h, allow, C, vcol, snapOn = true) {
   // vertex normals: a snap must move a vertex roughly along its normal, never sideways onto a crumb
   const NV = new Float32Array(V.length);
   for (let t = 0; t < VI.length; t += 3) {
@@ -697,18 +703,25 @@ function snapToRaw(V, VI, P, T, h, allow) {
   const nV = V.length / 3;
   for (let v = 0; v < nV; v++) {
     const x = V[v * 3], y = V[v * 3 + 1], z = V[v * 3 + 2];
-    if (!allow(x, y, z)) continue;
+    if (!allow(x, y, z, v)) continue;
     const cx = Math.floor((x - o[0]) / cs), cy = Math.floor((y - o[1]) / cs), cz = Math.floor((z - o[2]) / cs);
     if (cx < 0 || cy < 0 || cz < 0 || cx >= gx || cy >= gy || cz >= gz) continue;
     const c = (cz * gy + cy) * gx + cx;
-    let best = R * R, bx = 0, by = 0, bz = 0, hit = false;
+    let best = R * R, bx = 0, by = 0, bz = 0, hit = false, bt = 0;
     for (let p = cnt[c]; p < cnt[c + 1]; p++) {
       const t = list[p], a = T[t * 3] * 3, b = T[t * 3 + 1] * 3, cc = T[t * 3 + 2] * 3;
       for (let k = 0; k < 3; k++) { tri[k] = P[a + k]; tri[3 + k] = P[b + k]; tri[6 + k] = P[cc + k]; }
       const d2 = closestOnTri(x, y, z, tri, q);
-      if (d2 < best) { best = d2; bx = q[0]; by = q[1]; bz = q[2]; hit = true; }
+      if (d2 < best) { best = d2; bx = q[0]; by = q[1]; bz = q[2]; hit = true; bt = t; }
     }
-    if (hit) {
+    if (hit && C) {
+      // colour of the AI texture at the closest point (barycentric blend of the raw vertex colours)
+      const t = bt, a = T[t * 3], b = T[t * 3 + 1], cc = T[t * 3 + 2];
+      const w = bary(bx, by, bz, P, a, b, cc);
+      for (let k = 0; k < 3; k++) vcol[v * 3 + k] = Math.round(w[0] * C[a * 3 + k] + w[1] * C[b * 3 + k] + w[2] * C[cc * 3 + k]);
+      vcol.has[v] = 1;
+    }
+    if (hit && snapOn) {
       const dx = bx - x, dy = by - y, dz = bz - z, dl = Math.hypot(dx, dy, dz);
       const nl = Math.hypot(NV[v * 3], NV[v * 3 + 1], NV[v * 3 + 2]) || 1;
       if (dl > 0.05 * h && Math.abs(dx * NV[v * 3] + dy * NV[v * 3 + 1] + dz * NV[v * 3 + 2]) / (dl * nl) < 0.6) continue;
@@ -716,6 +729,147 @@ function snapToRaw(V, VI, P, T, h, allow) {
     }
   }
   return moved;
+}
+
+// Snapping can catch a vertex on a stray AI crumb and leave a pin-prick bump. Any vertex standing well
+// off the average of its neighbours is pulled back onto it (a few passes, so clustered spikes go too).
+function despike(V, I, h, fixed) {
+  const nV = V.length / 3, { start, adj } = adjacency(I, nV), lim = (0.4 * h) ** 2;
+  for (let pass = 0; pass < 3; pass++) {
+    let n = 0;
+    for (let v = 0; v < nV; v++) {
+      if (fixed[v]) continue;
+      const s0 = start[v], s1 = start[v + 1], k = s1 - s0;
+      if (!k) continue;
+      let x = 0, y = 0, z = 0;
+      for (let p = s0; p < s1; p++) { const u = adj[p] * 3; x += V[u]; y += V[u + 1]; z += V[u + 2]; }
+      x /= k; y /= k; z /= k;
+      const dx = V[v * 3] - x, dy = V[v * 3 + 1] - y, dz = V[v * 3 + 2] - z;
+      if (dx * dx + dy * dy + dz * dz > lim) { V[v * 3] = x; V[v * 3 + 1] = y; V[v * 3 + 2] = z; n++; }
+    }
+    if (!n) break;
+  }
+}
+
+const _w = [0, 0, 0];
+function bary(px, py, pz, P, a, b, c) {
+  a *= 3; b *= 3; c *= 3;
+  const v0x = P[b] - P[a], v0y = P[b + 1] - P[a + 1], v0z = P[b + 2] - P[a + 2];
+  const v1x = P[c] - P[a], v1y = P[c + 1] - P[a + 1], v1z = P[c + 2] - P[a + 2];
+  const v2x = px - P[a], v2y = py - P[a + 1], v2z = pz - P[a + 2];
+  const d00 = v0x * v0x + v0y * v0y + v0z * v0z, d01 = v0x * v1x + v0y * v1y + v0z * v1z, d11 = v1x * v1x + v1y * v1y + v1z * v1z;
+  const d20 = v2x * v0x + v2y * v0y + v2z * v0z, d21 = v2x * v1x + v2y * v1y + v2z * v1z, den = d00 * d11 - d01 * d01;
+  if (Math.abs(den) < 1e-20) { _w[0] = 1; _w[1] = 0; _w[2] = 0; return _w; }
+  let v = (d11 * d20 - d01 * d21) / den, w = (d00 * d21 - d01 * d20) / den;
+  v = Math.min(1, Math.max(0, v)); w = Math.min(1 - v, Math.max(0, w));
+  _w[0] = 1 - v - w; _w[1] = v; _w[2] = w; return _w;
+}
+
+// Feature-preserving denoise (bilateral normal filtering, then vertices moved to fit the filtered normals).
+// Removes the AI's speckle and voxel ripple but keeps creases: collars, folds, chain links, eyelids.
+function bilateralDenoise(V, I, iters, sigmaR) {
+  const nV = V.length / 3, nF = I.length / 3;
+  const start = new Uint32Array(nV + 1);
+  for (let k = 0; k < I.length; k++) start[I[k] + 1]++;
+  for (let v = 0; v < nV; v++) start[v + 1] += start[v];
+  const fill = start.slice(0, nV), vf = new Uint32Array(I.length);
+  for (let k = 0; k < I.length; k++) vf[fill[I[k]]++] = (k / 3) | 0;
+  const N = new Float32Array(nF * 3), Cn = new Float32Array(nF * 3), A = new Float32Array(nF), N2 = new Float32Array(nF * 3);
+  const faces = () => {
+    let el = 0;
+    for (let f = 0; f < nF; f++) {
+      const a = I[f * 3] * 3, b = I[f * 3 + 1] * 3, c = I[f * 3 + 2] * 3;
+      const ux = V[b] - V[a], uy = V[b + 1] - V[a + 1], uz = V[b + 2] - V[a + 2], vx = V[c] - V[a], vy = V[c + 1] - V[a + 1], vz = V[c + 2] - V[a + 2];
+      const nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx, l = Math.hypot(nx, ny, nz) || 1e-12;
+      N[f * 3] = nx / l; N[f * 3 + 1] = ny / l; N[f * 3 + 2] = nz / l; A[f] = l / 2;
+      Cn[f * 3] = (V[a] + V[b] + V[c]) / 3; Cn[f * 3 + 1] = (V[a + 1] + V[b + 1] + V[c + 1]) / 3; Cn[f * 3 + 2] = (V[a + 2] + V[b + 2] + V[c + 2]) / 3;
+      el += Math.sqrt(ux * ux + uy * uy + uz * uz);
+    }
+    return el / nF;
+  };
+  for (let it = 0; it < iters; it++) {
+    const sS = faces() * 1.5, iS = 1 / (2 * sS * sS), iR = 1 / (2 * sigmaR * sigmaR);
+    for (let pass = 0; pass < 2; pass++) {
+      for (let f = 0; f < nF; f++) {
+        const fx = N[f * 3], fy = N[f * 3 + 1], fz = N[f * 3 + 2], cx = Cn[f * 3], cy = Cn[f * 3 + 1], cz = Cn[f * 3 + 2];
+        let sx = 0, sy = 0, sz = 0;
+        for (let c = 0; c < 3; c++) {
+          const v = I[f * 3 + c];
+          for (let q = start[v]; q < start[v + 1]; q++) {
+            const g = vf[q];
+            const dx = Cn[g * 3] - cx, dy = Cn[g * 3 + 1] - cy, dz = Cn[g * 3 + 2] - cz;
+            const nx = N[g * 3] - fx, ny = N[g * 3 + 1] - fy, nz = N[g * 3 + 2] - fz;
+            const w = A[g] * Math.exp(-(dx * dx + dy * dy + dz * dz) * iS - (nx * nx + ny * ny + nz * nz) * iR);
+            sx += w * N[g * 3]; sy += w * N[g * 3 + 1]; sz += w * N[g * 3 + 2];
+          }
+        }
+        const l = Math.hypot(sx, sy, sz) || 1;
+        N2[f * 3] = sx / l; N2[f * 3 + 1] = sy / l; N2[f * 3 + 2] = sz / l;
+      }
+      N.set(N2);
+    }
+    // vertex update (Sun et al. 2007): pull each vertex onto the planes of its filtered faces
+    for (let k = 0; k < 4; k++) {
+      for (let f = 0; f < nF; f++) {
+        const a = I[f * 3] * 3, b = I[f * 3 + 1] * 3, c = I[f * 3 + 2] * 3;
+        Cn[f * 3] = (V[a] + V[b] + V[c]) / 3; Cn[f * 3 + 1] = (V[a + 1] + V[b + 1] + V[c + 1]) / 3; Cn[f * 3 + 2] = (V[a + 2] + V[b + 2] + V[c + 2]) / 3;
+      }
+      for (let v = 0; v < nV; v++) {
+        const n = start[v + 1] - start[v]; if (!n) continue;
+        let dx = 0, dy = 0, dz = 0;
+        const x = V[v * 3], y = V[v * 3 + 1], z = V[v * 3 + 2];
+        for (let q = start[v]; q < start[v + 1]; q++) {
+          const g = vf[q], nx = N[g * 3], ny = N[g * 3 + 1], nz = N[g * 3 + 2];
+          const d = nx * (Cn[g * 3] - x) + ny * (Cn[g * 3 + 1] - y) + nz * (Cn[g * 3 + 2] - z);
+          dx += nx * d; dy += ny * d; dz += nz * d;
+        }
+        V[v * 3] = x + dx / n; V[v * 3 + 1] = y + dy / n; V[v * 3 + 2] = z + dz / n;
+      }
+    }
+  }
+}
+
+// Detail boost: push each vertex away from its neighbourhood average along the normal (unsharp mask).
+function sharpen(V, I, amount) {
+  const nV = V.length / 3, { start, adj } = adjacency(I, nV);
+  const NV = new Float32Array(V.length), D = new Float32Array(nV);
+  for (let t = 0; t < I.length; t += 3) {
+    const a = I[t] * 3, b = I[t + 1] * 3, c = I[t + 2] * 3;
+    const ux = V[b] - V[a], uy = V[b + 1] - V[a + 1], uz = V[b + 2] - V[a + 2], vx = V[c] - V[a], vy = V[c + 1] - V[a + 1], vz = V[c + 2] - V[a + 2];
+    const nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx;
+    for (const v of [a, b, c]) { NV[v] += nx; NV[v + 1] += ny; NV[v + 2] += nz; }
+  }
+  // two rings of averaging = the "blurred" surface; detail = offset from it, measured along the normal
+  const B = Float32Array.from(V), T2 = new Float32Array(V.length);
+  for (let r = 0; r < 2; r++) {
+    for (let v = 0; v < nV; v++) {
+      const s0 = start[v], s1 = start[v + 1], n = s1 - s0; if (!n) { T2[v * 3] = B[v * 3]; T2[v * 3 + 1] = B[v * 3 + 1]; T2[v * 3 + 2] = B[v * 3 + 2]; continue; }
+      let x = 0, y = 0, z = 0; for (let q = s0; q < s1; q++) { const u = adj[q] * 3; x += B[u]; y += B[u + 1]; z += B[u + 2]; }
+      T2[v * 3] = x / n; T2[v * 3 + 1] = y / n; T2[v * 3 + 2] = z / n;
+    }
+    B.set(T2);
+  }
+  for (let v = 0; v < nV; v++) {
+    const l = Math.hypot(NV[v * 3], NV[v * 3 + 1], NV[v * 3 + 2]) || 1;
+    const nx = NV[v * 3] / l, ny = NV[v * 3 + 1] / l, nz = NV[v * 3 + 2] / l;
+    D[v] = (V[v * 3] - B[v * 3]) * nx + (V[v * 3 + 1] - B[v * 3 + 1]) * ny + (V[v * 3 + 2] - B[v * 3 + 2]) * nz;
+    V[v * 3] += amount * D[v] * nx; V[v * 3 + 1] += amount * D[v] * ny; V[v * 3 + 2] += amount * D[v] * nz;
+  }
+}
+
+// Give every vertex that found no AI colour the colour of its nearest coloured neighbour (BFS over edges).
+function fillColours(vcol, I, nV) {
+  const { start, adj } = adjacency(I, nV), has = vcol.has;
+  let front = [];
+  for (let v = 0; v < nV; v++) if (has[v]) front.push(v);
+  while (front.length) {
+    const next = [];
+    for (const v of front) for (let q = start[v]; q < start[v + 1]; q++) {
+      const u = adj[q]; if (has[u]) continue;
+      has[u] = 1; vcol[u * 3] = vcol[v * 3]; vcol[u * 3 + 1] = vcol[v * 3 + 1]; vcol[u * 3 + 2] = vcol[v * 3 + 2]; next.push(u);
+    }
+    front = next;
+  }
 }
 
 // Open edges (used once) and non-manifold edges (used 3+ times).

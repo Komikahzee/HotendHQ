@@ -1,12 +1,13 @@
 import { Viewer, trianglesOf } from './viewer.js';
 import { ENGINES, preprocess, generate, ping } from './engines.js';
 import { toSTL, to3MF, download } from './export.js';
+import { quantize, faceNeighbours, hex, rgb } from './colors.js';
 
 const $ = (id) => document.getElementById(id);
 const viewer = new Viewer($('view'));
 const S = {
   photo: null, photoName: 'model', engine: 'trellis2', res: '1536', texture: 2048, base: 'plinth', vox: 320,
-  color: '#c9c4bc', cands: [], sel: -1, print: null, busy: false, token: '',
+  color: '#c9c4bc', ncol: '4', cands: [], sel: -1, print: null, busy: false, token: '',
 };
 
 // ---------- small UI helpers ----------
@@ -103,7 +104,8 @@ pills('vox', 'vox', () => { $('voxOut').textContent = S.vox; });
 bindRange('seeds'); bindRange('shapeSteps'); bindRange('ssSteps'); bindRange('shapeGuid', (v) => v.toFixed(1));
 bindRange('faces', (v) => Math.round(v / 1000) + 'k');
 bindRange('height', (v) => v + ' mm'); bindRange('plinthH', (v) => v + ' mm'); bindRange('plinthS', (v) => v + '%');
-bindRange('cut', (v) => v + ' mm'); bindRange('seal', (v) => v.toFixed(1) + ' mm'); bindRange('wall', (v) => v.toFixed(1) + ' mm'); bindRange('smooth');
+bindRange('cut', (v) => v + ' mm'); bindRange('seal', (v) => v.toFixed(1) + ' mm'); bindRange('wall', (v) => v.toFixed(1) + ' mm'); bindRange('smooth'); bindRange('denoise'); bindRange('sharpen', (v) => v + '%');
+pills('ncol', 'ncol', () => { if (S.print) { recolour(); showPrint(true); } });
 $('hollow').addEventListener('change', () => { document.querySelector('.hollow-only').hidden = !$('hollow').checked; });
 $('sw').addEventListener('click', (e) => {
   const b = e.target.closest('button'); if (!b) return;
@@ -202,12 +204,13 @@ $('glbFile').addEventListener('change', (e) => { const f = e.target.files[0]; if
 let worker = null;
 $('btnFix').addEventListener('click', () => {
   const c = S.cands[S.sel]; if (!c?.gltf) return;
-  const { positions, indices } = trianglesOf(c.gltf);
+  const { positions, indices, colors } = trianglesOf(c.gltf);
   const opt = {
     heightMM: num('height'), res: +S.vox, sealMM: num('seal'), base: S.base, cutMM: num('cut'), plinthH: num('plinthH'),
     plinthScale: num('plinthS') / 100, hollow: $('hollow').checked, wallMM: num('wall'), drainMM: 6, smooth: num('smooth'),
-    snap: $('snap').checked, keepLargest: $('largest').checked, rotX: num('rotX'), rotY: num('rotY'), rotZ: num('rotZ'),
+    snap: $('snap').checked, denoise: num('denoise'), sharpen: num('sharpen') / 100, keepLargest: $('largest').checked, rotX: num('rotX'), rotY: num('rotY'), rotZ: num('rotZ'),
   };
+  Object.assign(opt, window.__extraOpt?.opt || {}); // testing hook
   worker?.terminate();
   worker = new Worker(new URL('./prep-worker.js', import.meta.url));
   S.busy = true; refresh(); busy('Starting', 0);
@@ -216,17 +219,32 @@ $('btnFix').addEventListener('click', () => {
     if (m.type === 'progress') { busy(m.msg, m.pct); return; }
     busy(false); S.busy = false;
     if (m.type === 'error') { log(m.msg, 'e'); refresh(); return; }
-    S.print = { positions: m.positions, indices: m.indices, stats: m.stats, name: `${S.photoName}-${c.engine}-${c.seed}` };
-    showPrint(); checks(m.stats); refresh();
+    S.print = { positions: m.positions, indices: m.indices, colors: m.colors, isBase: m.isBase, stats: m.stats, name: `${S.photoName}-${c.engine}-${c.seed}` };
+    recolour(); showPrint(); checks(m.stats); refresh();
     log(`Print-ready in ${(m.stats.ms / 1000).toFixed(1)} s`, 'o');
   };
   worker.onerror = (e) => { busy(false); S.busy = false; log(e.message || 'Print prep crashed (out of memory? try Draft detail).', 'e'); refresh(); };
-  worker.postMessage({ positions, indices, opt }, [positions.buffer, indices.buffer]);
+  worker.postMessage({ positions, indices, colors, opt }, [positions.buffer, indices.buffer, colors.buffer]);
 });
-function showPrint() {
-  const p = S.print; viewer.showPrint(p.positions, p.indices, S.color); setMode('print');
+// Filament colours: k-means of the AI texture colours on the print mesh, one colour per triangle.
+function recolour() {
+  const p = S.print, K = +S.ncol;
+  p.labels = null; p.palette = null; $('pal').innerHTML = '';
+  if (!K || !p.colors) return;
+  p.nb ||= faceNeighbours(p.indices, p.positions.length / 3);
+  const q = quantize(p.colors, p.indices, p.isBase, K, p.nb);
+  p.labels = q.labels; p.palette = q.palette;
+  $('pal').innerHTML = q.palette.map((c, i) => `<label title="Filament ${i + 1}"><input type="color" data-i="${i}" value="${hex(c)}">${i + 1}${i === K ? ' base' : ''}</label>`).join('');
+}
+$('pal').addEventListener('input', (e) => {
+  const i = +e.target.dataset.i; if (!S.print?.palette || isNaN(i)) return;
+  S.print.palette[i] = rgb(e.target.value); showPrint(true);
+});
+function showPrint(keep) {
+  const p = S.print; viewer.keepView = !!keep;
+  viewer.showPrint(p.positions, p.indices, S.color, p.labels, p.palette); viewer.keepView = false; setMode('print');
   const [x, y, z] = p.stats.size;
-  $('vb').innerHTML = `<span>${x.toFixed(1)} × ${y.toFixed(1)} × ${z.toFixed(1)} mm</span><span>${p.stats.triangles.toLocaleString()} triangles · print-ready</span>`;
+  $('vb').innerHTML = `<span>${x.toFixed(1)} × ${y.toFixed(1)} × ${z.toFixed(1)} mm</span><span>${p.stats.triangles.toLocaleString()} triangles · ${p.palette ? p.palette.length + ' filaments' : 'print-ready'}</span>`;
 }
 function checks(s) {
   const row = (ok, title, sub) => `<div class="ck"><span class="s ${ok === true ? '' : ok === 'w' ? 'w' : 'x'}">${ok === true ? '✓' : '!'}</span><div><b>${title}</b><small>${sub}</small></div></div>`;
@@ -248,7 +266,7 @@ $('vClay').addEventListener('click', () => { const on = !$('vClay').classList.co
 $('vWire').addEventListener('click', () => { const on = !$('vWire').classList.contains('on'); $('vWire').classList.toggle('on', on); viewer.setWire(on); });
 $('vSpin').addEventListener('click', () => { const on = !viewer.controls.autoRotate; viewer.controls.autoRotate = on; $('vSpin').classList.toggle('on', on); });
 $('dlSTL').addEventListener('click', () => download(toSTL(S.print.positions, S.print.indices, S.print.name), S.print.name + '.stl'));
-$('dl3MF').addEventListener('click', () => download(to3MF(S.print.positions, S.print.indices, S.print.name, S.color), S.print.name + '.3mf'));
+$('dl3MF').addEventListener('click', () => download(to3MF(S.print.positions, S.print.indices, S.print.name, S.color, S.print.labels, S.print.palette), S.print.name + '.3mf'));
 $('dlGLB').addEventListener('click', () => { const c = S.cands[S.sel]; if (c) download(c.glb, `${S.photoName}-${c.engine}-${c.seed}.glb`); });
 
 refresh(); checkSpaces();
