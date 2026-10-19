@@ -11,7 +11,9 @@
 .st-drop-main{font-weight:700;font-size:.92rem;color:var(--text);word-break:break-word}
 .st-drop-sub{font-size:.76rem;color:var(--text-faint)}
 .st-sample{font-size:.8rem;color:var(--text-faint);margin:0 0 14px;text-align:center}
-.st-tabs{grid-template-columns:1fr 1fr}
+.st-tabs{grid-template-columns:repeat(3,minmax(0,1fr))}
+.st-mode-hint{margin:-8px 2px 14px}
+.st-flat{padding:10px 12px;border:1px solid var(--border);border-radius:12px;background:rgba(243,102,46,.06)}
 
 /* palette */
 .st-pal{display:grid;grid-template-columns:repeat(auto-fill,minmax(138px,1fr));gap:6px;margin-bottom:10px}
@@ -83,3 +85,11 @@
 @media (max-width:420px){
   .st-pal{grid-template-columns:1fr 1fr}
 }
+
+/* showcase + how-to */
+.st-show-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:14px 0}
+.st-show-grid figure{margin:0}
+.st-show-grid img{width:100%;height:auto;display:block;border-radius:14px;border:1px solid var(--border)}
+.st-show-grid figcaption{font-size:.82rem;color:var(--text-faint);margin-top:6px;font-weight:600}
+.st-steps{margin:10px 0 0;padding-left:1.3em;display:grid;gap:8px;color:var(--text-dim)}
+@media (max-width:640px){.st-show-grid{grid-template-columns:1fr}}

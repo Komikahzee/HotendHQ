@@ -5,7 +5,8 @@
    Shared by the worker and the Node tests.
    ============================================================ */
 import * as P from './prep.js?v=4f4f30580f';
-import { vectorize as trace } from './vectorize.js?v=4b7c9fe7ea';
+import { vectorize as trace } from './vectorize.js?v=0ad95ea9ae';
+import { segment, flatten, fit } from './regions.js?v=57fb784ce9';
 
 /** Working size: small images are enlarged (edges land between pixels, so curves come out smooth),
     huge ones are capped so the browser stays quick. */
@@ -20,7 +21,8 @@ export function workSize(w, h, quality = 'high') {
 
 /**
  * Stage 1: everything up to the indexed image. Slow-ish, so the worker caches it.
- * o: { mode: 'color'|'bw', colors, merge, denoise: 'auto'|0..3, detail, quality, threshold, invert, palette (hex list override) }
+ * o: { mode: 'color'|'bw', colors, merge, denoise: 'auto'|0..3, detail, quality, threshold, invert, palette (hex list override),
+ *      flat: 0 (keep shading) | 'auto' | 1..3 (remove shading: light..strong) }
  */
 export function prepare(rgba, w, h, o) {
   const t0 = Date.now();
@@ -38,6 +40,10 @@ export function prepare(rgba, w, h, o) {
     threshold = o.threshold != null && o.threshold !== 'auto' ? +o.threshold : P.otsu(labSmall, clean, w * h);
     lbl = P.labelBW(labBig, big, W * H, threshold, !!o.invert);
     palette = [{ rgb: [255, 255, 255], weight: 0 }, { rgb: [0, 0, 0], weight: 0 }];
+  } else if (o.flat) {
+    // remove shading: areas follow the real outlines, and each area gets exactly one colour
+    const level = o.flat === 'auto' ? (noise > 15 ? 1 : 3) : +o.flat;   // photos keep their main tones
+    ({ lbl, palette } = flatten(big, W, H, { level, s, chroma, unify: +o.merge || 12, count: +o.colors || 0, palette: o.palette }));
   } else {
     if (o.palette && o.palette.length) {
       palette = o.palette.map(hx => { const rgb = P.fromHex(hx); const l = P.rgbToLab(...rgb); return { rgb, lab: [l[0], l[1] * chroma, l[2] * chroma], weight: 0 }; });
@@ -94,3 +100,50 @@ export function toSvg(prep, o) {
   return { svg, layers, paths: res.regions.length, bytes: svg.length, ms: Date.now() - t0 };
 }
 
+
+/* ============================================================
+   Detailed mode: for photos, renders and shaded artwork.
+   The image is split into many small regions that follow its edges, and each region gets its own
+   colour or a fitted gradient. Every shape is also stroked in its own paint on a layer underneath,
+   which fills the hairline seams browsers leave between touching shapes.
+   o: { detail 1..3, quality, smooth, corners, gradients }
+   ============================================================ */
+const DETAIL = { 1: { k: 40, min: 8 }, 2: { k: 16, min: 5 }, 3: { k: 8, min: 3 } };
+export function traceDetailed(rgba, w, h, o = {}, progress = () => {}) {
+  const t0 = Date.now();
+  const { W, H, s } = workSize(w, h, o.quality || 'high');
+  const big = P.resize(rgba, w, h, W, H);
+  const D = DETAIL[o.detail] || DETAIL[2];
+  progress('regions');
+  const { rid, regions } = segment(big, W, H, { sigma: 0.8, k: D.k * Math.max(1, s), minSize: Math.round(D.min * s * s) });
+  const sum = new Float64Array(regions * 4);
+  for (let i = 0; i < W * H; i++) { const r = rid[i]; if (r < 0) continue; sum[r * 4] += big[i * 4]; sum[r * 4 + 1] += big[i * 4 + 1]; sum[r * 4 + 2] += big[i * 4 + 2]; sum[r * 4 + 3]++; }
+  const hexOf = (r) => '#' + [0, 1, 2].map(c => Math.round(sum[r * 4 + c] / sum[r * 4 + 3]).toString(16).padStart(2, '0')).join('');
+  let fills;
+  if (o.gradients !== false) {
+    progress('shading');
+    // pixels per region (a sample of up to ~4000 for big regions keeps the fit quick)
+    const px = Array.from({ length: regions }, () => []);
+    for (let i = 0; i < W * H; i++) { const r = rid[i]; if (r < 0) continue; const c = sum[r * 4 + 3]; if (c < 4000 || i % Math.floor(c / 4000) === 0) px[r].push(i); }
+    fills = px.map((ix, r) => fit(ix, big, W, hexOf(r), sum[r * 4 + 3], { minArea: 60 * s * s, flatErr: 2 }));
+  } else fills = Array.from({ length: regions }, (_, r) => ({ hex: hexOf(r) }));
+  progress('curves');
+  const k = w / W;
+  const res = trace(rid, W, H, { smooth: o.smooth ?? 5, corners: o.corners ?? 5, workScale: s, scale: k, stacked: false, skip: new Set([-1]) });
+  const defs = [], f = (v) => +(v * k).toFixed(1);
+  const paint = fills.map((F) => {
+    if (!F.type) return F.hex;
+    const id = 'g' + defs.length.toString(36);
+    if (F.type === 'linear') defs.push(`<linearGradient id="${id}" gradientUnits="userSpaceOnUse" x1="${f(F.x1)}" y1="${f(F.y1)}" x2="${f(F.x2)}" y2="${f(F.y2)}">${F.stops.map(q => `<stop offset="${q.t}" stop-color="${q.hex}"/>`).join('')}</linearGradient>`);
+    else { const R = Math.max(F.r, 1e-3); defs.push(`<radialGradient id="${id}" gradientUnits="userSpaceOnUse" cx="${f(F.cx)}" cy="${f(F.cy)}" r="${f(R)}">${F.stops.map(q => `<stop offset="${(F.r0 / R + q.t * (F.r - F.r0) / R).toFixed(3)}" stop-color="${q.hex}"/>`).join('')}</radialGradient>`); }
+    return `url(#${id})`;
+  });
+  // shapes never overlap (holes are cut), so the stroke layer underneath only ever shows through seams
+  const ids = [], under = [], over = [];
+  res.regions.forEach((r, i) => {
+    const id = 'p' + i.toString(36), pt = paint[r.label];
+    ids.push(`<path id="${id}" d="${r.d}"/>`); under.push(`<use xlink:href="#${id}" stroke="${pt}"/>`); over.push(`<use xlink:href="#${id}" fill="${pt}"/>`);
+  });
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">\n<defs>${defs.join('')}\n${ids.join('\n')}</defs>\n<g fill="none" stroke-width="1.2" stroke-linejoin="round">${under.join('')}</g>\n<g fill-rule="evenodd">${over.join('')}</g>\n</svg>\n`;
+  return { svg, paths: res.regions.length, regions, gradients: defs.length, bytes: svg.length, ms: Date.now() - t0 };
+}

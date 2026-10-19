@@ -166,9 +166,12 @@ export function vectorize(lbl, W, H, opts = {}) {
   for (const r of regions) {
     let parts;
     if (opts.stacked) {
-      parts = [r.cycles[r.outer]];
+      // a region that touches itself at a corner can come out as several outer loops (a figure 8):
+      // keep every loop that runs the same way round as the outer one, drop the holes
+      const sgn = Math.sign(polyArea(r.cycles[r.outer], chains));
+      parts = r.cycles.filter((cy, i) => i === r.outer || Math.sign(polyArea(cy, chains)) === sgn);
       if (transparentPts.length) r.cycles.forEach((cy, i) => {
-        if (i === r.outer) return;
+        if (i === r.outer || parts.includes(cy)) return;
         const poly = rawPoly(cy, chains);
         if (transparentPts.some(([px, py]) => pointIn(poly, px, py))) parts.push(cy);
       });
@@ -212,17 +215,27 @@ function pointIn(p, x, y) {
 
 const fmt = (v) => { const r = Math.round(v * 100) / 100; return Object.is(r, -0) ? '0' : String(r); };
 function cycleD(cyc, fitted, k) {
-  let d = '';
+  // relative commands on a 0.1 px grid: much smaller files, no visible difference
+  let d = '', px = 0, py = 0;
+  const q = (v) => Math.round(v * 10) / 10;
+  const num = (v) => { let t = String(Math.round(v * 10) / 10); if (t === '-0') t = '0'; return t.replace(/^(-?)0\./, '$1.'); };
+  const join = (a) => { let o = ''; for (const t of a) o += (o && t[0] !== '-' && !(t[0] === '.' && /\.\d*$/.test(o.slice(-6)) && o.slice(o.lastIndexOf(' ') + 1).includes('.'))) ? ' ' + t : t; return o; };
+  const rel = (p) => { const x = q(p[0] * k), y = q(p[1] * k); const r = [num(x - px), num(y - py)]; px = x; py = y; return r; };
   cyc.forEach((r, n) => {
     const segs = fitted[r.i];
     const list = r.rev ? segs.slice().reverse().map(s => s.length === 2 ? [s[1], s[0]] : [s[3], s[2], s[1], s[0]]) : segs;
-    if (n === 0) d += 'M' + fmt(list[0][0][0] * k) + ' ' + fmt(list[0][0][1] * k);
+    if (n === 0) { px = q(list[0][0][0] * k); py = q(list[0][0][1] * k); d += 'M' + join([num(px), num(py)]); }
     for (const s of list) {
-      if (s.length === 2) d += 'L' + fmt(s[1][0] * k) + ' ' + fmt(s[1][1] * k);
-      else d += 'C' + [s[1], s[2], s[3]].map(p => fmt(p[0] * k) + ' ' + fmt(p[1] * k)).join(' ');
+      if (s.length === 2) d += 'l' + join(rel(s[1]));
+      else {
+        const x0 = px, y0 = py;
+        const c = [s[1], s[2], s[3]].map(p => [q(p[0] * k), q(p[1] * k)]);
+        px = c[2][0]; py = c[2][1];
+        d += 'c' + join(c.flatMap(p => [num(p[0] - x0), num(p[1] - y0)]));
+      }
     }
   });
-  return d + 'Z';
+  return d + 'z';
 }
 
 /* ---------- chain fitting ---------- */
