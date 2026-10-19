@@ -293,7 +293,7 @@ ${GENERATORS.map(g => `- [${g.name}](${BASE}${url(g.slug)}): ${g.blurb}`).join('
 ## Everything else
 - [Troubleshooting](${BASE}/troubleshoot): answer a few questions about a print problem and get the likely cause, the check that confirms it and the fix.
 - [Calculators & filament database](${BASE}/tools): flow rate and max speed, filament cost, e-steps, shrinkage, spool remaining, and properties of common filaments.
-- [SVG Tracer](${BASE}/svg-tracer): turn a logo, decal or artwork image into a clean multicolour or black-and-white vector SVG, in the browser with nothing uploaded.
+- [SVG Tracer](${BASE}/svg-tracer): free image to SVG converter. Turns logos and cartoons into flat-colour SVGs (shading removed), photos into detailed SVGs with real gradients, or anything into black and white, in the browser with nothing uploaded.
 - [News & guides](${BASE}/news): hands-on 3D printing guides.
 - [Print My Order](${BASE}/order): send a model file, link or photo and get a free quote to have it 3D printed.
 - [All generators](${BASE}/generators)

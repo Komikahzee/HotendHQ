@@ -22,7 +22,7 @@
 <link rel="stylesheet" href="/assets/css/pages.css?v=0df26b3f2f">
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"ItemList","name":"3D model generators","itemListElement":[{"@type":"ListItem","position":1,"name":"Gridfinity generator","url":"https://hotendhq.com/generators/gridfinity"},{"@type":"ListItem","position":2,"name":"Pendant & Medallion Studio","url":"https://hotendhq.com/generators/pendant/"},{"@type":"ListItem","position":3,"name":"Chain generator","url":"https://hotendhq.com/generators/chain"},{"@type":"ListItem","position":4,"name":"Layered sign generator","url":"https://hotendhq.com/generators/layered-signs"},{"@type":"ListItem","position":5,"name":"Dice generator","url":"https://hotendhq.com/generators/dice"},{"@type":"ListItem","position":6,"name":"Stencil generator","url":"https://hotendhq.com/generators/stencils"},{"@type":"ListItem","position":7,"name":"Plant marker generator","url":"https://hotendhq.com/generators/plant-markers"},{"@type":"ListItem","position":8,"name":"Lettering & calligraphy generator","url":"https://hotendhq.com/generators/lettering"},{"@type":"ListItem","position":9,"name":"Pen grip & cutter adapter generator","url":"https://hotendhq.com/generators/pen-grips"},{"@type":"ListItem","position":10,"name":"Board game pieces generator","url":"https://hotendhq.com/generators/board-game-pieces"},{"@type":"ListItem","position":11,"name":"Fidget spinner generator","url":"https://hotendhq.com/generators/fidget-spinners"},{"@type":"ListItem","position":12,"name":"Drone frame generator","url":"https://hotendhq.com/generators/drone-frame"},{"@type":"ListItem","position":13,"name":"Mic clip & stand accessory generator","url":"https://hotendhq.com/generators/mic-accessories"},{"@type":"ListItem","position":14,"name":"Storage box generator","url":"https://hotendhq.com/generators/storage-box"},{"@type":"ListItem","position":15,"name":"Grid organiser generator","url":"https://hotendhq.com/generators/grid-organiser"},{"@type":"ListItem","position":16,"name":"Cable clip generator","url":"https://hotendhq.com/generators/cable-clip"},{"@type":"ListItem","position":17,"name":"Spool holder generator","url":"https://hotendhq.com/generators/spool-holder"},{"@type":"ListItem","position":18,"name":"Wall bracket generator","url":"https://hotendhq.com/generators/wall-bracket"}]}</script>
 <script src="/assets/js/config.js?v=fdd459de6a" defer></script>
-<script src="/assets/js/nav.js?v=e3b8f7ba78" defer></script>
+<script src="/assets/js/nav.js?v=f828edb391" defer></script>
 <script src="/assets/js/site.js?v=e98640a3e3" defer></script>
 <script src="/assets/js/api.js?v=097762e5df" defer></script>
 </head>
@@ -37,9 +37,7 @@
 
   <section class="wrap section--tight gens-feature-wrap" aria-labelledby="gens-feature-title">
     <h2 id="gens-feature-title" class="sr-only">Featured generators</h2>
-    <div class="gens-rail">
-    <button type="button" class="gens-rail-btn" data-dir="-1" aria-label="Previous featured generators" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg></button>
-    <div class="gens-features" id="gens-features" tabindex="0" aria-label="Featured generators, scroll right for more">
+    <div class="gens-features">
       <div class="card gens-feature">
         <a class="gens-feature-img" href="/generators/pendant/" tabindex="-1" aria-hidden="true">
           <img src="/assets/img/articles/pendant-coin.webp" alt="" width="1200" height="750" decoding="async">
@@ -96,8 +94,6 @@
           </div>
         </div>
       </div>
-    </div>
-    <button type="button" class="gens-rail-btn" data-dir="1" aria-label="More featured generators" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
     </div>
   </section>
 
@@ -258,18 +254,6 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('w1').innerHTML = icon('calc');
   document.getElementById('w2').innerHTML = icon('bolt');
   document.getElementById('w3').innerHTML = icon('check');
-  const rail = document.getElementById('gens-features'), railBtns = document.querySelectorAll('.gens-rail-btn');
-  const railSync = () => {
-    const max = rail.scrollWidth - rail.clientWidth - 2;
-    railBtns.forEach(b => { b.hidden = b.dataset.dir === '1' ? rail.scrollLeft >= max : rail.scrollLeft <= 2; });
-  };
-  railBtns.forEach(b => b.addEventListener('click', () => {
-    const card = rail.querySelector('.gens-feature'), step = card.offsetWidth + parseFloat(getComputedStyle(rail).columnGap);
-    rail.scrollBy({ left: step * +b.dataset.dir });
-  }));
-  rail.addEventListener('scroll', railSync, { passive: true });
-  window.addEventListener('resize', railSync);
-  railSync();
   const chips = document.querySelectorAll('.gens-filter .chip'), cards = document.querySelectorAll('#gens-grid .gens-card');
   chips.forEach(c => c.addEventListener('click', () => {
     chips.forEach(x => x.setAttribute('aria-pressed', String(x === c)));

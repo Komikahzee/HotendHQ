@@ -42,12 +42,15 @@ const PAGES = [
     { '@context': 'https://schema.org', '@type': 'WebApplication', name: 'Hotend HQ 3D printing calculators', url: BASE + '/tools', applicationCategory: 'UtilitiesApplication',
       operatingSystem: 'Any (runs in the browser)', isAccessibleForFree: true, offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' } },
     crumbs([['Home', '/'], ['Tools', '/tools']])] },
-  { file: 'svg-tracer.html', url: '/svg-tracer', ld: (h) => [
-    { '@context': 'https://schema.org', '@type': 'WebApplication', name: 'Hotend HQ SVG Tracer', url: BASE + '/svg-tracer', applicationCategory: 'DesignApplication',
+  { file: 'svg-tracer.html', url: '/svg-tracer', image: '/assets/img/svg-tracer/og-svg-tracer.jpg', ld: (h) => [
+    { '@context': 'https://schema.org', '@type': 'WebApplication', name: 'Hotend HQ SVG Tracer', alternateName: 'Free Image to SVG Converter', url: BASE + '/svg-tracer', applicationCategory: 'DesignApplication',
       operatingSystem: 'Any (runs in the browser)', isAccessibleForFree: true, offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' }, publisher: ORG,
-      description: 'Convert PNG and JPG logos, decals and artwork into clean multicolour or black and white SVG vectors in the browser.',
-      featureList: ['Multicolour and black and white tracing', 'Gap-free shapes with shared edges', 'Smooth curves with sharp corners kept', 'Pick, recolour, hide or remove colours', 'One SVG per colour for cutters and multicolour prints', 'Runs locally, nothing uploaded'] },
-    faqLd(faqOf(h.slice(h.indexOf('class="gf-faq"')))), crumbs([['Home', '/'], ['Tools', '/tools'], ['SVG Tracer', '/svg-tracer']])] },
+      image: BASE + '/assets/img/svg-tracer/og-svg-tracer.jpg', screenshot: BASE + '/assets/img/svg-tracer/dead-radio-traced.webp',
+      description: 'Convert PNG, JPG and photos into SVG vectors in the browser: flat colours with shading removed, detailed vectors with real gradients, or black and white.',
+      featureList: ['Image to SVG for logos, cartoons and photos', 'Remove shading for flat-colour SVGs', 'Detailed mode with real SVG gradients for photos', 'Black and white tracing for stencils and cut files', 'Gap-free shapes with shared edges', 'Smooth curves with sharp corners kept', 'Pick, recolour, hide or remove colours', 'One SVG per colour for cutters and multicolour prints', 'Runs locally, nothing uploaded'] },
+    { '@context': 'https://schema.org', '@type': 'HowTo', name: 'How to convert an image to SVG',
+      step: [...h.matchAll(/<li><strong>([^<]+)<\/strong>([\s\S]*?)<\/li>/g)].map((m, i) => ({ '@type': 'HowToStep', position: i + 1, name: m[1].replace(/\.$/, ''), text: (m[1] + m[2]).replace(/<[^>]+>/g, '').replace(/&amp;/g, '&').replace(/\s+/g, ' ').trim() })) },
+    faqLd(faqOf(h.slice(h.indexOf('class="gf-faq"')))), crumbs([['Home', '/'], ['Tools', '/tools'], ['SVG Tracer', '/svg-tracer']])].filter(Boolean) },
   { file: 'gear.html', noindex: true },          // paused until the affiliate links are ready
   { file: 'order.html', url: '/order', ld: (h) => [
     { '@context': 'https://schema.org', '@type': 'Service', name: 'Custom 3D printing', serviceType: '3D printing to order', url: BASE + '/order',

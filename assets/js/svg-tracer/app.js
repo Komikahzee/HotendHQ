@@ -14,7 +14,11 @@ const MERGE = [26, 22, 19, 16, 14, 12, 10, 8.5, 7, 5.5, 4];             // colou
 const SPECK = ['auto', 1, 2, 3, 4, 5, 6, 8, 10, 12, 15, 20, 25, 30, 40];   // speck side in original-image px (area = side²)
 const speckText = (v) => v ? `${SPECK[v]}×${SPECK[v]} px` : 'auto';
 const DEFAULTS = { mode: 'color', auto: true, merge: 5, count: 8, thrAuto: true, thr: 50, invert: false, smooth: 5, corners: 5,
-  speck: 0, nobg: false, nobgBw: true, layout: 'stacked', quality: 'high', denoise: 'auto' };
+  speck: 0, nobg: false, nobgBw: true, layout: 'stacked', quality: 'high', denoise: 'auto',
+  flat: false, flatLevel: 0, detail: 2, gradients: true };
+const FLAT = ['auto', 1, 2, 3];
+const flatText = (v) => ['Auto', 'Light', 'Medium', 'Strong'][v];
+const DETAIL_TEXT = { 1: 'Low (smaller file)', 2: 'Medium', 3: 'High (biggest file)' };
 const S = { ...DEFAULTS, palette: null, hidden: new Set(), recolor: {} };
 
 let img = null;           // { rgba, w, h, name, url }
@@ -22,13 +26,14 @@ let last = null;          // last trace result
 let view = { z: 1, tx: 0, ty: 0, split: 0.5, mode: 'split' };
 
 /* ---------------- worker ---------------- */
-const worker = new Worker(new URL('./worker.js?v=22a3ea8bfc', import.meta.url), { type: 'module' });
+const worker = new Worker(new URL('./worker.js?v=562fa7afd3', import.meta.url), { type: 'module' });
+const STAGE = { colours: 'Finding the colours…', regions: 'Finding every edge…', shading: 'Fitting the shading…', curves: 'Fitting the curves…' };
 let reqId = 0, busy = false, queued = false, timer = 0;
 const waiting = new Map();     // id -> purpose
 worker.onmessage = (e) => {
   const m = e.data;
   const purpose = waiting.get(m.id);
-  if (m.type === 'progress') { if (purpose === 'view') status(m.stage === 'colours' ? 'Finding the colours…' : 'Fitting the curves…'); return; }
+  if (m.type === 'progress') { if (purpose === 'view') status(STAGE[m.stage] || 'Working…'); return; }
   if (m.type === 'loaded') return;
   waiting.delete(m.id);
   busy = false;
@@ -41,7 +46,9 @@ worker.onerror = () => { busy = false; stage.classList.remove('is-busy'); status
 
 function prepOpts() {
   const bw = S.mode === 'bw';
+  if (S.mode === 'detail') return { mode: 'detail', quality: S.quality, detail: S.detail, gradients: S.gradients };
   return {
+    flat: bw || !S.flat ? 0 : FLAT[S.flatLevel],
     mode: S.mode, quality: S.quality, denoise: S.denoise, detail: S.speck ? SPECK[S.speck] ** 2 : 'auto',
     colors: bw ? null : (S.auto ? 0 : S.count), merge: bw ? null : MERGE[S.merge], palette: bw ? null : S.palette,
     threshold: bw ? (S.thrAuto ? 'auto' : S.thr) : null, invert: bw ? S.invert : null,
@@ -135,8 +142,22 @@ $('st-sample').addEventListener('click', async () => {
   const c = document.createElement('canvas'); c.width = 900; c.height = 900;
   c.getContext('2d').drawImage(i, 0, 0, 900, 900);
   URL.revokeObjectURL(i.src);
+  if (S.mode === 'detail') { S.mode = 'color'; syncUI(); }
   c.toBlob((b) => loadBlob(b, 'sample-emblem.png'), 'image/png');
 });
+
+/* detailed sample: Dead Radio, traced in Detailed mode */
+async function loadPhotoSample() {
+  status('Opening the sample…');
+  try {
+    const r = await fetch('/assets/img/svg-tracer/dead-radio.jpg');
+    if (!r.ok) throw new Error();
+    if (S.mode !== 'detail') { S.mode = 'detail'; syncUI(); }
+    loadBlob(await r.blob(), 'dead-radio.jpg');
+  } catch { status('The sample could not be loaded.', 'bad'); }
+}
+$('st-sample-photo').addEventListener('click', loadPhotoSample);
+$('st-show-try').addEventListener('click', () => { $('st-panel').scrollIntoView({ behavior: 'smooth', block: 'start' }); loadPhotoSample(); });
 
 /* ---------------- result ---------------- */
 function show(m) {
@@ -147,14 +168,17 @@ function show(m) {
     if (S.thrAuto) $('st-thr').value = Math.round(m.threshold);
     $('st-thr-out').textContent = S.thrAuto ? `auto (${Math.round(m.threshold)})` : S.thr;
   }
-  const nCol = S.mode === 'bw' ? 1 : m.palette.length - S.hidden.size - (S.nobg && m.bg >= 0 && !S.hidden.has(m.bg) ? 1 : 0);
-  const kb = m.bytes / 1024;
-  readout.textContent = `${nCol} colour${nCol === 1 ? '' : 's'} · ${m.paths} shapes · ${kb < 1000 ? kb.toFixed(kb < 10 ? 1 : 0) + ' KB' : (kb / 1024).toFixed(1) + ' MB'}`;
+  const kb = m.bytes / 1024, size = kb < 1000 ? kb.toFixed(kb < 10 ? 1 : 0) + ' KB' : (kb / 1024).toFixed(1) + ' MB';
+  if (S.mode === 'detail') readout.textContent = `${m.paths.toLocaleString()} shapes · ${m.gradients.toLocaleString()} gradients · ${size}`;
+  else {
+    const nCol = S.mode === 'bw' ? 1 : m.palette.length - S.hidden.size - (S.nobg && m.bg >= 0 && !S.hidden.has(m.bg) ? 1 : 0);
+    readout.textContent = `${nCol} colour${nCol === 1 ? '' : 's'} · ${m.paths} shapes · ${size}`;
+  }
   status(`Traced in ${(m.ms / 1000).toFixed(1)} s: ${readout.textContent}.`, 'ok');
   setButtons(true);
   applyView();
 }
-function setButtons(on) { for (const id of ['st-dl', 'st-zip', 'st-copy']) $(id).disabled = !on; }
+function setButtons(on) { for (const id of ['st-dl', 'st-zip', 'st-copy']) $(id).disabled = !on; if (S.mode === 'detail') $('st-zip').disabled = true; }
 function status(t, kind) { statusEl.textContent = t; if (kind) statusEl.dataset.kind = kind; else delete statusEl.dataset.kind; }
 
 /* ---------------- palette ---------------- */
@@ -165,7 +189,7 @@ const ICON = {
 };
 function renderPalette(m) {
   const box = $('st-pal');
-  if (S.mode === 'bw') return;
+  if (S.mode !== 'color') return;
   box.innerHTML = '';
   m.palette.forEach((p, i) => {
     const hex = S.recolor[i] || p.hex;
@@ -222,11 +246,15 @@ bindRange('st-count', 'count', (v) => v, () => { S.palette = null; S.hidden.clea
 bindRange('st-smooth', 'smooth');
 bindRange('st-corners', 'corners');
 bindRange('st-speck', 'speck', speckText);
+bindRange('st-flat-level', 'flatLevel', flatText, () => { S.palette = null; S.hidden.clear(); S.recolor = {}; });
+bindRange('st-detail', 'detail', (v) => DETAIL_TEXT[v]);
 bindRange('st-thr', 'thr', (v) => v, () => { S.thrAuto = false; $('st-thr-auto').checked = false; });
 const bindTog = (id, key, after) => $(id).addEventListener('change', (e) => { S[key] = e.target.checked; after && after(); schedule(0); });
 bindTog('st-auto', 'auto', () => { S.palette = null; S.hidden.clear(); S.recolor = {}; syncUI(); });
 bindTog('st-thr-auto', 'thrAuto', () => syncUI());
 bindTog('st-invert', 'invert');
+bindTog('st-flat', 'flat', () => { S.palette = null; S.hidden.clear(); S.recolor = {}; syncUI(); });
+bindTog('st-grad', 'gradients');
 $('st-nobg').addEventListener('change', (e) => { if (S.mode === 'bw') S.nobgBw = e.target.checked; else S.nobg = e.target.checked; schedule(0); });
 for (const [id, key] of [['st-layout', 'layout'], ['st-quality', 'quality'], ['st-denoise', 'denoise']])
   $(id).addEventListener('change', (e) => { S[key] = e.target.value; schedule(0); });
@@ -238,7 +266,13 @@ $('st-reset').addEventListener('click', () => { Object.assign(S, DEFAULTS, { pal
 
 function syncUI() {
   document.querySelectorAll('.st-tabs button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.mode === S.mode)));
-  document.querySelectorAll('[data-for]').forEach(d => d.classList.toggle('hidden', d.dataset.for !== S.mode));
+  document.querySelectorAll('[data-for]').forEach(d => d.classList.toggle('hidden', !d.dataset.for.split(' ').includes(S.mode)));
+  $('st-flat').checked = S.flat;
+  $('st-flat-row').classList.toggle('hidden', !S.flat);
+  $('st-flat-level').value = S.flatLevel; $('st-flat-level-out').textContent = flatText(S.flatLevel);
+  $('st-detail').value = S.detail; $('st-detail-out').textContent = DETAIL_TEXT[S.detail];
+  $('st-grad').checked = S.gradients;
+  if (last) setButtons(true);
   $('st-auto').checked = S.auto;
   $('st-merge-row').classList.toggle('hidden', !S.auto);
   $('st-count-row').classList.toggle('hidden', S.auto);
@@ -252,7 +286,7 @@ function syncUI() {
   $('st-nobg').checked = S.mode === 'bw' ? S.nobgBw : S.nobg;
   $('st-nobg-hint').textContent = S.mode === 'bw' ? 'Leaves the white out, so only the black shapes are in the SVG.' : 'Leaves the background colour out, so the SVG is transparent there.';
   $('st-layout').value = S.layout; $('st-quality').value = S.quality; $('st-denoise').value = S.denoise;
-  if (S.mode === 'bw') $('st-pick').setAttribute('aria-pressed', 'false');
+  if (S.mode !== 'color') $('st-pick').setAttribute('aria-pressed', 'false');
 }
 
 /* ---------------- pick a missing colour ---------------- */
