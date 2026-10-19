@@ -5,8 +5,8 @@
    Shared by the worker and the Node tests.
    ============================================================ */
 import * as P from './prep.js?v=4f4f30580f';
-import { vectorize as trace } from './vectorize.js?v=0ad95ea9ae';
-import { segment, flatten, fit } from './regions.js?v=57fb784ce9';
+import { vectorize as trace } from './vectorize.js?v=fb419d1384';
+import { segment, flatten, fit, fitExact } from './regions.js?v=6ac1d660a5';
 
 /** Working size: small images are enlarged (edges land between pixels, so curves come out smooth),
     huge ones are capped so the browser stays quick. */
@@ -146,4 +146,79 @@ export function traceDetailed(rgba, w, h, o = {}, progress = () => {}) {
   });
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">\n<defs>${defs.join('')}\n${ids.join('\n')}</defs>\n<g fill="none" stroke-width="1.2" stroke-linejoin="round">${under.join('')}</g>\n<g fill-rule="evenodd">${over.join('')}</g>\n</svg>\n`;
   return { svg, paths: res.regions.length, regions, gradients: defs.length, bytes: svg.length, ms: Date.now() - t0 };
+}
+
+/* ============================================================
+   Pixel-exact mode: the SVG is drawn on the image's own pixel grid, so at 100 % it can match the original
+   pixel for pixel. Regions follow the image's edges; every region gets the flat colour or gradient that
+   reproduces its pixels best (solved the way the browser paints it), and any region still further off than
+   `tol` is split again along its own finer edges, round after round, until it matches.
+   o: { tol (RMS error per channel allowed in a region, 0..255), rounds, onProgress }
+   ============================================================ */
+const ROUNDS = [{ k: 8, minSize: 3, sigma: 0.8 }, { k: 3, minSize: 2, sigma: 0.5 }, { k: 1.2, minSize: 1, sigma: 0 }, { k: 0.4, minSize: 1, sigma: 0 }, { k: 0.01, minSize: 1, sigma: 0 }];
+export function traceExact(rgba, w, h, o = {}, progress = () => {}) {
+  const t0 = Date.now();
+  const W = w, H = h, n = W * H, tol = o.tol ?? 4;
+  // fully transparent pixels stay empty; colours are taken as painted over nothing (alpha is not traced)
+  progress('regions');
+  let { rid, regions: R } = segment(rgba, W, H, ROUNDS[0]);
+  let fills = null, errs = null;
+  const rounds = Math.min(ROUNDS.length, o.rounds ?? ROUNDS.length);
+  for (let round = 0; ; round++) {
+    progress('shading', round);
+    // pixels of each region, contiguous (counting sort)
+    const cnt = new Int32Array(R + 1);
+    for (let i = 0; i < n; i++) if (rid[i] >= 0) cnt[rid[i] + 1]++;
+    for (let r = 0; r < R; r++) cnt[r + 1] += cnt[r];
+    const pix = new Int32Array(cnt[R]), pos = cnt.slice(0, R);
+    for (let i = 0; i < n; i++) if (rid[i] >= 0) pix[pos[rid[i]]++] = i;
+    fills = new Array(R); errs = new Float32Array(R);
+    for (let r = 0; r < R; r++) {
+      let ix = pix.subarray(cnt[r], cnt[r + 1]);
+      // big regions: fit on an even sample (the error is then a close estimate)
+      if (ix.length > 6000) { const st = ix.length / 6000, sm = new Int32Array(6000); for (let k = 0; k < 6000; k++) sm[k] = ix[Math.floor(k * st)]; ix = sm; }
+      const f = fitExact(ix, rgba, W, { tol });
+      fills[r] = f.fill; errs[r] = f.e;
+    }
+    if (round + 1 >= rounds) break;
+    // regions still off by more than tol are split again, along their own finer edges
+    const bad = new Uint8Array(R); let nb = 0;
+    for (let r = 0; r < R; r++) if (errs[r] > tol && cnt[r + 1] - cnt[r] > 1) { bad[r] = 1; nb++; }
+    if (!nb) break;
+    progress('regions', round + 1);
+    const masked = new Uint8ClampedArray(rgba);
+    for (let i = 0; i < n; i++) if (rid[i] < 0 || !bad[rid[i]]) masked[i * 4 + 3] = 0;
+    const sub = segment(masked, W, H, ROUNDS[round + 1]);
+    // new id = the old region for good pixels, (old region, sub region) for re-split ones
+    const map = new Map(); let next = 0; const keep = new Int32Array(R).fill(-1); const nr = new Int32Array(n);
+    for (let i = 0; i < n; i++) {
+      const r = rid[i]; if (r < 0) { nr[i] = -1; continue; }
+      if (!bad[r]) { if (keep[r] < 0) keep[r] = next++; nr[i] = keep[r]; continue; }
+      const key = r * 4294967296 + sub.rid[i]; let v = map.get(key);
+      if (v === undefined) { v = next++; map.set(key, v); }
+      nr[i] = v;
+    }
+    rid = nr; R = next;
+  }
+  progress('curves');
+  const res = trace(rid, W, H, { exact: true, smooth: 0, corners: 10, workScale: 1, scale: 1, stacked: false, skip: new Set([-1]) });
+  // flat colours: one path per colour; gradients: one path each
+  const defs = [], byHex = new Map(), body = [];
+  const num = (v) => String(+v.toFixed(1));
+  for (const r of res.regions) {
+    const F = fills[r.label];
+    if (!F.type) { let a = byHex.get(F.hex); if (!a) byHex.set(F.hex, a = []); a.push(r.d); continue; }
+    const id = 'g' + defs.length.toString(36);
+    const st = F.stops.map(q => `<stop offset="${q.t}" stop-color="${q.hex}"/>`).join('');
+    if (F.type === 'linear') defs.push(`<linearGradient id="${id}" gradientUnits="userSpaceOnUse" x1="${num(F.x1)}" y1="${num(F.y1)}" x2="${num(F.x2)}" y2="${num(F.y2)}">${st}</linearGradient>`);
+    else {
+      const Rr = Math.max(F.r, 1e-3);
+      defs.push(`<radialGradient id="${id}" gradientUnits="userSpaceOnUse" cx="${num(F.cx)}" cy="${num(F.cy)}" r="${num(Rr)}">${F.stops.map(q => `<stop offset="${((F.r0 + q.t * (F.r - F.r0)) / Rr).toFixed(4)}" stop-color="${q.hex}"/>`).join('')}</radialGradient>`);
+    }
+    body.push([`url(#${id})`, r.d]);
+  }
+  for (const [hx, ds] of byHex) body.unshift([hx, ds.join('')]);
+  // crispEdges: the shapes tile the pixel grid exactly, so no edge needs smoothing and no hairline seams appear
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" shape-rendering="crispEdges" fill-rule="evenodd">\n${defs.length ? '<defs>' + defs.join('') + '</defs>\n' : ''}${body.map(([pt, d]) => `<path fill="${pt}" d="${d}"/>`).join('\n')}\n</svg>\n`;
+  return { svg, paths: res.regions.length, regions: R, gradients: defs.length, colours: byHex.size, bytes: svg.length, ms: Date.now() - t0, ...(o.debug ? { rid, fills, errs } : {}) };
 }

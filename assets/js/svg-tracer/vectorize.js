@@ -110,7 +110,8 @@ export function vectorize(lbl, W, H, opts = {}) {
   const tol = Math.max(0.35, (0.25 + smooth * 0.06) * Math.max(1, s * 0.7));
   const eps = opts.eps ?? ((0.25 + smooth * 0.05) * s + 0.4);
   const rMax = Math.round(10 * Math.max(1, s));
-  const fitted = chains.map(ch => fitChain(ch, { sigma, cornerDeg, tol, s, eps, rMax }));
+  // exact: keep the pixel outline itself (straight runs along the pixel grid), so every pixel lands in its own shape
+  const fitted = chains.map(ch => opts.exact ? gridChain(ch) : fitChain(ch, { sigma, cornerDeg, tol, s, eps, rMax }));
 
   /* ---------- 4. regions -> cycles -> paths ---------- */
   const byComp = new Map();     // comp -> [{ chain, rev }]
@@ -226,7 +227,7 @@ function cycleD(cyc, fitted, k) {
     const list = r.rev ? segs.slice().reverse().map(s => s.length === 2 ? [s[1], s[0]] : [s[3], s[2], s[1], s[0]]) : segs;
     if (n === 0) { px = q(list[0][0][0] * k); py = q(list[0][0][1] * k); d += 'M' + join([num(px), num(py)]); }
     for (const s of list) {
-      if (s.length === 2) d += 'l' + join(rel(s[1]));
+      if (s.length === 2) { const r = rel(s[1]); d += r[1] === '0' ? 'h' + r[0] : r[0] === '0' ? 'v' + r[1] : 'l' + join(r); }
       else {
         const x0 = px, y0 = py;
         const c = [s[1], s[2], s[3]].map(p => [q(p[0] * k), q(p[1] * k)]);
@@ -236,6 +237,18 @@ function cycleD(cyc, fitted, k) {
     }
   });
   return d + 'z';
+}
+
+/** A chain as straight runs along the pixel grid (consecutive steps in the same direction joined). */
+function gridChain(ch) {
+  const p = ch.pts, n = p.length / 2, out = [];
+  let sx = p[0], sy = p[1];
+  for (let i = 1; i < n; i++) {
+    const x = p[i * 2], y = p[i * 2 + 1];
+    const straight = i + 1 < n && p[i * 2 + 2] - x === x - p[i * 2 - 2] && p[i * 2 + 3] - y === y - p[i * 2 - 1];
+    if (!straight) { out.push([[sx, sy], [x, y]]); sx = x; sy = y; }
+  }
+  return out.length ? out : [[[p[0], p[1]], [p[0], p[1]]]];
 }
 
 /* ---------- chain fitting ---------- */
