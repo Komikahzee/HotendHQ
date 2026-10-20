@@ -274,10 +274,30 @@ for (const g of GENERATORS) {
   if (!re.test(s)) { console.warn('no More generators section in', g.slug); continue; }
   fs.writeFileSync(f, s.replace(re, () => moreSection(g.slug))); m++;
 }
-// the home page: the generator count in the hero stats
+// the home page: the flagship generators as cards, every other generator (and the SVG Tracer) as a plain link,
+// written into the HTML so search engines see a direct link to each one; and the generator count in the hero stats
+const homeGens = () => `<!--home-gens-->
+  <section class="wrap section--tight" aria-labelledby="home-gens-title">
+    <div class="sec-head between">
+      <div><span class="eyebrow">Free model generators</span><h2 id="home-gens-title">Design it in your browser, print it today</h2></div>
+      <a class="btn btn-ghost btn-sm" href="/generators">All ${GENERATORS.length} generators</a>
+    </div>
+    <div class="grid g4 home-gens">
+${FEATURED.map(f => `      <a class="card card--link gens-card" href="${url(f.slug)}">
+        <img src="${f.img}" alt="${esc(bySlug[f.slug].name)} preview" width="1200" height="750" loading="lazy" decoding="async">
+        <div class="gens-body"><h3>${esc(bySlug[f.slug].name)}</h3><span class="gens-go">${esc(f.open)} ${ARROW}</span></div>
+      </a>`).join('\n')}
+    </div>
+    <nav class="chips home-gen-links" aria-label="More free generators">
+${GENERATORS.filter(g => !FEATURED.some(f => f.slug === g.slug)).map(g => `      <a class="chip" href="${url(g.slug)}">${esc(g.name.replace(/ generator$/i, ''))}</a>`).join('\n')}
+      <a class="chip" href="/svg-tracer">Image to SVG converter</a>
+    </nav>
+  </section>
+  <!--/home-gens-->`;
 {
   const f = path.join(ROOT, 'index.html');
   let s = fs.readFileSync(f, 'utf8');
+  s = s.replace(/<!--home-gens-->[\s\S]*?<!--\/home-gens-->/, homeGens);
   s = s.replace(/(<b id="s-models">)\d+(<\/b>)/, `$1${GENERATORS.length}$2`);
   s = s.replace(/with \d+ model generators/, `with ${GENERATORS.length} model generators`);
   fs.writeFileSync(f, s);

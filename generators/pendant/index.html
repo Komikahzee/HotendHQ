@@ -38,7 +38,7 @@
   <header id="topbar">
     <div class="brand">
       <a class="brand-home" href="/" title="Hotend HQ home"><img class="brand-mark" src="/generators/pendant/assets/hq-mark.png" alt="" width="26" height="40"></a>
-      <div class="brand-text"><a class="brand-home" href="/" title="Hotend HQ home"><img class="brand-word" src="/generators/pendant/assets/hq-wordmark.png" alt="Hotend HQ" width="120" height="20"></a><small>Pendant &amp; Medallion Studio</small></div>
+      <div class="brand-text"><a class="brand-home" href="/" title="Hotend HQ home"><img class="brand-word" src="/generators/pendant/assets/hq-wordmark.png" alt="Hotend HQ" width="120" height="20"></a><h1 class="brand-title">Pendant &amp; Medallion Studio</h1></div>
     </div>
     <div class="tb-group">
       <a class="tb-btn" id="btnGens" href="/generators" title="All Hotend HQ generators"><i data-ic="back"></i><span>Generators</span></a>
@@ -118,6 +118,50 @@
     <a class="bmc-card" href="https://buymeacoffee.com/hotendhq" target="_blank" rel="noopener noreferrer"><span class="bmc-cup"><i data-ic="coffee"></i></span><span><b>Enjoying HotendHq?</b><small>Support development — buy me a coffee</small></span></a>
   </aside>
 </div>
+
+<!-- about: plain text below the studio, so search engines (and anyone who scrolls) can read what it does -->
+<section id="about" class="pa">
+  <div class="pa-wrap">
+    <span class="pa-eyebrow">Free image to 3D pendant maker</span>
+    <h2>Turn any image into a 3D printed pendant</h2>
+    <p class="pa-lede">Load a photo of your dog, a club logo or a hand drawing, pick a shape and a style, and Pendant &amp; Medallion Studio turns it into a pendant, coin, keychain, badge or lithophane that is ready for your slicer. It is free, there is no account or watermark, and everything, AI included, runs on your own device, so your image is never uploaded.</p>
+
+    <div class="pa-shots">
+      <figure><img src="/assets/img/articles/pendant-coin.webp" alt="A gold coin-style medallion made from a photo" width="1200" height="750" loading="lazy"><figcaption>Coin relief from a photo</figcaption></figure>
+      <figure><img src="/assets/img/articles/pendant-halftone.webp" alt="A two-colour halftone pendant" width="1200" height="750" loading="lazy"><figcaption>Two-colour halftone</figcaption></figure>
+      <figure><img src="/assets/img/articles/pendant-lithophane.webp" alt="A heart lithophane lit from behind" width="1200" height="750" loading="lazy"><figcaption>Lithophane with the backlight on</figcaption></figure>
+    </div>
+
+    <h3>What you can make</h3>
+    <ul class="pa-grid">
+      <li><b>Pendants and charms</b>for a necklace or bracelet, in twelve outlines, including one traced from your image.</li>
+      <li><b>Coins and medallions</b>with milled, beaded or rope-twist rims and lettering around the edge.</li>
+      <li><b>Keychains and pet tags</b>with a hole, a name on the front and a phone number engraved on the back.</li>
+      <li><b>Badges and crests</b>such as sheriff stars, shields and hexagon badges, with magnet pockets on the back.</li>
+      <li><b>Lithophanes</b>that show the photo when a light shines through them.</li>
+      <li><b>Multicolour pieces</b>with colour swaps at set layers, so they print on a single-nozzle printer.</li>
+    </ul>
+
+    <h3>How it works</h3>
+    <ol class="pa-steps">
+      <li><b>Load an image.</b> Drop in a PNG, JPEG or WebP. The AI cut-out finds the subject of photos, pets, objects and logos.</li>
+      <li><b>Choose where the height comes from.</b> AI depth sculpts a real bas-relief from a photo; brightness suits logos and line art; hybrid mixes the two.</li>
+      <li><b>Pick a style and a shape.</b> Ten relief styles, from coin and cameo to halftone, contours and line art, plus arc and centre text in thirteen fonts.</li>
+      <li><b>Export and print.</b> Download STL, 3MF or OBJ. The print report flags thin walls and tiny lettering for your nozzle before you slice.</li>
+    </ol>
+
+    <h3>Questions</h3>
+    <div class="pa-faq">
+      <details><summary>Is the pendant generator really free?</summary><p>Yes. There is no account and no watermark, and what you make is yours to print, give away or sell.</p></details>
+      <details><summary>Does my photo get uploaded?</summary><p>No. Everything, including the AI depth and the background removal, runs in your browser on your own device.</p></details>
+      <details><summary>Which image works best?</summary><p>A sharp picture with one clear subject and a plain background. For logos, a PNG with a transparent background is ideal.</p></details>
+      <details><summary>What file formats can I export?</summary><p>STL, 3MF and OBJ. 3MF can keep each colour as its own part for AMS, MMU and toolchanger printers, and there is an STL per colour too.</p></details>
+      <details><summary>Can I use it on a phone?</summary><p>Yes, although a larger screen makes fine adjustments easier, and the AI features are quicker on a laptop or desktop.</p></details>
+    </div>
+
+    <p class="pa-more">Read the <a href="/guides/pendant-medallion-generator-guide/">complete guide to the studio</a> or <a href="/guides/pendant-studio-2-launch/">what is new in 2.0</a>. Need something to hang it on? The <a href="/generators/chain">chain generator</a> makes print-in-place necklace chains to match. <a href="/generators">See all free generators</a>.</p>
+  </div>
+</section>
 
 <div id="hqModal" hidden><div class="hq-dialog" role="dialog" aria-modal="true"><div id="hqModalBody"></div></div></div>
 <input type="file" id="fileInput" accept="image/*,.json,.hotendhq" hidden>
