@@ -18,7 +18,7 @@ const DEFAULTS = { mode: 'color', auto: true, merge: 5, count: 8, thrAuto: true,
   flat: false, flatLevel: 0, detail: 2, gradients: true };
 const FLAT = ['auto', 1, 2, 3];
 const flatText = (v) => ['Auto', 'Light', 'Medium', 'Strong'][v];
-const DETAIL_TEXT = { 1: 'Low (smaller file)', 2: 'Medium', 3: 'High (biggest file)' };
+const DETAIL_TEXT = { 1: 'Low (smallest file)', 2: 'Medium', 3: 'High', 4: 'Pixel-exact', 5: 'Identical' };
 const S = { ...DEFAULTS, palette: null, hidden: new Set(), recolor: {} };
 
 let img = null;           // { rgba, w, h, name, url }
@@ -26,14 +26,17 @@ let last = null;          // last trace result
 let view = { z: 1, tx: 0, ty: 0, split: 0.5, mode: 'split' };
 
 /* ---------------- worker ---------------- */
-const worker = new Worker(new URL('./worker.js?v=562fa7afd3', import.meta.url), { type: 'module' });
+const worker = new Worker(new URL('./worker.js?v=9e86322722', import.meta.url), { type: 'module' });
 const STAGE = { colours: 'Finding the colours…', regions: 'Finding every edge…', shading: 'Fitting the shading…', curves: 'Fitting the curves…' };
 let reqId = 0, busy = false, queued = false, timer = 0;
 const waiting = new Map();     // id -> purpose
 worker.onmessage = (e) => {
   const m = e.data;
   const purpose = waiting.get(m.id);
-  if (m.type === 'progress') { if (purpose === 'view') status(STAGE[m.stage] || 'Working…'); return; }
+  if (m.type === 'progress') {
+    if (purpose === 'view') status(S.mode === 'detail' && S.detail >= 4 && m.pass ? `Matching every pixel, pass ${m.pass + 1}…` : STAGE[m.stage] || 'Working…');
+    return;
+  }
   if (m.type === 'loaded') return;
   waiting.delete(m.id);
   busy = false;
@@ -247,7 +250,7 @@ bindRange('st-smooth', 'smooth');
 bindRange('st-corners', 'corners');
 bindRange('st-speck', 'speck', speckText);
 bindRange('st-flat-level', 'flatLevel', flatText, () => { S.palette = null; S.hidden.clear(); S.recolor = {}; });
-bindRange('st-detail', 'detail', (v) => DETAIL_TEXT[v]);
+bindRange('st-detail', 'detail', (v) => DETAIL_TEXT[v], () => syncUI());
 bindRange('st-thr', 'thr', (v) => v, () => { S.thrAuto = false; $('st-thr-auto').checked = false; });
 const bindTog = (id, key, after) => $(id).addEventListener('change', (e) => { S[key] = e.target.checked; after && after(); schedule(0); });
 bindTog('st-auto', 'auto', () => { S.palette = null; S.hidden.clear(); S.recolor = {}; syncUI(); });
@@ -272,6 +275,10 @@ function syncUI() {
   $('st-flat-level').value = S.flatLevel; $('st-flat-level-out').textContent = flatText(S.flatLevel);
   $('st-detail').value = S.detail; $('st-detail-out').textContent = DETAIL_TEXT[S.detail];
   $('st-grad').checked = S.gradients;
+  $('st-grad-row').classList.toggle('hidden', S.detail >= 4);
+  $('st-detail-hint').textContent = S.detail >= 4
+    ? 'Drawn on the image\'s own pixel grid and refined until it matches the original pixel for pixel at 100 %. Big files, and big images can take a minute.'
+    : 'High keeps the finest texture but makes a much bigger file.';
   if (last) setButtons(true);
   $('st-auto').checked = S.auto;
   $('st-merge-row').classList.toggle('hidden', !S.auto);

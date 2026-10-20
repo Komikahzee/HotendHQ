@@ -306,3 +306,85 @@ function solve3(M, b) {
   return [a[0][3] / (a[0][0] || 1e-9), a[1][3] / (a[1][1] || 1e-9), a[2][3] / (a[2][2] || 1e-9)];
 }
 const rgbHex = (c) => '#' + c.map(v => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, '0')).join('');
+
+/* ---------------- exact fills (Pixel-exact mode) ---------------- */
+/** Fill for one region, built the way a browser paints it: a flat colour, or a linear/radial gradient whose stops
+    are solved by least squares on the exact piecewise-linear ramp SVG draws between stops. Returns { fill, e } with
+    e = RMS error per channel (0..255) over the region's pixels. ix: pixel indices, big: RGBA. */
+export function fitExact(ix, big, W, opt = {}) {
+  const N = ix.length, tol = opt.tol ?? 4;
+  const X = new Float64Array(N), Y = new Float64Array(N), C = [new Float64Array(N), new Float64Array(N), new Float64Array(N)];
+  let mx = 0, my = 0; const mean = [0, 0, 0];
+  for (let k = 0; k < N; k++) { const i = ix[k]; X[k] = i % W; Y[k] = (i / W) | 0; mx += X[k]; my += Y[k]; for (let c = 0; c < 3; c++) { C[c][k] = big[i * 4 + c]; mean[c] += C[c][k]; } }
+  mx /= N; my /= N; for (let c = 0; c < 3; c++) mean[c] /= N;
+  const flatRGB = mean.map(v => Math.round(v));
+  let eFlat = 0; for (let k = 0; k < N; k++) for (let c = 0; c < 3; c++) { const v = C[c][k] - flatRGB[c]; eFlat += v * v; }
+  eFlat = Math.sqrt(eFlat / (N * 3));
+  const flat = { fill: { hex: rgbHex(flatRGB) }, e: eFlat };
+  if (N < 12 || eFlat <= tol * 0.6) return flat;
+  let minx = Infinity, maxx = -Infinity, miny = Infinity, maxy = -Infinity;
+  for (let k = 0; k < N; k++) { if (X[k] < minx) minx = X[k]; if (X[k] > maxx) maxx = X[k]; if (Y[k] < miny) miny = Y[k]; if (Y[k] > maxy) maxy = Y[k]; }
+  if (maxx - minx < 2 && maxy - miny < 2) return flat;
+  const u = new Float64Array(N);
+  // ramp with K evenly spaced stops along u (0..1), solved by least squares with hat functions
+  const ramp = (K) => {
+    const A = Array.from({ length: K }, () => new Float64Array(K)), B = [new Float64Array(K), new Float64Array(K), new Float64Array(K)];
+    for (let k = 0; k < N; k++) {
+      const f = u[k] * (K - 1), a = Math.min(K - 2, Math.floor(f)), w = f - a, wa = 1 - w;
+      A[a][a] += wa * wa; A[a][a + 1] += wa * w; A[a + 1][a] += wa * w; A[a + 1][a + 1] += w * w;
+      for (let c = 0; c < 3; c++) { B[c][a] += wa * C[c][k]; B[c][a + 1] += w * C[c][k]; }
+    }
+    for (let j = 0; j < K; j++) A[j][j] += 1e-6;          // stops no pixel touches stay solvable
+    const S = B.map(b => solveN(A, b).map(v => Math.max(0, Math.min(255, Math.round(v)))));
+    let e = 0;
+    for (let k = 0; k < N; k++) {
+      const f = u[k] * (K - 1), a = Math.min(K - 2, Math.floor(f)), w = f - a;
+      for (let c = 0; c < 3; c++) { const v = C[c][k] - (S[c][a] * (1 - w) + S[c][a + 1] * w); e += v * v; }
+    }
+    return { K, S, e: Math.sqrt(e / (N * 3)) };
+  };
+  const span = (lo, hi) => { const d = hi - lo || 1; for (let k = 0; k < N; k++) u[k] = Math.min(1, Math.max(0, (u[k] - lo) / d)); };
+  // linear: along the main direction of change
+  let sxx = 0, sxy = 0, syy = 0; const sxc = [0, 0, 0], syc = [0, 0, 0];
+  for (let k = 0; k < N; k++) { const dx = X[k] - mx, dy = Y[k] - my; sxx += dx * dx; sxy += dx * dy; syy += dy * dy; for (let c = 0; c < 3; c++) { sxc[c] += dx * (C[c][k] - mean[c]); syc[c] += dy * (C[c][k] - mean[c]); } }
+  const det = sxx * syy - sxy * sxy || 1;
+  let a11 = 0, a12 = 0, a22 = 0;
+  for (let c = 0; c < 3; c++) { const gx = (syy * sxc[c] - sxy * syc[c]) / det, gy = (sxx * syc[c] - sxy * sxc[c]) / det; a11 += gx * gx; a12 += gx * gy; a22 += gy * gy; }
+  const th = 0.5 * Math.atan2(2 * a12, a11 - a22), ux = Math.cos(th), uy = Math.sin(th);
+  let tmin = Infinity, tmax = -Infinity;
+  for (let k = 0; k < N; k++) { const t = (X[k] + 0.5 - mx) * ux + (Y[k] + 0.5 - my) * uy; u[k] = t; if (t < tmin) tmin = t; if (t > tmax) tmax = t; }
+  const linU = Float64Array.from(u); span(tmin, tmax); const linNorm = Float64Array.from(u);
+  let best = flat;
+  const tryLin = (K) => { u.set(linNorm); const r = ramp(K); if (r.e < best.e - 0.25) best = { e: r.e, fill: { type: 'linear', x1: mx + ux * tmin, y1: my + uy * tmin, x2: mx + ux * tmax, y2: my + uy * tmax, stops: stopsOf(r) } }; };
+  tryLin(2); if (best.e > tol) tryLin(3); if (best.e > tol) tryLin(5);
+  void linU;
+  // radial: centre found on a coarse grid with 3 stops, then refined
+  if (best.e > tol && N >= 40) {
+    let rb = null;
+    const tryC = (cx, cy, K) => {
+      let r0 = Infinity, r1 = -Infinity;
+      for (let k = 0; k < N; k++) { const d = Math.hypot(X[k] + 0.5 - cx, Y[k] + 0.5 - cy); u[k] = d; if (d < r0) r0 = d; if (d > r1) r1 = d; }
+      span(r0, r1); const r = ramp(K);
+      if (!rb || r.e < rb.e) rb = { ...r, cx, cy, r0, r1 };
+    };
+    const G = 5;
+    for (let a = 0; a <= G; a++) for (let b = 0; b <= G; b++) tryC(minx + (maxx - minx + 1) * a / G, miny + (maxy - miny + 1) * b / G, 3);
+    const st = Math.max(maxx - minx, maxy - miny) / G / 2, c0 = rb;
+    for (let a = -1; a <= 1; a++) for (let b = -1; b <= 1; b++) if (a || b) tryC(c0.cx + a * st, c0.cy + b * st, 3);
+    if (rb.e > tol) tryC(rb.cx, rb.cy, 5);
+    if (rb.e < best.e - 0.25) best = { e: rb.e, fill: { type: 'radial', cx: rb.cx, cy: rb.cy, r0: rb.r0, r: rb.r1, stops: stopsOf(rb) } };
+  }
+  if (best.fill.type) best.fill.hex = flat.fill.hex;
+  return best;
+}
+const stopsOf = (r) => Array.from({ length: r.K }, (_, j) => ({ t: +(j / (r.K - 1)).toFixed(3), hex: rgbHex([r.S[0][j], r.S[1][j], r.S[2][j]]) }));
+function solveN(M, b) {
+  const n = b.length, a = M.map((r, i) => [...r, b[i]]);
+  for (let i = 0; i < n; i++) {
+    let p = i; for (let r = i + 1; r < n; r++) if (Math.abs(a[r][i]) > Math.abs(a[p][i])) p = r;
+    [a[i], a[p]] = [a[p], a[i]];
+    const v = a[i][i] || 1e-12;
+    for (let r = 0; r < n; r++) if (r !== i) { const f = a[r][i] / v; if (f) for (let c = i; c <= n; c++) a[r][c] -= f * a[i][c]; }
+  }
+  return a.map((r, i) => r[n] / (r[i] || 1e-12));
+}

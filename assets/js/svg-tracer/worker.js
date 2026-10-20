@@ -3,7 +3,7 @@
    Holds the image, caches the slow clean-up step, and turns it into
    SVG off the main thread.
    ============================================================ */
-import { prepare, toSvg, traceDetailed } from './trace.js?v=c2d53ad8b6';
+import { prepare, toSvg, traceDetailed, traceExact } from './trace.js?v=707ce64b60';
 
 let img = null;          // { rgba, w, h }
 let prep = null, prepKey = '';
@@ -21,8 +21,11 @@ self.onmessage = (e) => {
       if (!img) throw new Error('No image loaded');
       const t0 = performance.now();
       if (m.prep.mode === 'detail') {
-        const res = traceDetailed(img.rgba, img.w, img.h, { ...m.prep, smooth: m.vec.smooth, corners: m.vec.corners },
-          (stage) => self.postMessage({ id: m.id, type: 'progress', stage }));
+        const progress = (stage, pass) => self.postMessage({ id: m.id, type: 'progress', stage, pass });
+        // levels 4 and 5: pixel-exact, refined until every region is within tol of the original
+        const res = m.prep.detail >= 4
+          ? traceExact(img.rgba, img.w, img.h, { tol: m.prep.detail >= 5 ? 1.2 : 3 }, progress)
+          : traceDetailed(img.rgba, img.w, img.h, { ...m.prep, smooth: m.vec.smooth, corners: m.vec.corners }, progress);
         self.postMessage({ id: m.id, type: 'done', fresh: true, svg: res.svg, layers: [], palette: [], bg: -1,
           regions: res.regions, gradients: res.gradients, paths: res.paths, bytes: res.bytes, ms: Math.round(performance.now() - t0) });
         return;
