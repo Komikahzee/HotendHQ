@@ -124,19 +124,21 @@ export function denoise(rgba, w, h, strength) {
   if (!strength) return rgba;
   let src = rgba;
   const sr = [0, 14, 22, 32][strength] || 32, inv = -1 / (2 * sr * sr);
-  const sw = []; for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) sw.push([dx, dy, Math.exp(-(dx * dx + dy * dy) / (2 * 1.6 * 1.6))]);
+  const SX = [], SY = [], SW = []; for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) { SX.push(dx); SY.push(dy); SW.push(Math.exp(-(dx * dx + dy * dy) / (2 * 1.6 * 1.6))); }
+  // colour differences are whole numbers, so every range weight comes from a table instead of an exp() per tap
+  const EXP = new Float64Array(3 * 255 * 255 + 1); for (let q = 0; q < EXP.length; q++) EXP[q] = Math.exp(q * inv);
   const passes = strength >= 3 ? 2 : 1;
   for (let p = 0; p < passes; p++) {
     const out = new Uint8ClampedArray(src.length);
     for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
       const i = (y * w + x) * 4, r0 = src[i], g0 = src[i + 1], b0 = src[i + 2];
       let R = 0, G = 0, B = 0, W = 0;
-      for (const [dx, dy, ws] of sw) {
-        const xx = x + dx, yy = y + dy;
+      for (let t = 0; t < 25; t++) {
+        const xx = x + SX[t], yy = y + SY[t];
         if (xx < 0 || yy < 0 || xx >= w || yy >= h) continue;
         const j = (yy * w + xx) * 4;
         const dr = src[j] - r0, dg = src[j + 1] - g0, db = src[j + 2] - b0;
-        const wt = ws * Math.exp((dr * dr + dg * dg + db * db) * inv);
+        const wt = SW[t] * EXP[dr * dr + dg * dg + db * db];
         R += src[j] * wt; G += src[j + 1] * wt; B += src[j + 2] * wt; W += wt;
       }
       out[i] = R / W; out[i + 1] = G / W; out[i + 2] = B / W; out[i + 3] = src[i + 3];

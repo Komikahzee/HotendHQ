@@ -32,6 +32,7 @@
     trash:'<path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/>',
     filament:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/>',
     flame:'<path d="M12 2s5 5.5 5 10a5 5 0 0 1-10 0c0-2 1-3.5 1-3.5S9.5 11 11 12c1.5-2-1-5 1-10z"/>',
+    pen:'<path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="M2 2l7.586 7.586"/><circle cx="11" cy="11" r="2"/>',
     grid:'<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M15 3v18M3 9h18M3 15h18"/>'
   };
   window.icon = (name, cls) =>
@@ -39,7 +40,7 @@
       stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"
       aria-hidden="true">${ICONS[name]||''}</svg>`;
 
-  const NAV_ICONS = { 'News':'news','Troubleshoot':'wrench','Generator':'cube','Generators':'cube','Gridfinity':'grid','Tools':'calc','Gear':'tag','Print My Order':'printer' };
+  const NAV_ICONS = { 'News':'news','Troubleshoot':'wrench','Generator':'cube','Generators':'cube','Gridfinity':'grid','SVG Tracer':'pen','Tools':'calc','Gear':'tag','Print My Order':'printer' };
   window.HHQ_NAV_ICONS = NAV_ICONS;
 
   /* ---------- helpers exposed to pages ---------- */

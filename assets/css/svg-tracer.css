@@ -46,8 +46,8 @@
 .st-art{position:absolute;left:0;top:0;transform-origin:0 0}
 .st-art img,#st-out{position:absolute;inset:0;width:100%;height:100%;display:block;pointer-events:none}
 .st-art img:not([src]){display:none}
-#st-out svg{width:100%;height:100%;display:block}
-.st-art.is-pixels img{image-rendering:pixelated}
+#st-out svg,#st-out img,#st-out canvas{width:100%;height:100%;display:block}
+.st-art.is-pixels #st-orig,.st-art.is-pixels #st-out canvas{image-rendering:pixelated}
 .st-stage[data-view=lines] #st-out path{fill:none!important;stroke:#ff2d75;stroke-width:1px;vector-effect:non-scaling-stroke}
 .st-stage[data-view=result] #st-orig,.st-stage[data-view=orig] #st-out{visibility:hidden}
 .st-stage[data-view=lines] #st-orig{opacity:.35}
@@ -60,12 +60,18 @@
 .st-split-handle svg{width:18px;height:18px;color:#1a0800}
 .st-split::after{content:'Original   |   SVG';position:absolute;top:12px;left:0;transform:translateX(-50%);white-space:pre;
   font:700 .66rem var(--font);letter-spacing:.06em;text-transform:uppercase;color:#fff;background:rgba(0,9,28,.72);padding:4px 8px;border-radius:6px}
-.st-empty{position:absolute;inset:0;display:none;place-items:center;text-align:center;color:var(--chrome-400);pointer-events:none}
-.st-empty svg{width:56px;height:56px;margin:0 auto 8px;display:block;color:var(--chrome-300)}
+.st-empty{position:absolute;inset:0;display:none;place-content:center;justify-items:center;gap:10px;text-align:center;
+  color:var(--chrome-400);padding:16px;cursor:default}
+.st-empty svg{width:56px;height:56px;margin:0 auto;display:block;color:var(--chrome-300)}
 .st-empty p{margin:0;font-size:.95rem;color:#4b5d73}
-.st-empty strong{color:#14243b}
+.st-empty strong{color:#14243b;font-size:1.05rem}
+.st-empty-narrow{display:none}
+.st-empty-btn{cursor:pointer;padding:11px 20px}
+.st-empty-try{font-size:.85rem!important}
+.st-empty .gf-link{color:#1d4f91;padding:6px 2px}
 .st-stage.is-empty .st-empty{display:grid}
-.st-stage.is-empty .st-view,.st-stage.is-empty .st-readout{display:none}
+.st-stage.is-empty .st-view,.st-stage.is-empty .st-readout,.st-stage.is-empty .gf-tools{display:none}
+.gf-view:has(.st-stage.is-empty) .gf-bar{display:none}
 .st-stage.is-over{outline:2px dashed var(--amber-300);outline-offset:-8px}
 .st-view{position:absolute;left:12px;bottom:12px;z-index:3;display:flex;padding:3px;gap:2px;border-radius:11px;
   background:rgba(0,9,28,.78);border:1px solid var(--border);backdrop-filter:blur(6px)}
@@ -78,9 +84,23 @@
 
 @media (max-width:900px){
   .st-view{left:8px;bottom:8px}
-  .st-view button{padding:7px 8px;font-size:.72rem}
+  .st-view button{padding:9px 9px;font-size:.74rem}
   .st-readout{display:none}
   .st-split::after{display:none}
+  .st-page .gf-tools{right:8px;top:8px;gap:5px}
+  .st-page .gf-tool{width:34px;height:34px;border-radius:9px}
+  .st-empty-wide{display:none}
+  .st-empty-narrow{display:inline}
+  .st-empty svg{width:40px;height:40px}
+}
+@media (min-width:901px){
+  .st-page .gf-hero .lede{font-size:1.02rem;max-width:none}
+}
+/* fingers need bigger targets than a mouse */
+@media (pointer:coarse){
+  .st-chip{width:32px;height:32px}
+  .st-sw-btn{width:32px;height:32px}
+  .st-sw{padding:4px 4px 4px 5px}
 }
 @media (max-width:420px){
   .st-pal{grid-template-columns:1fr 1fr}

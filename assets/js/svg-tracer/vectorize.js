@@ -117,8 +117,9 @@ export function vectorize(lbl, W, H, opts = {}) {
   const byComp = new Map();     // comp -> [{ chain, rev }]
   const add = (c, ref) => { if (c < 0) return; let a = byComp.get(c); if (!a) byComp.set(c, a = []); a.push(ref); };
   chains.forEach((ch, i) => { add(ch.left, { i, rev: false }); add(ch.right, { i, rev: true }); });
-  const startOf = (r) => { const p = chains[r.i].pts; return r.rev ? (p[p.length - 2] + ',' + p[p.length - 1]) : (p[0] + ',' + p[1]); };
-  const endOf = (r) => { const p = chains[r.i].pts; return r.rev ? (p[0] + ',' + p[1]) : (p[p.length - 2] + ',' + p[p.length - 1]); };
+  // corner keys as numbers (y * (W + 1) + x): string keys made millions of throwaway strings on big traces
+  const startOf = (r) => { const p = chains[r.i].pts; return r.rev ? p[p.length - 1] * W1 + p[p.length - 2] : p[1] * W1 + p[0]; };
+  const endOf = (r) => { const p = chains[r.i].pts; return r.rev ? p[1] * W1 + p[0] : p[p.length - 1] * W1 + p[p.length - 2]; };
   const dirIn = (r) => r.rev ? (chains[r.i].first + 2) & 3 : chains[r.i].last;     // direction arriving at the end
   const dirOut = (r) => r.rev ? (chains[r.i].last + 2) & 3 : chains[r.i].first;    // direction leaving the start
 
