@@ -27,12 +27,12 @@
 <link rel="stylesheet" href="/assets/css/theme.css?v=e097b43669">
 <link rel="stylesheet" href="/assets/css/pages.css?v=0df26b3f2f">
 <link rel="stylesheet" href="/assets/css/gridfinity.css?v=7a19fc5534">
-<link rel="stylesheet" href="/assets/css/svg-tracer.css?v=8bbc3ee8a8">
+<link rel="stylesheet" href="/assets/css/svg-tracer.css?v=41a0aac935">
 <script src="/assets/js/config.js?v=fdd459de6a" defer></script>
 <script src="/assets/js/nav.js?v=f828edb391" defer></script>
 <script src="/assets/js/site.js?v=38dfcceba2" defer></script>
 <script src="/assets/js/api.js?v=097762e5df" defer></script>
-<script type="module" src="/assets/js/svg-tracer/app.js?v=1c42b4e2de"></script>
+<script type="module" src="/assets/js/svg-tracer/app.js?v=8e212638c7"></script>
 </head>
 <body>
 <main id="main" class="gf-page st-page">
@@ -141,7 +141,7 @@
         </details>
 
         <!-- shapes -->
-        <details class="gf-group" open>
+        <details class="gf-group" id="st-shapes" open>
           <summary><span>Shapes</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></summary>
           <div class="gf-body">
             <div class="gf-row">
@@ -211,7 +211,10 @@
           <div class="st-split" id="st-split" aria-hidden="true"><span class="st-split-handle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 7l-5 5 5 5M15 7l5 5-5 5"/></svg></span></div>
           <div class="st-empty" id="st-empty">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20 L10 8 L14 14 L16 11 L20 20Z"/><circle cx="17" cy="6" r="2"/></svg>
-            <p><strong>Drop an image here</strong><br>or choose one on the left</p>
+            <p><strong class="st-empty-wide">Drop an image here</strong><strong class="st-empty-narrow">Turn any image into an SVG</strong></p>
+            <label class="btn btn-primary btn-sm st-empty-btn" for="st-file">Choose an image</label>
+            <p class="st-empty-try">or try <button type="button" class="gf-link" data-sample="logo">a logo</button> or
+              <button type="button" class="gf-link" data-sample="photo">a detailed image</button></p>
           </div>
           <div class="gf-tools">
             <button type="button" class="gf-tool" id="st-zin" aria-label="Zoom in" title="Zoom in">

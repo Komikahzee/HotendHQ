@@ -8,7 +8,7 @@
    fit(): the best flat colour, linear or radial gradient for a region
      (used by the Detailed mode).
    ============================================================ */
-import * as P from './prep.js?v=4f4f30580f';
+import * as P from './prep.js?v=469c7cc377';
 
 /* ---------------- segmentation ---------------- */
 export function segment(rgba, W, H, opt = {}) {
@@ -17,7 +17,8 @@ export function segment(rgba, W, H, opt = {}) {
   const lab = blurLab(P.labOf(rgba, n), W, H, opt.sigma ?? 0.8);
   // edges: right, down, down-right, down-left; weights bucketed for a linear-time sort
   const BUCK = 2048, MAXD = 100;
-  const ea = new Int32Array(n * 4), eb = new Int32Array(n * 4), ew = new Float32Array(n * 4);
+  let solid = 0; for (let i = 0; i < n; i++) if (rgba[i * 4 + 3] >= 128) solid++;
+  const ea = new Int32Array(solid * 4), eb = new Int32Array(solid * 4), ew = new Float32Array(solid * 4);
   let m = 0;
   const d = (i, j) => { const a = i * 3, b = j * 3, x = lab[a] - lab[b], y = lab[a + 1] - lab[b + 1], z = lab[a + 2] - lab[b + 2]; return Math.sqrt(x * x + y * y + z * z); };
   const add = (i, j) => { if (rgba[j * 4 + 3] < 128) return; ea[m] = i; eb[m] = j; ew[m] = d(i, j); m++; };
@@ -29,10 +30,11 @@ export function segment(rgba, W, H, opt = {}) {
   }
   const cnt = new Int32Array(BUCK + 1);
   const bk = (w) => Math.min(BUCK - 1, (w / MAXD * BUCK) | 0);
-  for (let e = 0; e < m; e++) cnt[bk(ew[e]) + 1]++;
+  const eb2 = new Uint16Array(m);
+  for (let e = 0; e < m; e++) { const q = bk(ew[e]); eb2[e] = q; cnt[q + 1]++; }
   for (let b = 0; b < BUCK; b++) cnt[b + 1] += cnt[b];
   const order = new Int32Array(m);
-  for (let e = 0; e < m; e++) order[cnt[bk(ew[e])]++] = e;
+  for (let e = 0; e < m; e++) order[cnt[eb2[e]]++] = e;
   const par = new Int32Array(n), sz = new Int32Array(n).fill(1), inner = new Float32Array(n);
   for (let i = 0; i < n; i++) par[i] = i;
   const find = (x) => { while (par[x] !== x) { par[x] = par[par[x]]; x = par[x]; } return x; };
@@ -50,10 +52,12 @@ export function segment(rgba, W, H, opt = {}) {
     const e = order[q]; const a = find(ea[e]), b = find(eb[e]);
     if (a !== b && (sz[a] < minSize || sz[b] < minSize)) { if (sz[a] < sz[b]) { par[a] = b; sz[b] += sz[a]; } else { par[b] = a; sz[a] += sz[b]; } }
   }
-  const rid = new Int32Array(n); const map = new Map(); let next = 0;
+  // number the regions in pixel order (the root's slot in sz is free now, so it holds the id)
+  const rid = new Int32Array(n); let next = 0;
+  for (let i = 0; i < n; i++) if (par[i] === i) sz[i] = -1;
   for (let i = 0; i < n; i++) {
     if (rgba[i * 4 + 3] < 128) { rid[i] = -1; continue; }
-    const r = find(i); let v = map.get(r); if (v === undefined) { v = next++; map.set(r, v); } rid[i] = v;
+    const r = find(i); if (sz[r] === -1) sz[r] = -2 - next++; rid[i] = -2 - sz[r];
   }
   return { rid, regions: next };
 }
@@ -224,7 +228,11 @@ function groupColours(cols, wt, tol, count) {
 class Heap {
   constructor() { this.c = []; this.a = []; this.b = []; this.va = []; this.vb = []; }
   get size() { return this.c.length; }
-  sw(i, j) { for (const k of ['c', 'a', 'b', 'va', 'vb']) { const t = this[k][i]; this[k][i] = this[k][j]; this[k][j] = t; } }
+  sw(i, j) {
+    const { c, a, b, va, vb } = this; let t;
+    t = c[i]; c[i] = c[j]; c[j] = t; t = a[i]; a[i] = a[j]; a[j] = t; t = b[i]; b[i] = b[j]; b[j] = t;
+    t = va[i]; va[i] = va[j]; va[j] = t; t = vb[i]; vb[i] = vb[j]; vb[j] = t;
+  }
   push(c, a, b, va, vb) {
     let k = this.c.length; this.c.push(c); this.a.push(a); this.b.push(b); this.va.push(va); this.vb.push(vb);
     while (k > 0) { const p = (k - 1) >> 1; if (this.c[p] <= this.c[k]) break; this.sw(p, k); k = p; }
@@ -259,15 +267,28 @@ export function fit(ix, big, W, flatHex, count, opt = {}) {
   const g = [0, 1, 2].map(c => [(syy * sxc[c] - sxy * syc[c]) / det, (sxx * syc[c] - sxy * sxc[c]) / det]);
   let a11 = 0, a12 = 0, a22 = 0; for (const [gx, gy] of g) { a11 += gx * gx; a12 += gx * gy; a22 += gy * gy; }
   const th = 0.5 * Math.atan2(2 * a12, a11 - a22), ux = Math.cos(th), uy = Math.sin(th);
+  // sum of squares per channel, so each fit's error comes from its normal equations instead of another pass
+  const SS = Cc.map(a => { let q = 0; for (let k = 0; k < N; k++) q += a[k] * a[k]; return q; });
+  const B = [new Float64Array(3), new Float64Array(3), new Float64Array(3)];
   const fitAlong = (tv) => {          // quadratic in t per channel
-    let tmin = Infinity, tmax = -Infinity; for (let k = 0; k < N; k++) { if (tv[k] < tmin) tmin = tv[k]; if (tv[k] > tmax) tmax = tv[k]; }
+    let tmin = Infinity, tmax = -Infinity; for (let k = 0; k < N; k++) { const t = tv[k]; if (t < tmin) tmin = t; if (t > tmax) tmax = t; }
     const span = tmax - tmin || 1;
-    const S = new Float64Array(5), B = [new Float64Array(3), new Float64Array(3), new Float64Array(3)];
-    for (let k = 0; k < N; k++) { const t = (tv[k] - tmin) / span; let p = 1; for (let e = 0; e < 5; e++) { S[e] += p; p *= t; } for (let c = 0; c < 3; c++) { const v = Cc[c][k]; B[c][0] += v; B[c][1] += v * t; B[c][2] += v * t * t; } }
-    const M = [[S[0], S[1], S[2]], [S[1], S[2], S[3]], [S[2], S[3], S[4]]];
+    for (const b of B) b.fill(0);
+    const C0 = Cc[0], C1 = Cc[1], C2 = Cc[2], B0 = B[0], B1 = B[1], B2 = B[2];
+    let s0 = 0, s1 = 0, s2 = 0, s3 = 0, s4 = 0;
+    for (let k = 0; k < N; k++) {
+      const t = (tv[k] - tmin) / span, t2 = t * t;
+      s0++; s1 += t; s2 += t2; s3 += t2 * t; s4 += t2 * t2;
+      const r = C0[k], g = C1[k], b = C2[k];
+      B0[0] += r; B0[1] += r * t; B0[2] += r * t2;
+      B1[0] += g; B1[1] += g * t; B1[2] += g * t2;
+      B2[0] += b; B2[1] += b * t; B2[2] += b * t2;
+    }
+    const M = [[s0, s1, s2], [s1, s2, s3], [s2, s3, s4]];
     const co = B.map(b => solve3(M, b));
-    const f = (k, c) => { const t = (tv[k] - tmin) / span; const q = co[c]; return q[0] + q[1] * t + q[2] * t * t; };
-    return { tmin, tmax, co, e: err(f) };
+    // least squares residual: sum v^2 - coefficients . (X^T v)
+    let e = 0; for (let c = 0; c < 3; c++) e += SS[c] - (co[c][0] * B[c][0] + co[c][1] * B[c][1] + co[c][2] * B[c][2]);
+    return { tmin, tmax, co, e: Math.sqrt(Math.max(0, e) / (N * 3)) };
   };
   const tl = new Float64Array(N); for (let k = 0; k < N; k++) tl[k] = (X[k] - mx) * ux + (Y[k] - my) * uy;
   const lin = fitAlong(tl);
@@ -277,7 +298,7 @@ export function fit(ix, big, W, flatHex, count, opt = {}) {
   if (Math.min(maxx - minx, maxy - miny) < (opt.thin ?? 6)) return { hex: flatHex };
   let rad = null;
   const tr = new Float64Array(N);
-  const tryC = (cx, cy) => { for (let k = 0; k < N; k++) tr[k] = Math.hypot(X[k] - cx, Y[k] - cy); const f = fitAlong(tr); if (!rad || f.e < rad.e) rad = { ...f, cx, cy }; };
+  const tryC = (cx, cy) => { for (let k = 0; k < N; k++) { const dx = X[k] - cx, dy = Y[k] - cy; tr[k] = Math.sqrt(dx * dx + dy * dy); } const f = fitAlong(tr); if (!rad || f.e < rad.e) rad = { ...f, cx, cy }; };
   const GR = 6;
   for (let a = 0; a <= GR; a++) for (let b = 0; b <= GR; b++) tryC(minx + (maxx - minx) * a / GR, miny + (maxy - miny) * b / GR);
   const st = Math.max(maxx - minx, maxy - miny) / GR / 2;
@@ -305,15 +326,24 @@ function solve3(M, b) {
   }
   return [a[0][3] / (a[0][0] || 1e-9), a[1][3] / (a[1][1] || 1e-9), a[2][3] / (a[2][2] || 1e-9)];
 }
-const rgbHex = (c) => '#' + c.map(v => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, '0')).join('');
+const HEX = Array.from({ length: 256 }, (_, i) => i.toString(16).padStart(2, '0'));
+const hx = (v) => HEX[Math.max(0, Math.min(255, Math.round(v)))];
+const rgbHex = (c) => '#' + hx(c[0]) + hx(c[1]) + hx(c[2]);
 
 /* ---------------- exact fills (Pixel-exact mode) ---------------- */
 /** Fill for one region, built the way a browser paints it: a flat colour, or a linear/radial gradient whose stops
     are solved by least squares on the exact piecewise-linear ramp SVG draws between stops. Returns { fill, e } with
     e = RMS error per channel (0..255) over the region's pixels. ix: pixel indices, big: RGBA. */
+// scratch buffers reused across calls: Pixel-exact fits hundreds of thousands of regions, and fresh arrays
+// for each one kept the garbage collector busy for longer than the fitting itself
+let XS = null;
+const scratch = (N) => {
+  if (!XS || XS.cap < N) { const cap = Math.max(N, 6000), f = () => new Float64Array(cap); XS = { cap, X: f(), Y: f(), C: [f(), f(), f()], u: f(), lin: f() }; }
+  return XS;
+};
 export function fitExact(ix, big, W, opt = {}) {
   const N = ix.length, tol = opt.tol ?? 4;
-  const X = new Float64Array(N), Y = new Float64Array(N), C = [new Float64Array(N), new Float64Array(N), new Float64Array(N)];
+  const { X, Y, C, u, lin: linNorm } = scratch(N);
   let mx = 0, my = 0; const mean = [0, 0, 0];
   for (let k = 0; k < N; k++) { const i = ix[k]; X[k] = i % W; Y[k] = (i / W) | 0; mx += X[k]; my += Y[k]; for (let c = 0; c < 3; c++) { C[c][k] = big[i * 4 + c]; mean[c] += C[c][k]; } }
   mx /= N; my /= N; for (let c = 0; c < 3; c++) mean[c] /= N;
@@ -325,7 +355,6 @@ export function fitExact(ix, big, W, opt = {}) {
   let minx = Infinity, maxx = -Infinity, miny = Infinity, maxy = -Infinity;
   for (let k = 0; k < N; k++) { if (X[k] < minx) minx = X[k]; if (X[k] > maxx) maxx = X[k]; if (Y[k] < miny) miny = Y[k]; if (Y[k] > maxy) maxy = Y[k]; }
   if (maxx - minx < 2 && maxy - miny < 2) return flat;
-  const u = new Float64Array(N);
   // ramp with K evenly spaced stops along u (0..1), solved by least squares with hat functions
   const ramp = (K) => {
     const A = Array.from({ length: K }, () => new Float64Array(K)), B = [new Float64Array(K), new Float64Array(K), new Float64Array(K)];
@@ -353,11 +382,10 @@ export function fitExact(ix, big, W, opt = {}) {
   const th = 0.5 * Math.atan2(2 * a12, a11 - a22), ux = Math.cos(th), uy = Math.sin(th);
   let tmin = Infinity, tmax = -Infinity;
   for (let k = 0; k < N; k++) { const t = (X[k] + 0.5 - mx) * ux + (Y[k] + 0.5 - my) * uy; u[k] = t; if (t < tmin) tmin = t; if (t > tmax) tmax = t; }
-  const linU = Float64Array.from(u); span(tmin, tmax); const linNorm = Float64Array.from(u);
+  span(tmin, tmax); linNorm.set(u.subarray(0, N));
   let best = flat;
-  const tryLin = (K) => { u.set(linNorm); const r = ramp(K); if (r.e < best.e - 0.25) best = { e: r.e, fill: { type: 'linear', x1: mx + ux * tmin, y1: my + uy * tmin, x2: mx + ux * tmax, y2: my + uy * tmax, stops: stopsOf(r) } }; };
+  const tryLin = (K) => { u.set(linNorm.subarray(0, N)); const r = ramp(K); if (r.e < best.e - 0.25) best = { e: r.e, fill: { type: 'linear', x1: mx + ux * tmin, y1: my + uy * tmin, x2: mx + ux * tmax, y2: my + uy * tmax, stops: stopsOf(r) } }; };
   tryLin(2); if (best.e > tol) tryLin(3); if (best.e > tol) tryLin(5);
-  void linU;
   // radial: centre found on a coarse grid with 3 stops, then refined
   if (best.e > tol && N >= 40) {
     let rb = null;

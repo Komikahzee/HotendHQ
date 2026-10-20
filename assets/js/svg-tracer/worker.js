@@ -3,7 +3,7 @@
    Holds the image, caches the slow clean-up step, and turns it into
    SVG off the main thread.
    ============================================================ */
-import { prepare, toSvg, traceDetailed, traceExact } from './trace.js?v=707ce64b60';
+import { prepare, toSvg, traceDetailed, traceExact } from './trace.js?v=051534e0cc';
 
 let img = null;          // { rgba, w, h }
 let prep = null, prepKey = '';
@@ -23,11 +23,14 @@ self.onmessage = (e) => {
       if (m.prep.mode === 'detail') {
         const progress = (stage, pass) => self.postMessage({ id: m.id, type: 'progress', stage, pass });
         // levels 4 and 5: pixel-exact, refined until every region is within tol of the original
-        const res = m.prep.detail >= 4
-          ? traceExact(img.rgba, img.w, img.h, { tol: m.prep.detail >= 5 ? 1.2 : 3 }, progress)
-          : traceDetailed(img.rgba, img.w, img.h, { ...m.prep, smooth: m.vec.smooth, corners: m.vec.corners }, progress);
-        self.postMessage({ id: m.id, type: 'done', fresh: true, svg: res.svg, layers: [], palette: [], bg: -1,
-          regions: res.regions, gradients: res.gradients, paths: res.paths, bytes: res.bytes, ms: Math.round(performance.now() - t0) });
+        const exact = m.prep.detail >= 4;
+        const res = exact
+          ? traceExact(img.rgba, img.w, img.h, { tol: m.prep.detail >= 5 ? 1.2 : 3, preview: true }, progress)
+          : traceDetailed(img.rgba, img.w, img.h, { ...m.prep, smooth: m.vec.smooth, corners: m.vec.corners, preview: true }, progress);
+        const pv = res.preview;
+        self.postMessage({ id: m.id, type: 'done', fresh: true, svg: res.svg, layers: [], palette: [], bg: -1, exact,
+          preview: pv && { w: pv.w, h: pv.h, data: pv.data.buffer },
+          regions: res.regions, gradients: res.gradients, paths: res.paths, bytes: res.bytes, ms: Math.round(performance.now() - t0) }, pv ? [pv.data.buffer] : []);
         return;
       }
       const key = JSON.stringify(m.prep);

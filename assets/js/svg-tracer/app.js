@@ -23,10 +23,10 @@ const S = { ...DEFAULTS, palette: null, hidden: new Set(), recolor: {} };
 
 let img = null;           // { rgba, w, h, name, url }
 let last = null;          // last trace result
-let view = { z: 1, tx: 0, ty: 0, split: 0.5, mode: 'split' };
+let view = { z: 1, fitZ: 1, tx: 0, ty: 0, split: 0.5, mode: 'split' };
 
 /* ---------------- worker ---------------- */
-const worker = new Worker(new URL('./worker.js?v=9e86322722', import.meta.url), { type: 'module' });
+const worker = new Worker(new URL('./worker.js?v=5c8a1fbd3c', import.meta.url), { type: 'module' });
 const STAGE = { colours: 'Finding the colours…', regions: 'Finding every edge…', shading: 'Fitting the shading…', curves: 'Fitting the curves…' };
 let reqId = 0, busy = false, queued = false, timer = 0;
 const waiting = new Map();     // id -> purpose
@@ -34,7 +34,11 @@ worker.onmessage = (e) => {
   const m = e.data;
   const purpose = waiting.get(m.id);
   if (m.type === 'progress') {
-    if (purpose === 'view') status(S.mode === 'detail' && S.detail >= 4 && m.pass ? `Matching every pixel, pass ${m.pass + 1}…` : STAGE[m.stage] || 'Working…');
+    if (purpose === 'view') {
+      const exact = S.mode === 'detail' && S.detail >= 4;
+      const slow = exact && img && img.w * img.h > 3e6 && matchMedia('(pointer:coarse)').matches ? ' Big image: on a phone this can take a few minutes.' : '';
+      status((exact && m.pass ? `Matching every pixel, pass ${m.pass + 1}…` : STAGE[m.stage] || 'Working…') + slow);
+    }
     return;
   }
   if (m.type === 'loaded') return;
@@ -43,7 +47,7 @@ worker.onmessage = (e) => {
   if (m.type === 'error') { stage.classList.remove('is-busy'); status('Something went wrong: ' + m.message, 'bad'); }
   else if (purpose === 'layers') saveLayers(m);
   else if (m.type === 'done') show(m);
-  if (queued) { queued = false; run(); } else if (!waiting.size) stage.classList.remove('is-busy');
+  if (queued) { queued = false; run(); } else if (!waiting.size && !painting) stage.classList.remove('is-busy');
 };
 worker.onerror = () => { busy = false; stage.classList.remove('is-busy'); status('The tracer could not start in this browser.', 'bad'); };
 
@@ -102,7 +106,7 @@ function setImage(d, name, url) {
   $('st-drop-main').textContent = name;
   $('st-drop-sub').textContent = `${d.w} × ${d.h} px${d.scaled ? ` (reduced from ${d.w0} × ${d.h0})` : ''} · choose another`;
   stage.classList.remove('is-empty');
-  out.innerHTML = ''; last = null;
+  last = null; showSvg();
   S.palette = null; S.hidden.clear(); S.recolor = {};
   setButtons(false);
   fit();
@@ -138,7 +142,7 @@ const SAMPLE = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600" wi
 <ellipse cx="185" cy="355" rx="34" ry="11" transform="rotate(-25 185 355)"/><ellipse cx="415" cy="355" rx="34" ry="11" transform="rotate(25 415 355)"/></g>
 <circle cx="300" cy="285" r="34" fill="#f4efe4"/><circle cx="300" cy="285" r="20" fill="#1d2a44"/>
 <text x="300" y="175" font-family="Arial,sans-serif" font-size="18" text-anchor="middle" fill="#f4efe4">EST. 2026</text></svg>`;
-$('st-sample').addEventListener('click', async () => {
+async function loadLogoSample() {
   const blob = new Blob([SAMPLE], { type: 'image/svg+xml' });
   const i = new Image(); i.src = URL.createObjectURL(blob);
   await i.decode();
@@ -147,7 +151,8 @@ $('st-sample').addEventListener('click', async () => {
   URL.revokeObjectURL(i.src);
   if (S.mode === 'detail') { S.mode = 'color'; syncUI(); }
   c.toBlob((b) => loadBlob(b, 'sample-emblem.png'), 'image/png');
-});
+}
+$('st-sample').addEventListener('click', loadLogoSample);
 
 /* detailed sample: Dead Radio, traced in Detailed mode */
 async function loadPhotoSample() {
@@ -160,12 +165,13 @@ async function loadPhotoSample() {
   } catch { status('The sample could not be loaded.', 'bad'); }
 }
 $('st-sample-photo').addEventListener('click', loadPhotoSample);
+document.querySelectorAll('#st-empty [data-sample]').forEach(b => b.addEventListener('click', () => (b.dataset.sample === 'logo' ? loadLogoSample : loadPhotoSample)()));
 $('st-show-try').addEventListener('click', () => { $('st-panel').scrollIntoView({ behavior: 'smooth', block: 'start' }); loadPhotoSample(); });
 
 /* ---------------- result ---------------- */
 function show(m) {
-  last = m;
-  out.innerHTML = m.svg;
+  last = m; painting = false;
+  showSvg();
   renderPalette(m);
   if (S.mode === 'bw' && m.threshold != null) {
     if (S.thrAuto) $('st-thr').value = Math.round(m.threshold);
@@ -177,10 +183,46 @@ function show(m) {
     const nCol = S.mode === 'bw' ? 1 : m.palette.length - S.hidden.size - (S.nobg && m.bg >= 0 && !S.hidden.has(m.bg) ? 1 : 0);
     readout.textContent = `${nCol} colour${nCol === 1 ? '' : 's'} · ${m.paths} shapes · ${size}`;
   }
-  status(`Traced in ${(m.ms / 1000).toFixed(1)} s: ${readout.textContent}.`, 'ok');
   setButtons(true);
   applyView();
+  if (m.bytes > 2e6 && !m.preview) { status('Drawing the SVG…'); painting = true; stage.classList.add('is-busy'); }
+  const done = () => { if (last !== m) return; painting = false; status(`Traced in ${(m.ms / 1000).toFixed(1)} s: ${readout.textContent}.`, 'ok'); if (!busy) stage.classList.remove('is-busy'); };
+  drawing.then(done);
 }
+/* The SVG is shown as an image, not as page markup: the browser then draws it once and reuses the picture while
+   you pan and zoom, instead of laying out every path (a detailed trace has up to a million) on each move.
+   Outlines needs real markup to restyle the paths, so only that view puts it in the page. */
+let outUrl = '', outMode = '';
+// a big Detailed result is first shown as the worker's painted preview (it looks the same at normal size);
+// the real SVG is drawn once you zoom in far enough to see curves. Pixel-exact results sit on the pixel grid,
+// so their preview is what the SVG shows at any zoom.
+const wantSvg = () => !last.preview || (!last.exact && view.z > view.fitZ * 2);
+function showSvg() {
+  if (last && last.preview && wantSvg()) last.full = true;
+  const mode = !last ? '' : view.mode === 'lines' ? 'lines' : last.preview && !last.full ? 'preview' : 'img';
+  if (mode === outMode && out.dataset.trace === String(last && last.id)) return;
+  if (outUrl) { URL.revokeObjectURL(outUrl); outUrl = ''; }
+  outMode = mode; out.dataset.trace = String(last && last.id);
+  if (!mode) { out.textContent = ''; drawing = Promise.resolve(); return; }
+  if (mode === 'lines') { out.innerHTML = last.svg; drawing = Promise.resolve(); return; }
+  if (mode === 'preview') {
+    const c = document.createElement('canvas'), p = last.preview;
+    c.width = p.w; c.height = p.h;
+    c.getContext('2d').putImageData(new ImageData(new Uint8ClampedArray(p.data), p.w, p.h), 0, 0);
+    out.replaceChildren(c); drawing = Promise.resolve(); return;
+  }
+  if (last.preview) { status('Drawing the full SVG…'); painting = true; stage.classList.add('is-busy'); }
+  const url = outUrl = URL.createObjectURL(new Blob([last.svg], { type: 'image/svg+xml' }));
+  const im = new Image(); im.alt = ''; im.draggable = false; im.src = url;
+  // the old picture stays up until the new one is drawn, so there is never a blank frame
+  const m = last;
+  const put = () => {
+    if (outUrl === url) out.replaceChildren(im);
+    if (m.preview && last === m) { painting = false; if (!busy) stage.classList.remove('is-busy'); status(`Traced in ${(m.ms / 1000).toFixed(1)} s: ${readout.textContent}.`, 'ok'); }
+  };
+  drawing = im.decode().then(put, put);
+}
+let drawing = Promise.resolve(), painting = false;
 function setButtons(on) { for (const id of ['st-dl', 'st-zip', 'st-copy']) $(id).disabled = !on; if (S.mode === 'detail') $('st-zip').disabled = true; }
 function status(t, kind) { statusEl.textContent = t; if (kind) statusEl.dataset.kind = kind; else delete statusEl.dataset.kind; }
 
@@ -276,6 +318,8 @@ function syncUI() {
   $('st-detail').value = S.detail; $('st-detail-out').textContent = DETAIL_TEXT[S.detail];
   $('st-grad').checked = S.gradients;
   $('st-grad-row').classList.toggle('hidden', S.detail >= 4);
+  // Pixel-exact levels keep the pixel outline itself, so smoothness and corners don't apply
+  $('st-shapes').classList.toggle('hidden', S.mode === 'detail' && S.detail >= 4);
   $('st-detail-hint').textContent = S.detail >= 4
     ? 'Drawn on the image\'s own pixel grid and refined until it matches the original pixel for pixel at 100 %. Big files, and big images can take a minute.'
     : 'High keeps the finest texture but makes a much bigger file.';
@@ -328,7 +372,7 @@ function fit() {
   if (!img) return;
   const r = stage.getBoundingClientRect();
   const z = Math.min((r.width - 24) / img.w, (r.height - 56) / img.h);
-  view.z = Math.max(0.02, z);
+  view.z = view.fitZ = Math.max(0.02, z);
   view.tx = (r.width - img.w * view.z) / 2; view.ty = (r.height - 40 - img.h * view.z) / 2 + 4;
   applyView();
 }
@@ -338,6 +382,7 @@ function applyView() {
   art.style.transform = `translate(${view.tx}px,${view.ty}px) scale(${view.z})`;
   art.classList.toggle('is-pixels', view.z >= 3);
   stage.dataset.view = view.mode;
+  showSvg();
   const r = stage.getBoundingClientRect();
   const sx = view.split * r.width;
   $('st-split').style.left = sx + 'px';
@@ -370,6 +415,7 @@ $('st-full').addEventListener('click', () => {
   else (stage.requestFullscreen || stage.webkitRequestFullscreen)?.call(stage);
 });
 document.addEventListener('fullscreenchange', () => setTimeout(fit, 60));
+if (!stage.requestFullscreen && !stage.webkitRequestFullscreen) $('st-full').hidden = true;
 new ResizeObserver(() => { if (img) fit(); }).observe(stage);
 
 stage.addEventListener('wheel', (e) => { if (!img) return; e.preventDefault(); zoomAt(Math.exp(-e.deltaY * 0.0015), e.clientX, e.clientY); }, { passive: false });

@@ -4,9 +4,9 @@
    toSvg(): indexed image -> SVG (vectorize.js)
    Shared by the worker and the Node tests.
    ============================================================ */
-import * as P from './prep.js?v=4f4f30580f';
-import { vectorize as trace } from './vectorize.js?v=fb419d1384';
-import { segment, flatten, fit, fitExact } from './regions.js?v=6ac1d660a5';
+import * as P from './prep.js?v=469c7cc377';
+import { vectorize as trace } from './vectorize.js?v=0d28b5d966';
+import { segment, flatten, fit, fitExact } from './regions.js?v=389d31c8ad';
 
 /** Working size: small images are enlarged (edges land between pixels, so curves come out smooth),
     huge ones are capped so the browser stays quick. */
@@ -145,7 +145,8 @@ export function traceDetailed(rgba, w, h, o = {}, progress = () => {}) {
     ids.push(`<path id="${id}" d="${r.d}"/>`); under.push(`<use xlink:href="#${id}" stroke="${pt}"/>`); over.push(`<use xlink:href="#${id}" fill="${pt}"/>`);
   });
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">\n<defs>${defs.join('')}\n${ids.join('\n')}</defs>\n<g fill="none" stroke-width="1.2" stroke-linejoin="round">${under.join('')}</g>\n<g fill-rule="evenodd">${over.join('')}</g>\n</svg>\n`;
-  return { svg, paths: res.regions.length, regions, gradients: defs.length, bytes: svg.length, ms: Date.now() - t0 };
+  return { svg, paths: res.regions.length, regions, gradients: defs.length, bytes: svg.length, ms: Date.now() - t0,
+    ...(o.preview ? { preview: paintFills(rid, W, H, fills, w, h) } : {}) };
 }
 
 /* ============================================================
@@ -190,11 +191,16 @@ export function traceExact(rgba, w, h, o = {}, progress = () => {}) {
     for (let i = 0; i < n; i++) if (rid[i] < 0 || !bad[rid[i]]) masked[i * 4 + 3] = 0;
     const sub = segment(masked, W, H, ROUNDS[round + 1]);
     // new id = the old region for good pixels, (old region, sub region) for re-split ones
+    // a sub region nearly always lies inside one old region: remember that pair per sub region, Map only for the rest
     const map = new Map(); let next = 0; const keep = new Int32Array(R).fill(-1); const nr = new Int32Array(n);
+    const subOld = new Int32Array(sub.regions).fill(-1), subNew = new Int32Array(sub.regions);
     for (let i = 0; i < n; i++) {
       const r = rid[i]; if (r < 0) { nr[i] = -1; continue; }
       if (!bad[r]) { if (keep[r] < 0) keep[r] = next++; nr[i] = keep[r]; continue; }
-      const key = r * 4294967296 + sub.rid[i]; let v = map.get(key);
+      const q = sub.rid[i];
+      if (subOld[q] === r) { nr[i] = subNew[q]; continue; }
+      if (subOld[q] < 0) { subOld[q] = r; nr[i] = subNew[q] = next++; continue; }
+      const key = r * 4294967296 + q; let v = map.get(key);
       if (v === undefined) { v = next++; map.set(key, v); }
       nr[i] = v;
     }
@@ -220,5 +226,48 @@ export function traceExact(rgba, w, h, o = {}, progress = () => {}) {
   for (const [hx, ds] of byHex) body.unshift([hx, ds.join('')]);
   // crispEdges: the shapes tile the pixel grid exactly, so no edge needs smoothing and no hairline seams appear
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" shape-rendering="crispEdges" fill-rule="evenodd">\n${defs.length ? '<defs>' + defs.join('') + '</defs>\n' : ''}${body.map(([pt, d]) => `<path fill="${pt}" d="${d}"/>`).join('\n')}\n</svg>\n`;
-  return { svg, paths: res.regions.length, regions: R, gradients: defs.length, colours: byHex.size, bytes: svg.length, ms: Date.now() - t0, ...(o.debug ? { rid, fills, errs } : {}) };
+  return { svg, paths: res.regions.length, regions: R, gradients: defs.length, colours: byHex.size, bytes: svg.length, ms: Date.now() - t0,
+    ...(o.preview ? { preview: paintFills(rid, W, H, fills, w, h) } : {}), ...(o.debug ? { rid, fills, errs } : {}) };
+}
+
+/* ============================================================
+   Preview: paint the traced regions straight into pixels, the way the SVG fills them (flat colour, or the
+   linear/radial gradient sampled at each pixel centre). A phone can take longer to draw a big SVG than to
+   trace it; this picture shows the result at once, and the page only draws the real SVG when you zoom in.
+   rid/fills: regions at the work size W x H (fill coordinates in work px); w x h: the output size.
+   ============================================================ */
+export function paintFills(rid, W, H, fills, w, h) {
+  const px = new Uint8ClampedArray(w * h * 4), kx = W / w, ky = H / h;
+  const rgb = (hex) => [parseInt(hex.slice(1, 3), 16), parseInt(hex.slice(3, 5), 16), parseInt(hex.slice(5, 7), 16)];
+  const ramp = fills.map((F) => {
+    if (!F || !F.type) return { c: rgb(F ? F.hex : '#000000') };
+    const st = F.stops.map(q => ({ o: F.type === 'radial' ? (F.r0 + q.t * (F.r - F.r0)) / Math.max(F.r, 1e-3) : q.t, c: rgb(q.hex) }));
+    return { F, st };
+  });
+  const at = (st, t, out) => {
+    if (t <= st[0].o) { out[0] = st[0].c[0]; out[1] = st[0].c[1]; out[2] = st[0].c[2]; return; }
+    for (let j = 1; j < st.length; j++) if (t <= st[j].o) {
+      const a = st[j - 1], b = st[j], f = (t - a.o) / ((b.o - a.o) || 1);
+      for (let c = 0; c < 3; c++) out[c] = a.c[c] + (b.c[c] - a.c[c]) * f;
+      return;
+    }
+    const z = st[st.length - 1].c; out[0] = z[0]; out[1] = z[1]; out[2] = z[2];
+  };
+  const col = [0, 0, 0];
+  for (let y = 0; y < h; y++) {
+    const wy = (y + 0.5) * ky, ry = Math.min(H - 1, wy | 0);
+    for (let x = 0; x < w; x++) {
+      const wx = (x + 0.5) * kx, r = rid[ry * W + Math.min(W - 1, wx | 0)], o = (y * w + x) * 4;
+      if (r < 0) continue;
+      const R = ramp[r];
+      if (!R.F) { px[o] = R.c[0]; px[o + 1] = R.c[1]; px[o + 2] = R.c[2]; px[o + 3] = 255; continue; }
+      const F = R.F;
+      let t;
+      if (F.type === 'linear') { const dx = F.x2 - F.x1, dy = F.y2 - F.y1; t = ((wx - F.x1) * dx + (wy - F.y1) * dy) / ((dx * dx + dy * dy) || 1); }
+      else t = Math.hypot(wx - F.cx, wy - F.cy) / Math.max(F.r, 1e-3);
+      at(R.st, t, col);
+      px[o] = col[0]; px[o + 1] = col[1]; px[o + 2] = col[2]; px[o + 3] = 255;
+    }
+  }
+  return { data: px, w, h };
 }
