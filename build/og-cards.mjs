@@ -33,6 +33,9 @@ const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
 const cards = [
   ...GENERATORS.map(g => ({ id: g.slug, kicker: 'Free 3D model generator', title: cap(g.name),
     chips: g.tags, foot: 'Free, runs in your browser', image: `/assets/img/generators/${g.slug}.webp` })),
+  { id: 'generators', kicker: 'Free 3D model generators', title: `${GENERATORS.length} generators that run in your browser`,
+    chips: ['STL', '3MF', 'No sign-up'], foot: 'Free, runs in your browser', image: '/assets/img/articles/pendant-coin.webp',
+    grid: ['/assets/img/articles/pendant-coin.webp', '/assets/img/articles/drone-hex.webp', '/assets/img/articles/spinner-petal.webp', '/assets/img/articles/chain-cuban.webp'] },
   ...(W.HHQ_SEED_ARTICLES || [])
     .filter(a => !/\/og-[^/]+\.jpg$/.test(a.cover_url || ''))            // already a finished 1200×630 card
     .map(a => ({ id: `guide-${a.slug}`, kicker: (a.tags || []).includes('new feature') ? 'News' : 'Guide',
@@ -47,9 +50,10 @@ html,body{width:1200px;height:630px;overflow:hidden;background:#00091c;font-fami
 .art{position:absolute;inset:0 0 0 auto;width:900px;
   -webkit-mask-image:linear-gradient(to right,transparent 0,#000 42%);mask-image:linear-gradient(to right,transparent 0,#000 42%)}
 .art img{width:100%;height:100%;object-fit:cover;object-position:center}
-.art.logo{width:620px;-webkit-mask-image:none;mask-image:none;display:grid;place-items:center;
+.art.logo{width:520px;-webkit-mask-image:none;mask-image:none;display:grid;place-items:center;
   background:radial-gradient(closest-side,rgba(17,130,201,.28),transparent)}
-.art.logo img{width:520px;height:auto;object-fit:contain}
+.art.grid{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:6px;background:#00091c}
+.art.logo img{width:440px;height:auto;object-fit:contain}
 .shade{position:absolute;inset:0;background:linear-gradient(to right,#00091c 0,rgba(0,9,28,.92) 34%,rgba(0,9,28,.2) 62%,transparent 80%)}
 .txt{position:absolute;left:64px;top:56px;bottom:56px;width:600px;display:flex;flex-direction:column}
 .brand{height:36px;width:auto;align-self:flex-start}
@@ -61,7 +65,8 @@ h1{margin-top:14px;color:#fff;font:800 64px/1.06 Inter;letter-spacing:-.02em;tex
 .foot b{color:#fff;font-weight:800}
 .bar{position:absolute;left:0;right:0;bottom:0;height:8px;background:linear-gradient(90deg,#c4451a,#f87b1e,#ffa32e)}
 </style></head><body>
-<div class="art${c.image ? '' : ' logo'}"><img src="${c.image || '/assets/img/logo-mark.png'}" alt=""></div>
+${c.grid ? `<div class="art grid">${c.grid.map(g => `<img src="${g}" alt="">`).join('')}</div>`
+  : `<div class="art${c.image ? '' : ' logo'}"><img src="${c.image || '/assets/img/logo-mark.png'}" alt=""></div>`}
 ${c.image ? '<div class="shade"></div>' : ''}
 <div class="txt">
   ${c.image ? '<img class="brand" src="/generators/pendant/assets/hq-wordmark.png" alt="">' : ''}

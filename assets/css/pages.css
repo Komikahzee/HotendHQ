@@ -324,3 +324,6 @@
 .home-gens img{aspect-ratio:8/5}
 .home-gen-links{margin-top:18px}
 .home-gen-links .chip{text-decoration:none}
+.gf-news{margin:12px 0 0;font-size:.92rem;font-weight:700}
+.gf-news a{display:inline-flex;align-items:center;gap:6px;color:var(--amber-300)}
+.gf-news svg{width:16px;height:16px}

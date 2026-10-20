@@ -64,16 +64,19 @@ const PAGES = [
     { '@context': 'https://schema.org', '@type': 'ContactPage', name: 'Support', url: BASE + '/support',
       mainEntity: { ...ORG, contactPoint: { '@type': 'ContactPoint', contactType: 'customer support', email: 'hotendhq@gmail.com', availableLanguage: 'English' } } },
     crumbs([['Home', '/'], ['Support', '/support']])] },
-  { file: 'generators/chain.html', url: '/generators/chain', image: '/assets/img/generators/chain.webp', ld: (h) => [
+  { file: 'generators/chain.html', url: '/generators/chain', image: '/assets/img/og/chain.jpg', ld: (h) => [
     faqLd(faqOf(h)), crumbs([['Home', '/'], ['3D model generators', '/generators'], ['Chains', '/generators/chain']])] },
-  { file: 'generators/gridfinity.html', url: '/generators/gridfinity', image: '/assets/img/generators/gridfinity.webp', ld: (h) => [
+  { file: 'generators/gridfinity.html', url: '/generators/gridfinity', image: '/assets/img/og/gridfinity.jpg', ld: (h) => [
     faqLd(faqOf(h)), crumbs([['Home', '/'], ['3D model generators', '/generators'], ['Gridfinity', '/generators/gridfinity']])] },
-  { file: 'generators/pendant/index.html', url: '/generators/pendant/', image: '/assets/img/generators/pendant.webp', ld: () => [
+  { file: 'generators/pendant/index.html', url: '/generators/pendant/', image: '/assets/img/og/pendant.jpg', ld: (h) => [
     { '@context': 'https://schema.org', '@type': 'WebApplication', name: 'Hotend HQ Pendant & Medallion Studio', url: BASE + '/generators/pendant/',
       image: BASE + '/assets/img/generators/pendant.webp', applicationCategory: 'DesignApplication', operatingSystem: 'Any (runs in the browser)',
       isAccessibleForFree: true, offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' }, publisher: ORG,
       description: 'Turn any image into a print-ready 3D pendant, medallion, keychain or badge. Exports STL, 3MF and OBJ.' },
-    crumbs([['Home', '/'], ['3D model generators', '/generators'], ['Pendants & medallions', '/generators/pendant/']])] },
+    faqLd(faqOf(h)), crumbs([['Home', '/'], ['3D model generators', '/generators'], ['Pendants & medallions', '/generators/pendant/']])] },
+  // the older generator pages carry their own JSON-LD; they only need the share tags
+  ...['storage-box', 'grid-organiser', 'cable-clip', 'spool-holder', 'wall-bracket'].map(slug =>
+    ({ file: `generators/${slug}.html`, url: `/generators/${slug}`, image: `/assets/img/og/${slug}.jpg`, ld: () => [] })),
   { file: '404.html', noindex: true },
 ];
 
@@ -91,6 +94,7 @@ for (const pg of PAGES) {
       `<meta property="og:type" content="${pg.type || 'website'}">`, '<meta property="og:site_name" content="Hotend HQ">',
       `<meta property="og:title" content="${esc(title)}">`, `<meta property="og:description" content="${esc(desc)}">`,
       `<meta property="og:url" content="${BASE}${pg.url}">`, `<meta property="og:image" content="${img}">`,
+      '<meta property="og:image:width" content="1200">', '<meta property="og:image:height" content="630">',   // every share image here is 1200×630
       '<meta name="twitter:card" content="summary_large_image">');
     if (!/name="theme-color"/.test(h)) tags.push('<meta name="theme-color" content="#00091c">');
     for (const o of pg.ld(h).filter(Boolean)) tags.push(ld(o));
