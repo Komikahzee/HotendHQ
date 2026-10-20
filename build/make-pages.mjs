@@ -16,15 +16,16 @@ const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replac
 const bySlug = Object.fromEntries(GENERATORS.map(g => [g.slug, g]));
 const url = (slug) => (bySlug[slug] ? urlOf(bySlug[slug]) : `/generators/${slug}`);
 const img = (slug) => `/assets/img/generators/${slug}.webp`;
+const ogImg = (slug) => `/assets/img/og/${slug}.jpg`;   // 1200×630 share card from build/og-cards.mjs
 const ld = (o) => `<script type="application/ld+json">${JSON.stringify(o).replace(/</g, '\\u003c')}</script>`;
 const ARROW = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>';
 
-const HEAD = ({ title, desc, canonical, image, extra = '' }) => `<!doctype html>
+const HEAD = ({ title, short = title, desc, canonical, image, extra = '' }) => `<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>${esc(title)} — Hotend HQ</title>
+<title>${esc(short)} — Hotend HQ</title>
 <meta name="description" content="${esc(desc)}">
 <link rel="canonical" href="${BASE}${canonical}">
 <meta property="og:type" content="website">
@@ -33,6 +34,8 @@ const HEAD = ({ title, desc, canonical, image, extra = '' }) => `<!doctype html>
 <meta property="og:description" content="${esc(desc)}">
 <meta property="og:url" content="${BASE}${canonical}">
 <meta property="og:image" content="${BASE}${image}">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="theme-color" content="#00091c">
 <link rel="icon" href="/assets/img/favicon-32.png" sizes="32x32">
@@ -64,6 +67,10 @@ ${(RELATED[slug] || GENERATORS.filter(g => g.slug !== slug).slice(0, 3).map(g =>
     </div>
   </section>`;
 
+// a link from a flagship generator to its News article (the article already links back)
+const news = (slug) => { const f = FEATURED.find(x => x.slug === slug);
+  return f ? `\n    <p class="gf-news"><a href="${f.article}">See everything it can do ${ARROW}</a></p>` : ''; };
+
 /* ---------------- one engine-generator page ---------------- */
 function page(slug, c) {
   const g = bySlug[slug];
@@ -80,7 +87,7 @@ function page(slug, c) {
   ];
   const TOOL = (id, label, svg) => `<button type="button" class="gf-tool" id="${id}" aria-label="${label}" title="${label}">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${svg}</svg></button>`;
-  return HEAD({ title: c.title, desc: c.desc, canonical: url(slug), image: img(slug), extra: `<link rel="stylesheet" href="/assets/css/gridfinity.css">
+  return HEAD({ title: c.title, short: c.short, desc: c.desc, canonical: url(slug), image: ogImg(slug), extra: `<link rel="stylesheet" href="/assets/css/gridfinity.css">
 <link rel="stylesheet" href="/assets/css/make.css">
 <link rel="preload" href="/assets/vendor/manifold/manifold.wasm" as="fetch" type="application/wasm" crossorigin>
 <script type="importmap">
@@ -96,7 +103,7 @@ ${lds.map(ld).join('\n')}
   <section class="wrap gf-hero">
     <nav class="crumbs" aria-label="Breadcrumb"><a href="/generators">3D model generators</a><span aria-hidden="true">/</span><span>${esc(c.crumb)}</span></nav>
     <h1>${esc(c.h1)}</h1>
-    <p class="lede">${esc(c.lede)}</p>
+    <p class="lede">${esc(c.lede)}</p>${news(slug)}
   </section>
 
   <section class="wrap gf-wrap" aria-label="Generator">
@@ -200,9 +207,9 @@ function hub() {
   const items = { '@context': 'https://schema.org', '@type': 'ItemList', name: '3D model generators',
     itemListElement: GENERATORS.map((g, i) => ({ '@type': 'ListItem', position: i + 1, name: g.name, url: BASE + url(g.slug) })) };
   const rest = GENERATORS.filter(g => !FEATURED.some(f => f.slug === g.slug)), count = (k) => rest.filter(g => g.cat === k).length;
-  return HEAD({ title: `3D Model Generators: ${GENERATORS.length} Free Parametric STL Makers`,
+  return HEAD({ title: `3D Model Generators: ${GENERATORS.length} Free Parametric STL Makers`, short: `${GENERATORS.length} Free 3D Model Generators (STL & 3MF)`,
     desc: `${GENERATORS.length} free 3D model generators that run in your browser: Gridfinity, print-in-place chains, dice, stencils, layered signs, plant markers, drone frames, mic clips and more. Set your sizes and download STL or 3MF.`,
-    canonical: '/generators', image: '/assets/img/articles/generators-spotlight.webp', extra: ld(items) + '\n' }) + `</head>
+    canonical: '/generators', image: ogImg('generators'), extra: ld(items) + '\n' }) + `</head>
 <body>
 <main id="main">
   <section class="wrap section--tight gens-hero">
@@ -274,10 +281,30 @@ for (const g of GENERATORS) {
   if (!re.test(s)) { console.warn('no More generators section in', g.slug); continue; }
   fs.writeFileSync(f, s.replace(re, () => moreSection(g.slug))); m++;
 }
-// the home page: the generator count in the hero stats
+// the home page: the flagship generators as cards, every other generator (and the SVG Tracer) as a plain link,
+// written into the HTML so search engines see a direct link to each one; and the generator count in the hero stats
+const homeGens = () => `<!--home-gens-->
+  <section class="wrap section--tight" aria-labelledby="home-gens-title">
+    <div class="sec-head between">
+      <div><span class="eyebrow">Free model generators</span><h2 id="home-gens-title">Design it in your browser, print it today</h2></div>
+      <a class="btn btn-ghost btn-sm" href="/generators">All ${GENERATORS.length} generators</a>
+    </div>
+    <div class="grid g4 home-gens">
+${FEATURED.map(f => `      <a class="card card--link gens-card" href="${url(f.slug)}">
+        <img src="${f.img}" alt="${esc(bySlug[f.slug].name)} preview" width="1200" height="750" loading="lazy" decoding="async">
+        <div class="gens-body"><h3>${esc(bySlug[f.slug].name)}</h3><span class="gens-go">${esc(f.open)} ${ARROW}</span></div>
+      </a>`).join('\n')}
+    </div>
+    <nav class="chips home-gen-links" aria-label="More free generators">
+${GENERATORS.filter(g => !FEATURED.some(f => f.slug === g.slug)).map(g => `      <a class="chip" href="${url(g.slug)}">${esc(g.name.replace(/ generator$/i, ''))}</a>`).join('\n')}
+      <a class="chip" href="/svg-tracer">Image to SVG converter</a>
+    </nav>
+  </section>
+  <!--/home-gens-->`;
 {
   const f = path.join(ROOT, 'index.html');
   let s = fs.readFileSync(f, 'utf8');
+  s = s.replace(/<!--home-gens-->[\s\S]*?<!--\/home-gens-->/, homeGens);
   s = s.replace(/(<b id="s-models">)\d+(<\/b>)/, `$1${GENERATORS.length}$2`);
   s = s.replace(/with \d+ model generators/, `with ${GENERATORS.length} model generators`);
   fs.writeFileSync(f, s);

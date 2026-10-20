@@ -3,6 +3,7 @@
 export const PAGES = {
   'plant-markers': {
     title: 'Plant Marker Generator: Custom 3D Printed Garden Labels',
+    short: '3D Printed Plant Marker Generator',   // the <title>; kept under ~60 characters so search results show it whole
     desc: 'Make a whole set of 3D printable plant markers from a list of names: stakes, pot-rim clips, hanging tags, raised or inlaid two-colour text, icons and 11 fonts. Free STL and 3MF.',
     crumb: 'Plant markers', h1: 'Plant marker generator',
     lede: 'Type your plants, one per line, and get a full set of garden markers laid out on your bed. Stakes, pot clips or hanging tags, with raised, inlaid or engraved text.',
@@ -23,6 +24,7 @@ export const PAGES = {
   },
   'layered-signs': {
     title: 'Layered Sign Generator: Multicolour 3D Printed Signs',
+    short: 'Layered Sign Generator for Multicolour Prints',   // the <title>; kept under ~60 characters so search results show it whole
     desc: 'Design a multicolour 3D printed sign in layers: base, border, outline and raised or inlaid letters, 11 shapes, icons or your own logo, and keyhole, magnet or stand mounting. Free STL and 3MF.',
     crumb: 'Layered signs', h1: 'Layered sign generator',
     lede: 'Type your text and build the sign in coloured layers. Print it with filament changes on any printer, or in full colour on an AMS or MMU.',
@@ -42,6 +44,7 @@ export const PAGES = {
   },
   dice: {
     title: 'Custom Dice Generator: d4 to d20 with Your Own Faces',
+    short: 'Custom Dice Generator: d4 to d20 STL',   // the <title>; kept under ~60 characters so search results show it whole
     desc: 'Make 3D printable dice from d4 to d20 plus d10 and percentile d100, with engraved numbers, your own words or symbols, pips, rounded edges and two-colour fills. Opposite faces add up like real dice. Free STL and 3MF.',
     crumb: 'Custom dice', h1: 'Custom dice generator',
     lede: 'Pick a die, or the full seven-piece set, and put your own numbers, words or pips on every face. Numbers are laid out so opposite faces add up like a real die.',
@@ -61,6 +64,7 @@ export const PAGES = {
   },
   stencils: {
     title: 'Stencil Generator: Text & Image Stencils with Automatic Bridges',
+    short: 'Stencil Generator: Text & Image to STL',   // the <title>; kept under ~60 characters so search results show it whole
     desc: 'Make 3D printable stencils from text, shapes or your own image. Islands in letters like O, A, B and R get bridges automatically so the middles stay in. Letter sets, rims, pull tabs and hanging holes. Free STL.',
     crumb: 'Stencils', h1: 'Stencil generator',
     lede: 'Type a word, pick a shape or upload an image, and get a stencil plate that holds together: every island, like the middle of an O or A, is tied in with bridges.',
@@ -80,6 +84,7 @@ export const PAGES = {
   },
   lettering: {
     title: 'Lettering & Calligraphy Template Generator: Tracing Templates, Stamps and Guide Rulers',
+    short: 'Lettering Template & Stamp Generator',   // the <title>; kept under ~60 characters so search results show it whole
     desc: 'Make name tracing templates, mirrored letter stamps with handles, and calligraphy guide rulers with your x-height, nib width and slant angle. 11 fonts. Free STL.',
     crumb: 'Lettering & calligraphy', h1: 'Lettering & calligraphy generator',
     lede: 'Practise a name with a tracing template, make a stamp that prints the right way round, or lay out calligraphy guidelines with a ruler you draw through.',
@@ -99,6 +104,7 @@ export const PAGES = {
   },
   'pen-grips': {
     title: 'Pen Adapter & Grip Generator: Cricut, Silhouette and Brother Pen Holders',
+    short: 'Cricut Pen Adapter & Grip Generator',   // the <title>; kept under ~60 characters so search results show it whole
     desc: 'Make adapters that hold any pen, marker or pencil in a Cricut, Silhouette or Brother cutting machine, with set screw, collet or press-fit holds and fit-test rings, plus comfort grips for pens and craft knives. Free STL.',
     crumb: 'Pen grips & cutter adapters', h1: 'Pen grip & cutter adapter generator',
     lede: 'Use your own pens and markers in a cutting machine, or make a chunky comfort grip for a pen, pencil, brush or craft knife.',
@@ -118,6 +124,7 @@ export const PAGES = {
   },
   'board-game-pieces': {
     title: 'Board Game Pieces Generator: Tokens, Pawns, Meeples and Bits',
+    short: 'Board Game Pieces Generator: Tokens & Meeples',   // the <title>; kept under ~60 characters so search results show it whole
     desc: 'Make whole sets of 3D printable board game pieces: numbered tokens and coins, pawns, meeples and figures, resource cubes and gems, and card stands, with one colour per player. Free STL and 3MF.',
     crumb: 'Board game pieces', h1: 'Board game pieces generator',
     lede: 'Replace lost pieces or make a set for your own game. Tokens count up automatically, and pawns, meeples and bits come in a colour per player.',
@@ -137,6 +144,7 @@ export const PAGES = {
   },
   'fidget-spinners': {
     title: 'Fidget Spinner Generator: Bearing, Print-in-Place and Spinner Rings',
+    short: 'Fidget Spinner Generator: Free STL',   // the <title>; kept under ~60 characters so search results show it whole
     desc: 'Make 3D printable fidget spinners for 608, 688, R188, 626 and 6000 bearings with nut, coin or bearing weights, print-in-place spinners that need no bearing, and spinning worry rings by US size. Eight shapes, a randomizer, a finished-spinner preview and spin figures. Free STL.',
     crumb: 'Fidget spinners', h1: 'Fidget spinner generator',
     lede: 'A classic bearing spinner with coins or nuts for weight, a print-in-place spinner with the hub trapped inside, or a spinner ring that fits your finger. See it finished with the bearing and weights in place, or press Randomize design for a new one.',
@@ -157,6 +165,7 @@ export const PAGES = {
   },
   'drone-frame': {
     title: 'FPV Drone Frame Generator: Quads, Hexacopters, Tricopters & Cinewhoops',
+    short: 'FPV Drone Frame Generator: Free STL',   // the <title>; kept under ~60 characters so search results show it whole
     desc: 'Design a 3D printable FPV drone frame from 65 mm whoops to 10-inch: quads (X, stretched, H, deadcat, cinewhoop), X8 cinelifters, tricopters, Y6, hexacopters and octocopters, with bolt-on arms, your motor and stack sizes, camera and GoPro mounts, and a randomizer. Free STL and 3MF.',
     crumb: 'Drone frames', h1: 'Drone frame generator',
     lede: 'Pick an aircraft, a size and one of 16 frame designs, or hit Randomize frame for a new one. Tap the parts list to add the top plate, motors, props, battery and electronics to the preview, then download the parts laid out for your bed.',
@@ -180,6 +189,7 @@ export const PAGES = {
   },
   'mic-accessories': {
     title: 'Mic Clip & Mic Stand Accessory Generator: Clips, Adapters, Pop Filters',
+    short: 'Mic Clip & Mic Stand Adapter Generator',   // the <title>; kept under ~60 characters so search results show it whole
     desc: 'Make 3D printable mic stand accessories with real 5/8″-27, 3/8″-16 and 1/4″-20 threads: mic clips, shock mounts, thread adapters and inserts, stand cable clips, pop filters and phone mounts. Free STL.',
     crumb: 'Mic stand accessories', h1: 'Mic clip & stand accessory generator',
     lede: 'Mic clips, shock mounts, thread adapters, cable clips, pop filters and phone holders for your stand, each sized to your mic, tube or phone and fitted with real stand threads.',

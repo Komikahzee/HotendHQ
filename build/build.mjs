@@ -28,6 +28,7 @@ import path from 'node:path';
 import vm from 'node:vm';
 import { fileURLToPath } from 'node:url';
 import crypto from 'node:crypto';
+import { execSync } from 'node:child_process';
 import { GENERATORS as SITE_GENERATORS } from './site-generators.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -160,6 +161,10 @@ function guidePage(a, all) {
   const title = a.seo_title || `${a.title} — ${CFG.siteName}`;
   const desc = a.meta_description || a.excerpt || '';
   const url = guideUrl(a);
+  // share image: the 1200×630 card from build/og-cards.mjs when there is one, else the cover, else the site card
+  const card = `/assets/img/og/guide-${a.slug}.jpg`, hasCard = fs.existsSync(path.join(ROOT, card));
+  const shareImg = hasCard ? BASE + card : absUrl(a.cover_url) || `${BASE}/assets/img/og-image.png`;
+  const fullSize = hasCard || !a.cover_url || /\/og-[^/]+\.jpg$/.test(a.cover_url);
   const img = absUrl(a.cover_url) || `${BASE}/assets/img/og-image.png`;
   const pub = iso(a.published_at || a.created_at), mod = iso(a.updated_at || a.published_at || a.created_at);
   const rel = W.HHQ_RENDER.related(a, all);
@@ -194,8 +199,8 @@ function guidePage(a, all) {
 <meta property="og:title" content="${esc(a.seo_title || a.title)}">
 <meta property="og:description" content="${esc(desc)}">
 <meta property="og:url" content="${url}">
-<meta property="og:image" content="${esc(img)}">
-${pub ? `<meta property="article:published_time" content="${pub}">` : ''}
+<meta property="og:image" content="${esc(shareImg)}">
+${fullSize ? '<meta property="og:image:width" content="1200">\n<meta property="og:image:height" content="630">\n' : ''}${pub ? `<meta property="article:published_time" content="${pub}">` : ''}
 ${mod ? `<meta property="article:modified_time" content="${mod}">` : ''}
 <meta property="article:section" content="${esc(a.category)}">
 <meta name="twitter:card" content="summary_large_image">
@@ -236,6 +241,28 @@ document.addEventListener('DOMContentLoaded', () => {
 `;
 }
 
+/* ---------------- sitemap dates ---------------- */
+/* The real date each page last changed, from git history: the page file plus the scripts that make up its tool.
+   Without history (a shallow clone), the dates come from the committed sitemap.xml, which --source refreshes. */
+const PAGE_DEPS = { 'svg-tracer': ['assets/js/svg-tracer'], troubleshoot: ['assets/js/data-troubleshoot.js'],
+  tools: ['assets/js/data-filament.js'], chain: ['assets/js/chain.js', 'assets/js/chain-core.js', 'assets/js/chain-build.js'],
+  gridfinity: ['assets/js/gridfinity.js', 'assets/js/gridfinity-core.js'] };
+let gitDates = false;
+try { gitDates = execSync('git rev-parse --is-shallow-repository', { cwd: ROOT, stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim() === 'false'; } catch {}
+const committedDates = Object.fromEntries([...(fs.existsSync(path.join(ROOT, 'sitemap.xml')) ? fs.readFileSync(path.join(ROOT, 'sitemap.xml'), 'utf8') : '')
+  .matchAll(/<loc>([^<]+)<\/loc><lastmod>([^<]+)<\/lastmod>/g)].map(m => [m[1], m[2]]));
+function lastmod(loc, files) {
+  if (gitDates) {
+    try {
+      const d = execSync(`git log -1 --format=%cs -- ${files.map(f => JSON.stringify(f)).join(' ')}`, { cwd: ROOT, stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim();
+      if (d) return d;
+    } catch {}
+  }
+  return committedDates[loc] || '';
+}
+const fileOf = p => (p === 'index' ? 'index.html' : GENERATORS.includes(p) ? `generators/${p}.html` : `${p}.html`);
+const lm = (d) => (d ? `<lastmod>${d}</lastmod>` : '');
+
 /* ---------------- main ---------------- */
 if (SOURCE) {
   // bundled articles only: those are the ones every copy of the site links to /guides/ (site.js hasGuidePage)
@@ -248,11 +275,11 @@ if (SOURCE) {
     fs.mkdirSync(path.join(gdir, a.slug), { recursive: true });
     fs.writeFileSync(path.join(gdir, a.slug, 'index.html'), finishPage(guidePage(a, seed), `/guides/${a.slug}/`));
   }
-  const day = d => (iso(d) || '').slice(0, 10), today = new Date().toISOString().slice(0, 10);
+  const day = d => (iso(d) || '').slice(0, 10);
   const pages = ['index', 'news', 'troubleshoot', 'generators', ...GENERATORS, 'tools', 'svg-tracer', 'order', 'about', 'support'];   // gear is paused
   const urls = [
-    ...pages.map(p => `  <url><loc>${BASE}${clean(p)}</loc><lastmod>${today}</lastmod><priority>${p === 'index' ? '1.0' : ['generators', 'gridfinity', 'chain', 'order'].includes(p) ? '0.9' : '0.8'}</priority></url>`),
-    ...APPS.map(a => `  <url><loc>${a.loc}</loc><lastmod>${today}</lastmod><priority>0.9</priority></url>`),
+    ...pages.map(p => `  <url><loc>${BASE}${clean(p)}</loc>${lm(lastmod(BASE + clean(p), [fileOf(p), ...(PAGE_DEPS[p] || [])]))}<priority>${p === 'index' ? '1.0' : ['generators', 'gridfinity', 'chain', 'order'].includes(p) ? '0.9' : '0.8'}</priority></url>`),
+    ...APPS.map(a => `  <url><loc>${a.loc}</loc>${lm(lastmod(a.loc, [path.dirname(a.file)]))}<priority>0.9</priority></url>`),
     ...seed.map(a => `  <url><loc>${guideUrl(a)}</loc>${day(a.updated_at || a.published_at) ? `<lastmod>${day(a.updated_at || a.published_at)}</lastmod>` : ''}<priority>0.7</priority></url>`),
   ];
   fs.writeFileSync(path.join(ROOT, 'sitemap.xml'), `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.join('\n')}\n</urlset>\n`);
@@ -330,7 +357,6 @@ log(`cache-busted ${assetHash.size} asset URL(s) across ${htmlFiles.length} page
 /* ---------------- sitemap + robots ---------------- */
 const day = d => (iso(d) || '').slice(0, 10);
 const staticPages = ['index', 'news', 'troubleshoot', 'generators', ...GENERATORS, 'tools', 'svg-tracer', 'order', 'about', 'support'];   // gear is paused
-const fileOf = p => (GENERATORS.includes(p) ? `generators/${p}.html` : `${p}.html`);
 /* A URL only goes in the sitemap if the page at that URL names itself as canonical.
    Anything that doesn't is left out and logged, so the sitemap never sends mixed signals. */
 const canonicalOf = file => {
@@ -346,8 +372,8 @@ const selfCanonical = (loc, file) => {
 };
 const urls = [
   ...staticPages.filter(p => selfCanonical(BASE + clean(p), fileOf(p)))
-    .map(p => `  <url><loc>${BASE}${clean(p)}</loc><priority>${p === 'index' ? '1.0' : ['generators', 'gridfinity', 'chain', 'order'].includes(p) ? '0.9' : '0.8'}</priority></url>`),
-  ...APPS.filter(a => selfCanonical(a.loc, a.file)).map(a => `  <url><loc>${a.loc}</loc><priority>0.9</priority></url>`),
+    .map(p => `  <url><loc>${BASE}${clean(p)}</loc>${lm(lastmod(BASE + clean(p), [fileOf(p), ...(PAGE_DEPS[p] || [])]))}<priority>${p === 'index' ? '1.0' : ['generators', 'gridfinity', 'chain', 'order'].includes(p) ? '0.9' : '0.8'}</priority></url>`),
+  ...APPS.filter(a => selfCanonical(a.loc, a.file)).map(a => `  <url><loc>${a.loc}</loc>${lm(lastmod(a.loc, [path.dirname(a.file)]))}<priority>0.9</priority></url>`),
   ...articles.filter(a => selfCanonical(guideUrl(a), path.join('guides', a.slug, 'index.html')))
     .map(a => `  <url><loc>${guideUrl(a)}</loc>${day(a.updated_at || a.published_at) ? `<lastmod>${day(a.updated_at || a.published_at)}</lastmod>` : ''}<priority>0.7</priority></url>`),
 ];
