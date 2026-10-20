@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mesh Lab: Image to 3D Print — Hotend HQ</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#00091c">
+<link rel="icon" href="/assets/img/favicon-32.png" sizes="32x32">
+<link rel="stylesheet" href="/assets/css/fonts.css">
+<link rel="stylesheet" href="css/mesh-lab.css">
+<script type="importmap">
+{ "imports": {
+  "three": "/assets/vendor/three/three.module.js",
+  "three/addons/": "/assets/vendor/three/addons/"
+} }
+</script>
+<script type="module" src="js/app.js"></script>
+</head>
+<body>
+<header class="top">
+  <a class="logo" href="/">HOTEND<b>HQ</b></a>
+  <span class="sub">Mesh Lab <em>private</em></span>
+  <div class="gpu" id="gpu"><span class="dot"></span><span id="gpuText">No token yet</span></div>
+</header>
+
+<main class="lab">
+  <!-- LEFT: image + AI -->
+  <aside class="col left">
+    <h3>1 · Image</h3>
+    <label class="drop" id="drop">
+      <input type="file" id="file" accept="image/*" hidden>
+      <img id="photo" alt="" hidden>
+      <span id="dropText">Drop a photo or click to choose</span>
+    </label>
+    <div class="row2">
+      <button class="btn sm" id="btnPrep" disabled>Cut out subject</button>
+      <span class="hint" id="prepHint">Each Space also cuts out the background itself.</span>
+    </div>
+
+    <h3>2 · AI model</h3>
+    <div class="seg" id="engines">
+      <button data-e="trellis2" class="on"><b>TRELLIS.2</b><small>Sharpest geometry</small></button>
+      <button data-e="pixal3d"><b>Pixal3D</b><small>Most faithful to the photo</small></button>
+      <button data-e="both"><b>Both</b><small>Run each, pick the best</small></button>
+    </div>
+
+    <div class="field"><label>Resolution</label>
+      <div class="pills" id="res"><button data-v="1024">1024</button><button data-v="1536" class="on">1536</button></div>
+    </div>
+    <div class="field"><label>Candidates per model <output id="seedsOut">2</output></label>
+      <input type="range" id="seeds" min="1" max="4" value="2"></div>
+    <div class="field"><label>Seed</label>
+      <div class="row2"><input type="number" id="seed" value="0" min="0"><label class="chk"><input type="checkbox" id="seedRand" checked> random</label></div></div>
+    <details class="adv">
+      <summary>Quality settings</summary>
+      <div class="field"><label>Shape sampling steps <output id="shapeStepsOut">20</output></label><input type="range" id="shapeSteps" min="8" max="50" value="20"></div>
+      <div class="field"><label>Structure sampling steps <output id="ssStepsOut">16</output></label><input type="range" id="ssSteps" min="8" max="50" value="16"></div>
+      <div class="field"><label>Shape guidance <output id="shapeGuidOut">7.5</output></label><input type="range" id="shapeGuid" min="1" max="10" step="0.1" value="7.5"></div>
+      <div class="field"><label>Mesh faces from the Space <output id="facesOut">500k</output></label><input type="range" id="faces" min="100000" max="500000" step="50000" value="500000"></div>
+      <div class="field"><label>Texture size</label><div class="pills" id="tex"><button data-v="1024">1K</button><button data-v="2048" class="on">2K</button><button data-v="4096">4K</button></div></div>
+      <p class="hint">More steps = more GPU seconds per run. Free accounts get a few GPU minutes a day.</p>
+    </details>
+
+    <h3>Hugging Face token</h3>
+    <div class="token">
+      <input type="password" id="token" placeholder="hf_…" autocomplete="off" spellcheck="false">
+      <label class="chk"><input type="checkbox" id="remember"> remember on this device</label>
+    </div>
+
+    <button class="btn p big" id="btnGen" disabled>Generate 3D</button>
+    <label class="btn ghost big" for="glbFile">…or open a GLB you already have<input type="file" id="glbFile" accept=".glb,.gltf,model/gltf-binary" hidden></label>
+    <div class="log" id="log"></div>
+  </aside>
+
+  <!-- CENTER: viewer -->
+  <section class="center">
+    <div class="view" id="view">
+      <div class="vt">
+        <button id="vRaw" class="on">AI model</button>
+        <button id="vPrint" disabled>Print-ready</button>
+        <button id="vClay">Clay</button>
+        <button id="vWire">Wireframe</button>
+        <button id="vSpin">Spin</button>
+      </div>
+      <div class="ph" id="ph">Your model shows up here</div>
+      <div class="busy" id="busy" hidden><div class="ring"></div><div id="busyText">Working…</div><div class="bar"><i id="busyBar"></i></div></div>
+      <div class="vb" id="vb"></div>
+    </div>
+    <div class="cands" id="cands"></div>
+  </section>
+
+  <!-- RIGHT: print prep -->
+  <aside class="col right">
+    <h3>3 · Make it printable</h3>
+    <div class="field"><label>Height <output id="heightOut">150 mm</output></label><input type="range" id="height" min="20" max="300" value="150"></div>
+    <div class="field"><label>Base</label>
+      <div class="pills" id="base"><button data-v="plinth" class="on">Round plinth</button><button data-v="flat">Flat cut</button><button data-v="none">None</button></div></div>
+    <div class="field plinth-only"><label>Plinth height <output id="plinthHOut">12 mm</output></label><input type="range" id="plinthH" min="4" max="40" value="12"></div>
+    <div class="field plinth-only"><label>Plinth size <output id="plinthSOut">100%</output></label><input type="range" id="plinthS" min="60" max="150" value="100"></div>
+    <div class="field cut-only"><label>Flatten bottom by <output id="cutOut">2 mm</output></label><input type="range" id="cut" min="0" max="30" step="0.5" value="2"></div>
+    <div class="field"><label>Detail (voxels on the long side) <output id="voxOut">320</output></label>
+      <div class="pills" id="vox"><button data-v="224">Draft</button><button data-v="320" class="on">High</button><button data-v="400">Ultra</button></div></div>
+    <div class="field"><label>Seal gaps up to <output id="sealOut">1.2 mm</output></label><input type="range" id="seal" min="0" max="5" step="0.1" value="1.2"></div>
+    <div class="field"><label>Rotate</label>
+      <div class="rot"><span>X</span><input type="number" id="rotX" value="0" step="5"><span>Y</span><input type="number" id="rotY" value="0" step="5"><span>Z</span><input type="number" id="rotZ" value="0" step="5"></div></div>
+    <label class="chk"><input type="checkbox" id="snap" checked> Snap to the AI surface (keeps fine detail)</label>
+    <label class="chk"><input type="checkbox" id="largest" checked> Keep the main body only (drops loose crumbs)</label>
+    <label class="chk"><input type="checkbox" id="hollow"> Hollow (resin) with a drain hole</label>
+    <div class="field hollow-only" hidden><label>Wall <output id="wallOut">2.4 mm</output></label><input type="range" id="wall" min="1.2" max="6" step="0.1" value="2.4"></div>
+    <div class="field"><label>Smoothing passes <output id="smoothOut">2</output></label><input type="range" id="smooth" min="0" max="8" value="2"></div>
+    <div class="field"><label>Clean surface (keeps creases) <output id="denoiseOut">4</output></label><input type="range" id="denoise" min="0" max="6" value="4"></div>
+    <div class="field"><label>Detail boost <output id="sharpenOut">30%</output></label><input type="range" id="sharpen" min="0" max="200" step="10" value="30"></div>
+    <div class="field"><label>Filament colours (from the AI texture)</label>
+      <div class="pills" id="ncol"><button data-v="0">Off</button><button data-v="2">2</button><button data-v="3">3</button><button data-v="4" class="on">4</button><button data-v="6">6</button><button data-v="8">8</button></div>
+      <div class="pal" id="pal"></div></div>
+    <div class="field"><label>Single-colour preview</label><div class="sw" id="sw">
+      <button style="--c:#c9c4bc" class="on"></button><button style="--c:#f2f2ee"></button><button style="--c:#2b2b2e"></button><button style="--c:#b8862b"></button><button style="--c:#9aa3ad"></button><button style="--c:#7a3b2e"></button></div></div>
+    <button class="btn p big" id="btnFix" disabled>Make print-ready</button>
+
+    <div class="checks" id="checks"></div>
+    <div class="exp">
+      <button class="btn" id="dlSTL" disabled>STL</button>
+      <button class="btn" id="dl3MF" disabled>3MF</button>
+      <button class="btn" id="dlGLB" disabled>AI GLB</button>
+    </div>
+  </aside>
+</main>
+</body>
+</html>
