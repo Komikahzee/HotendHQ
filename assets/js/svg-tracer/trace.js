@@ -69,6 +69,7 @@ export function prepare(rgba, w, h, o) {
       if (keep.length < palette.length) { palette = keep; lbl = P.label(labBig, big, W, H, palette, Math.max(2, Math.ceil(s) + 1)); }
     }
   }
+  if (o.mode !== 'bw' && !(o.palette && o.palette.length) && !(+o.colors)) palette = pruneColours(lbl, W, H, palette, labBig, s, chroma);
   const detail = o.detail == null || o.detail === 'auto' ? (noise > 4.5 ? 8 : 2) : +o.detail;
   const minArea = Math.max(1, Math.round(detail * s * s));
   P.despeckle(lbl, W, H, minArea);
@@ -78,6 +79,66 @@ export function prepare(rgba, w, h, o) {
   palette.forEach((p, i) => { p.weight = tot ? cnt[i] / tot : 0; p.hex = P.hex(p.rgb); });
   const bg = P.borderLabel(lbl, W, H);
   return { mode: o.mode === 'bw' ? 'bw' : 'color', lbl, W, H, s, w, h, palette, bg: bg === P.TRANSPARENT ? -1 : bg, denoise: dn, noise, threshold, ms: Date.now() - t0 };
+}
+
+/** Drop colours that are only edge blends or noise, not colours of the art: anti-aliased borders between two
+    colours (a thin band of their mix, e.g. navy + red -> plum) and JPEG speckle. A colour goes when it is a mix
+    of two others and is mostly band (little inside it is more than R px from another colour), or when it is
+    rare and nearly all edge. Its pixels go to whichever neighbouring colour each one is closest to, so borders
+    stay where they were. Changes lbl in place; returns the palette that is left. */
+function pruneColours(lbl, W, H, palette, lab, s, chroma) {
+  const R = Math.max(1, Math.round(s)), n = W * H, T = P.TRANSPARENT;
+  const labOfP = (p) => { const l = P.rgbToLab(...p.rgb); return [l[0], l[1] * chroma, l[2] * chroma]; };
+  for (let pass = 0; pass < 4 && palette.length > 2; pass++) {
+    const K = palette.length, cnt = new Float64Array(K), core = new Float64Array(K);
+    let tot = 0;
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      const i = y * W + x, l = lbl[i]; if (l === T) continue;
+      cnt[l]++; tot++;
+      if (x >= R && y >= R && x < W - R && y < H - R && lbl[i - R] === l && lbl[i + R] === l && lbl[i - R * W] === l && lbl[i + R * W] === l) core[l]++;
+    }
+    if (!tot) return palette;
+    const rgbs = palette.map(p => p.rgb);
+    const labs = palette.map(labOfP);
+    const drop = palette.map((p, k) => {
+      if (!cnt[k]) return true;
+      const inner = core[k] / cnt[k], share = cnt[k] / tot;
+      if (inner < (share < 0.01 ? 0.5 : 0.25) && P.isBlend(p.rgb, rgbs.filter((_, j) => j !== k), 28)) return true;   // a band between two colours
+      if (share < 0.02 && inner < 0.1) return true;                                           // speckle
+      // a slightly-off copy of a bigger colour (JPEG edges, shading left over)
+      return inner < 0.3 && labs.some((L, j) => cnt[j] > cnt[k] && (L[0] - labs[k][0]) ** 2 + (L[1] - labs[k][1]) ** 2 + (L[2] - labs[k][2]) ** 2 < 144);
+    });
+    // never fall below two colours: the biggest ones stay
+    const order = [...cnt.keys()].sort((a, b) => cnt[b] - cnt[a]);
+    drop[order[0]] = false; if (order.length > 1) drop[order[1]] = false;
+    if (!drop.some((d, k) => d && cnt[k])) { if (drop.some(Boolean)) { /* only unused colours */ } else return palette; }
+    const map = new Int32Array(K).fill(-1); const kept = [];
+    palette.forEach((p, k) => { if (!drop[k]) { map[k] = kept.length; kept.push(p); } });
+    const kl = kept.map(labOfP);
+    const near = (i, cand) => {
+      const a = lab[i * 3], b = lab[i * 3 + 1], c = lab[i * 3 + 2];
+      let best = -1, bd = Infinity;
+      for (const q of cand) { const L = kl[q], d = (L[0] - a) ** 2 + (L[1] - b) ** 2 + (L[2] - c) ** 2; if (d < bd) { bd = d; best = q; } }
+      return best;
+    };
+    const all = kept.map((_, q) => q);
+    const out = new Uint8Array(lbl);
+    const reach = R + 1;
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      const i = y * W + x, l = lbl[i]; if (l === T) continue;
+      if (map[l] >= 0) { out[i] = map[l]; continue; }
+      // kept colours touching this pixel, else any kept colour
+      const cand = new Set();
+      for (let dy = -reach; dy <= reach; dy++) for (let dx = -reach; dx <= reach; dx++) {
+        const xx = x + dx, yy = y + dy; if (xx < 0 || yy < 0 || xx >= W || yy >= H) continue;
+        const m = lbl[yy * W + xx]; if (m !== T && map[m] >= 0) cand.add(map[m]);
+      }
+      out[i] = near(i, cand.size ? cand : all);
+    }
+    lbl.set(out);
+    palette = kept;
+  }
+  return palette;
 }
 
 /** Stage 2: indexed image -> SVG (vectorize.js). o: { smooth, corners, cutout, removeBg, hidden } */
