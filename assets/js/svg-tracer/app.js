@@ -26,7 +26,7 @@ let last = null;          // last trace result
 let view = { z: 1, fitZ: 1, tx: 0, ty: 0, split: 0.5, mode: 'split' };
 
 /* ---------------- worker ---------------- */
-const worker = new Worker(new URL('./worker.js?v=733190287e', import.meta.url), { type: 'module' });
+const worker = new Worker(new URL('./worker.js?v=81e85bf3cc', import.meta.url), { type: 'module' });
 const STAGE = { colours: 'Finding the colours…', regions: 'Finding every edge…', shading: 'Fitting the shading…', curves: 'Fitting the curves…' };
 let reqId = 0, busy = false, queued = false, timer = 0;
 const waiting = new Map();     // id -> purpose
@@ -57,7 +57,7 @@ function prepOpts() {
   return {
     flat: bw || !S.flat ? 0 : FLAT[S.flatLevel],
     mode: S.mode, quality: S.quality, denoise: S.denoise, detail: S.speck ? SPECK[S.speck] ** 2 : 'auto',
-    colors: bw ? null : (S.auto ? 0 : S.count), merge: bw ? null : MERGE[S.merge], palette: bw ? null : S.palette,
+    colors: bw ? null : (S.auto ? 0 : S.count), merge: bw ? null : MERGE[Math.max(5, S.merge)], fewer: bw || !S.auto ? 0 : Math.max(0, 5 - S.merge), palette: bw ? null : S.palette,
     threshold: bw ? (S.thrAuto ? 'auto' : S.thr) : null, invert: bw ? S.invert : null,
   };
 }

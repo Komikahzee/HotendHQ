@@ -119,10 +119,12 @@ export function flatten(big, W, H, o = {}) {
   const minArea = 30 * s * s, alive = new Uint8Array(R).fill(1), ver = new Int32Array(R), par = new Int32Array(R);
   for (let i = 0; i < R; i++) par[i] = i;
   const cost = (a, b, e) => {
-    if (Math.min(cnt[a], cnt[b]) < minArea) return e.s / e.c * 0.01;     // specks always go, into the softest neighbour
     const na = cnt[a], nb = cnt[b];
     const dl = (sL[a] / na - sL[b] / nb) * wL, da = sa[a] / na - sa[b] / nb, db = sb[a] / na - sb[b] / nb;
-    if (Math.sqrt(dl * dl + da * da + db * db) > L.maxDiff) return Infinity;
+    const diff = Math.sqrt(dl * dl + da * da + db * db);
+    // specks go into the softest neighbour, unless they stand out clearly (small lettering, dots, fine lines)
+    if (Math.min(na, nb) < minArea && (diff < 25 || Math.min(na, nb) < 4 * s * s)) return e.s / e.c * 0.01;
+    if (diff > L.maxDiff) return Infinity;
     if (L.spread < Infinity) {
       const N = na + nb, mL = (sL[a] + sL[b]) / N * wL, ma = (sa[a] + sa[b]) / N, mb = (sb[a] + sb[b]) / N;
       if (Math.sqrt(Math.max(0, (q2[a] + q2[b]) / N - mL * mL - ma * ma - mb * mb)) > L.spread) return Infinity;
