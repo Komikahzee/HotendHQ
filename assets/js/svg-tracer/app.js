@@ -26,7 +26,7 @@ let last = null;          // last trace result
 let view = { z: 1, fitZ: 1, tx: 0, ty: 0, split: 0.5, mode: 'split' };
 
 /* ---------------- worker ---------------- */
-const worker = new Worker(new URL('./worker.js?v=81e85bf3cc', import.meta.url), { type: 'module' });
+const worker = new Worker(new URL('./worker.js?v=75b3dbca07', import.meta.url), { type: 'module' });
 const STAGE = { colours: 'Finding the colours…', regions: 'Finding every edge…', shading: 'Fitting the shading…', curves: 'Fitting the curves…' };
 let reqId = 0, busy = false, queued = false, timer = 0;
 const waiting = new Map();     // id -> purpose

@@ -6,7 +6,7 @@
    ============================================================ */
 import * as P from './prep.js?v=469c7cc377';
 import { vectorize as trace } from './vectorize.js?v=0d28b5d966';
-import { segment, flatten, fit, fitExact } from './regions.js?v=5633e7cffe';
+import { segment, flatten, fit, fitExact } from './regions.js?v=c896e2b9bf';
 
 /** Working size: small images are enlarged (edges land between pixels, so curves come out smooth),
     huge ones are capped so the browser stays quick. */
@@ -235,7 +235,7 @@ function pruneColours(lbl, W, H, palette, lab, s, chroma) {
       if (!cnt[k]) return true;
       const inner = core[k] / cnt[k], share = cnt[k] / tot;
       const others = rgbs.filter((_, j) => j !== k);
-      if (inner < (share < 0.01 ? 0.5 : 0.25) && (P.isBlend(p.rgb, others, 28) || labBlend(p.rgb, others))) return true;   // a band between two colours
+      if (inner < (share < 0.01 ? 0.6 : 0.25) && (P.isBlend(p.rgb, others, 28) || labBlend(p.rgb, others))) return true;   // a band between two colours
       // the closest bigger colour: a thin colour of its own (a fine line, small lettering) is a detail, not noise
       let dMin = Infinity;
       labs.forEach((L, j) => { if (j !== k && cnt[j] > cnt[k]) dMin = Math.min(dMin, (L[0] - labs[k][0]) ** 2 + (L[1] - labs[k][1]) ** 2 + (L[2] - labs[k][2]) ** 2); });
