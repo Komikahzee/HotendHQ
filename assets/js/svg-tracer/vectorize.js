@@ -16,9 +16,9 @@
    ============================================================ */
 
 /**
- * lbl: Uint8Array W*H palette indices (255 = transparent)
+ * lbl: W*H palette indices (Uint8Array, 255 = transparent; or wider labels, with their own skip set)
  * opts: { smooth 0..10, corners 0..10, tolerance (px of the work image), stacked, scale (output px per work px),
- *         skip: Set of labels not drawn }
+ *         skip: Set of labels not drawn, group: label -> layer number (object layers) }
  * returns { regions: [{ label, area, d }], order: [...] }
  */
 export function vectorize(lbl, W, H, opts = {}) {
@@ -26,6 +26,7 @@ export function vectorize(lbl, W, H, opts = {}) {
   const s = opts.workScale || 1;               // work px per original px (bigger = more upscaled)
   const out = opts.scale || 1;
   const skip = opts.skip || new Set([255]);
+  const group = opts.group || null;            // label -> layer, when the trace is split into object layers
 
   /* ---------- 1. components (4-connected) ---------- */
   const n = W * H;
@@ -172,8 +173,13 @@ export function vectorize(lbl, W, H, opts = {}) {
       // keep every loop that runs the same way round as the outer one, drop the holes
       const sgn = Math.sign(polyArea(r.cycles[r.outer], chains));
       parts = r.cycles.filter((cy, i) => i === r.outer || Math.sign(polyArea(cy, chains)) === sgn);
-      if (transparentPts.length) r.cycles.forEach((cy, i) => {
+      // with object layers, a hole that borders another layer stays cut, so hiding or moving that layer
+      // never leaves this one's filled hole behind
+      const g = group ? group(r.label) : 0;
+      if (transparentPts.length || group) r.cycles.forEach((cy, i) => {
         if (i === r.outer || parts.includes(cy)) return;
+        if (group && cy.some(ref => { const ch = chains[ref.i], other = ref.rev ? ch.left : ch.right; return other >= 0 && group(compLabel[other]) !== g; })) { parts.push(cy); return; }
+        if (!transparentPts.length) return;
         const poly = rawPoly(cy, chains);
         if (transparentPts.some(([px, py]) => pointIn(poly, px, py))) parts.push(cy);
       });

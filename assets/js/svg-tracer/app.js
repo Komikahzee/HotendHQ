@@ -15,18 +15,18 @@ const SPECK = ['auto', 1, 2, 3, 4, 5, 6, 8, 10, 12, 15, 20, 25, 30, 40];   // sp
 const speckText = (v) => v ? `${SPECK[v]}×${SPECK[v]} px` : 'auto';
 const DEFAULTS = { mode: 'color', auto: true, merge: 5, count: 8, thrAuto: true, thr: 50, invert: false, smooth: 5, corners: 5,
   speck: 0, nobg: false, nobgBw: true, layout: 'stacked', quality: 'high', denoise: 'auto',
-  flat: false, flatLevel: 0, detail: 2, gradients: true };
+  flat: false, flatLevel: 0, detail: 2, gradients: true, layerMode: 'colour' };
 const FLAT = ['auto', 1, 2, 3];
 const flatText = (v) => ['Auto', 'Light', 'Medium', 'Strong'][v];
 const DETAIL_TEXT = { 1: 'Low (smallest file)', 2: 'Medium', 3: 'High', 4: 'Pixel-exact', 5: 'Identical' };
-const S = { ...DEFAULTS, palette: null, hidden: new Set(), recolor: {} };
+const S = { ...DEFAULTS, palette: null, hidden: new Set(), recolor: {}, objects: [], restHidden: false };
 
 let img = null;           // { rgba, w, h, name, url }
 let last = null;          // last trace result
 let view = { z: 1, fitZ: 1, tx: 0, ty: 0, split: 0.5, mode: 'split' };
 
 /* ---------------- worker ---------------- */
-const worker = new Worker(new URL('./worker.js?v=75b3dbca07', import.meta.url), { type: 'module' });
+const worker = new Worker(new URL('./worker.js?v=8bbabb6ef3', import.meta.url), { type: 'module' });
 const STAGE = { colours: 'Finding the colours…', regions: 'Finding every edge…', shading: 'Fitting the shading…', curves: 'Fitting the curves…' };
 let reqId = 0, busy = false, queued = false, timer = 0;
 const waiting = new Map();     // id -> purpose
@@ -63,7 +63,8 @@ function prepOpts() {
 }
 function vecOpts() {
   return { smooth: S.smooth, corners: S.corners, cutout: S.layout === 'cutout',
-    removeBg: S.mode === 'bw' ? S.nobgBw : S.nobg, hidden: S.mode === 'bw' ? [] : [...S.hidden], recolor: S.mode === 'bw' ? {} : S.recolor };
+    removeBg: S.mode === 'bw' ? S.nobgBw : S.nobg, hidden: S.mode === 'bw' ? [] : [...S.hidden], recolor: S.mode === 'bw' ? {} : S.recolor,
+    ...layerOpts() };
 }
 function schedule(delay = 120) { clearTimeout(timer); timer = setTimeout(run, delay); }
 function run() {
@@ -108,6 +109,8 @@ function setImage(d, name, url) {
   stage.classList.remove('is-empty');
   last = null; showSvg();
   S.palette = null; S.hidden.clear(); S.recolor = {};
+  S.objects = []; S.restHidden = false; objSel = -1; objCount = 0; samFor = null; renderLayers();
+  layoutPhone();
   setButtons(false);
   fit();
   const copy = new Uint8ClampedArray(d.rgba);
@@ -178,10 +181,13 @@ function show(m) {
     $('st-thr-out').textContent = S.thrAuto ? `auto (${Math.round(m.threshold)})` : S.thr;
   }
   const kb = m.bytes / 1024, size = kb < 1000 ? kb.toFixed(kb < 10 ? 1 : 0) + ' KB' : (kb / 1024).toFixed(1) + ' MB';
-  if (S.mode === 'detail') readout.textContent = `${m.paths.toLocaleString()} shapes · ${m.gradients.toLocaleString()} gradients · ${size}`;
+  if (m.objMap) m.objMap = new Uint8Array(m.objMap);
+  drawOverlay();
+  const nLay = m.objLayers ? ` · ${m.objLayers.length} layer${m.objLayers.length === 1 ? '' : 's'}` : '';
+  if (S.mode === 'detail') readout.textContent = `${m.paths.toLocaleString()} shapes · ${m.gradients.toLocaleString()} gradients${nLay} · ${size}`;
   else {
     const nCol = S.mode === 'bw' ? 1 : m.palette.length - S.hidden.size - (S.nobg && m.bg >= 0 && !S.hidden.has(m.bg) ? 1 : 0);
-    readout.textContent = `${nCol} colour${nCol === 1 ? '' : 's'} · ${m.paths} shapes · ${size}`;
+    readout.textContent = `${nCol} colour${nCol === 1 ? '' : 's'}${nLay} · ${m.paths} shapes · ${size}`;
   }
   setButtons(true);
   applyView();
@@ -223,7 +229,10 @@ function showSvg() {
   drawing = im.decode().then(put, put);
 }
 let drawing = Promise.resolve(), painting = false;
-function setButtons(on) { for (const id of ['st-dl', 'st-zip', 'st-copy']) $(id).disabled = !on; if (S.mode === 'detail') $('st-zip').disabled = true; }
+function setButtons(on) {
+  for (const id of ['st-dl', 'st-zip', 'st-copy']) $(id).disabled = !on;
+  if (S.mode === 'detail' && !(last && last.objLayers)) $('st-zip').disabled = true;
+}
 function status(t, kind) { statusEl.textContent = t; if (kind) statusEl.dataset.kind = kind; else delete statusEl.dataset.kind; }
 
 /* ---------------- palette ---------------- */
@@ -307,7 +316,7 @@ document.querySelectorAll('.st-tabs button').forEach(b => b.addEventListener('cl
   if (S.mode === b.dataset.mode) return;
   S.mode = b.dataset.mode; syncUI(); schedule(0);
 }));
-$('st-reset').addEventListener('click', () => { Object.assign(S, DEFAULTS, { palette: null, hidden: new Set(), recolor: {} }); syncUI(); schedule(0); });
+$('st-reset').addEventListener('click', () => { Object.assign(S, DEFAULTS, { palette: null, hidden: new Set(), recolor: {}, objects: [], restHidden: false }); objSel = -1; setObjPick(false); renderLayers(); syncUI(); schedule(0); });
 
 function syncUI() {
   document.querySelectorAll('.st-tabs button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.mode === S.mode)));
@@ -338,6 +347,14 @@ function syncUI() {
   $('st-nobg-hint').textContent = S.mode === 'bw' ? 'Leaves the white out, so only the black shapes are in the SVG.' : 'Leaves the background colour out, so the SVG is transparent there.';
   $('st-layout').value = S.layout; $('st-quality').value = S.quality; $('st-denoise').value = S.denoise;
   if (S.mode !== 'color') $('st-pick').setAttribute('aria-pressed', 'false');
+  document.querySelectorAll('[data-layers]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.layers === S.layerMode)));
+  $('st-obj').classList.toggle('hidden', S.layerMode !== 'object');
+  $('st-lay-hint').textContent = S.layerMode === 'object'
+    ? 'Tap anything in the image and it becomes its own layer. Tap inside a layer again to lift out a smaller part, like one letter of a sign.'
+    : S.mode === 'color' ? 'Every colour is its own layer. Hide or remove colours in the list above.'
+    : S.mode === 'bw' ? 'One colour, one layer. Switch to By object to split it up.' : 'Switch to By object to split the trace into layers.';
+  if (S.layerMode !== 'object') setObjPick(false);
+  syncTabs();
 }
 
 /* ---------------- pick a missing colour ---------------- */
@@ -460,6 +477,7 @@ const endPtr = (e) => {
   if (!ptrs.has(e.pointerId)) return;
   ptrs.delete(e.pointerId);
   if (drag && drag.kind === 'pan' && drag.moved <= 3 && picking && e.type === 'pointerup') pickAt(e.clientX, e.clientY);
+  else if (drag && drag.kind === 'pan' && drag.moved <= 3 && objPick && e.type === 'pointerup') tapObject(e.clientX, e.clientY);
   stage.classList.remove('is-panning');
   drag = null;
   if (ptrs.size === 1) { const [p] = [...ptrs.values()]; drag = { kind: 'pan', x: p[0], y: p[1], tx: view.tx, ty: view.ty, moved: 9 }; }
@@ -482,6 +500,7 @@ $('st-copy').addEventListener('click', async () => {
 });
 $('st-zip').addEventListener('click', () => {
   if (!last) return;
+  if (last.objLayers) { saveObjectLayers(last); return; }
   status('Making one SVG per colour…');
   const id = ++reqId; waiting.set(id, 'layers');
   busy = true; stage.classList.add('is-busy');
@@ -498,5 +517,252 @@ function saveLayers(m) {
   save(new Blob([zipSync(files, { level: 6 })], { type: 'application/zip' }), `${img.name}-layers.zip`);
   status(`Saved ${m.layers.length} colour layer${m.layers.length === 1 ? '' : 's'} as a ZIP.`, 'ok');
 }
+
+/* ---------------- object layers ----------------
+   Tap an object and the object finder (sam-worker.js) outlines it; the tracer then cuts the trace into
+   one layer per object. Each tap keeps the finder's sizes for that spot (one shape, part, object, whole),
+   so a layer can be made smaller or bigger afterwards without tapping again. */
+let objPick = false, objSel = -1, objCount = 0, hoverLayer = -1;
+let sam = null, samReq = 0, samFor = null, samReady = null;
+const samWait = new Map();
+const SAM_SIDE = 1024;
+const LAYER_HUES = [24, 200, 140, 280, 50, 330, 170, 0, 230, 95];
+const layerColour = (k) => `hsl(${LAYER_HUES[k % LAYER_HUES.length]} 95% 55%)`;
+
+function samCall(msg, transfer) {
+  return new Promise((res, rej) => { const id = ++samReq; samWait.set(id, { res, rej }); sam.postMessage({ ...msg, id }, transfer || []); });
+}
+function startSam() {
+  if (sam) return;
+  sam = new Worker(new URL('./sam-worker.js?v=c6efbc96b0', import.meta.url), { type: 'module' });
+  sam.onmessage = (e) => {
+    const m = e.data, w = samWait.get(m.id);
+    if (m.type === 'progress') { status(m.text); return; }
+    if (!w) return;
+    samWait.delete(m.id);
+    if (m.type === 'error') w.rej(new Error(m.message)); else w.res(m);
+  };
+  sam.onerror = () => { for (const w of samWait.values()) w.rej(new Error('The object finder could not start in this browser.')); samWait.clear(); sam = null; samReady = null; };
+}
+// the image as the finder sees it: long side 1024 px
+function samSize() { const k = SAM_SIDE / Math.max(img.w, img.h); return { k, w: Math.round(img.w * k), h: Math.round(img.h * k) }; }
+function ensureEmbed() {
+  if (samFor === img && samReady) return samReady;
+  startSam();
+  samFor = img;
+  const { w, h } = samSize();
+  const src = document.createElement('canvas'); src.width = img.w; src.height = img.h;
+  src.getContext('2d').putImageData(new ImageData(new Uint8ClampedArray(img.rgba), img.w, img.h), 0, 0);
+  const c = document.createElement('canvas'); c.width = w; c.height = h;
+  const g = c.getContext('2d', { willReadFrequently: true });
+  g.imageSmoothingQuality = 'high'; g.drawImage(src, 0, 0, w, h);
+  const px = g.getImageData(0, 0, w, h).data;
+  const forImg = img;
+  samReady = samCall({ type: 'embed', rgba: px.buffer, w, h }, [px.buffer]).catch((e) => { if (samFor === forImg) { samReady = null; samFor = null; } throw e; });
+  return samReady;
+}
+
+function setObjPick(on) {
+  objPick = !!on && !!img;
+  $('st-obj-pick').setAttribute('aria-pressed', String(objPick));
+  $('st-obj-pick').querySelector('span').textContent = objPick ? 'Done picking' : 'Tap objects to lift them out';
+  stage.classList.toggle('is-objpick', objPick);
+  if (objPick) {
+    if (picking) $('st-pick').click();
+    if (view.mode === 'split' || view.mode === 'orig') setView('result');
+    status('Tap anything in the image to make it a layer.');
+    ensureEmbed().then(() => { if (objPick) status('Ready: tap anything in the image to make it a layer.'); }, (e) => status('The object finder could not load: ' + e.message, 'bad'));
+  }
+  drawOverlay();
+}
+$('st-obj-pick').addEventListener('click', () => { if (!img) { status('Open an image first.'); return; } setObjPick(!objPick); });
+document.querySelectorAll('[data-layers]').forEach(b => b.addEventListener('click', () => {
+  if (S.layerMode === b.dataset.layers) return;
+  S.layerMode = b.dataset.layers; syncUI(); renderLayers(); schedule(0);
+  if (S.layerMode === 'object' && img && !S.objects.length) setObjPick(true);
+}));
+
+const LEVEL_NAMES = { 1: ['Whole'], 2: ['Part', 'Whole'], 3: ['Part', 'Object', 'Whole'] };
+function levelName(L) {
+  const lv = L.levels[L.li];
+  if (lv === 'shape') return 'Shape';
+  const masks = L.levels.filter(v => v !== 'shape');
+  return LEVEL_NAMES[masks.length][masks.indexOf(lv)];
+}
+const maskOf = (L, c) => L.masks.slice(c * L.mw * L.mh, (c + 1) * L.mw * L.mh);
+function layerOpts() {
+  if (S.layerMode !== 'object' || !S.objects.length) return {};
+  const objects = S.objects.map((L) => {
+    // Detailed mode has no flat colours to follow, so a single shape falls back to the finder's smallest part
+    const lv = L.levels[L.li] === 'shape' && S.mode === 'detail' ? (L.levels[1] ?? L.biggest) : L.levels[L.li];
+    if (lv === 'shape') return { kind: 'shape', x: L.x, y: L.y, within: { w: L.mw, h: L.mh, data: maskOf(L, L.biggest) } };
+    return { kind: 'mask', w: L.mw, h: L.mh, data: maskOf(L, lv) };
+  });
+  const layerHidden = S.objects.map((L, i) => L.hidden ? i + 1 : -1).filter(k => k > 0);
+  if (S.restHidden) layerHidden.push(0);
+  return { objects, layerNames: S.objects.map(L => L.name), layerHidden };
+}
+// the layer under an image point, from the last trace
+function layerAt(x, y) {
+  if (!last || !last.objMap || !last.work) return 0;
+  const [W, H] = last.work;
+  return last.objMap[Math.min(H - 1, Math.floor(y * H / img.h)) * W + Math.min(W - 1, Math.floor(x * W / img.w))] || 0;
+}
+function overlap(a, b) {
+  let i = 0, u = 0;
+  for (let p = 0; p < a.length; p++) { const A = a[p] > 127, B = b[p] > 127; if (A && B) i++; if (A || B) u++; }
+  return u ? i / u : 0;
+}
+async function tapObject(cx, cy) {
+  const r = stage.getBoundingClientRect();
+  const x = (cx - r.left - view.tx) / view.z, y = (cy - r.top - view.ty) / view.z;
+  if (x < 0 || y < 0 || x >= img.w || y >= img.h) return;
+  const forImg = img;
+  status('Finding that object…');
+  stage.classList.add('is-busy');
+  try {
+    await ensureEmbed();
+    const { k } = samSize();
+    const m = await samCall({ type: 'pick', x: x * k, y: y * k });
+    if (img !== forImg) return;
+    const masks = new Uint8Array(m.masks), n = m.w * m.h;
+    // the finder's three sizes for this spot, smallest first, without near-duplicates
+    const lv = [];
+    for (const c of [1, 2, 3].filter(c => m.area[c] > 0).sort((a, b) => m.area[a] - m.area[b]))
+      if (!lv.length || m.area[c] > m.area[lv[lv.length - 1]] * 1.12) lv.push(c);
+    if (!lv.length) { status('Nothing found there. Try tapping right on the object.'); return; }
+    const best = [1, 2, 3].reduce((a, c) => m.iou[c] > m.iou[a] ? c : a, 1);
+    const levels = (S.mode !== 'detail' ? ['shape'] : []).concat(lv);
+    let li = levels.indexOf(lv.reduce((a, c) => Math.abs(m.area[c] - m.area[best]) < Math.abs(m.area[a] - m.area[best]) ? c : a, lv[0]));
+    // tapping inside a layer you already have means the part of it under your finger: in flat colours that is
+    // the one shape you tapped (a letter of a sign, the eye of a face), whole; in Detailed mode the finder's next size down
+    const under = layerAt(x, y);
+    if (under > 0) {
+      const U = S.objects[under - 1];
+      if (U.levels[U.li] === 'shape') { objSel = under - 1; renderLayers(); drawOverlay(); status('That is already its own layer. Use + on it to take more.'); return; }
+      if (levels[0] === 'shape') li = 0;
+      else {
+        const Um = maskOf(U, U.levels[U.li]);
+        while (li > 0 && overlap(masks.subarray(levels[li] * n, (levels[li] + 1) * n), Um) > 0.8) li--;
+      }
+    }
+    const L = { name: `Object ${++objCount}`, x, y, mw: m.w, mh: m.h, masks, levels, li, biggest: lv[lv.length - 1], hidden: false };
+    S.objects.push(L); objSel = S.objects.length - 1;
+    renderLayers();
+    status(`Lifted out as ${L.name}. Tracing the layers…`);
+    schedule(0);
+  } catch (e) {
+    status('The object finder could not run: ' + e.message, 'bad');
+  } finally { if (!busy) stage.classList.remove('is-busy'); }
+}
+
+function renderLayers() {
+  const box = $('st-lays');
+  if (!S.objects.length) {
+    box.innerHTML = '<p class="hint">No layers yet. Your layers show up here, with everything you have not picked in its own layer.</p>';
+    drawOverlay(); return;
+  }
+  box.innerHTML = '';
+  hoverLayer = -1;                 // the rows are rebuilt, so the one under the pointer never reports leaving
+  const row = (k) => {
+    const L = k ? S.objects[k - 1] : null, off = k ? L.hidden : S.restHidden;
+    const el = document.createElement('div');
+    el.className = 'st-ly' + (k ? '' : ' st-ly-rest') + (off ? ' is-off' : '') + (k && objSel === k - 1 ? ' is-sel' : '');
+    el.innerHTML = `<span class="st-ly-dot" style="background:${k ? layerColour(k - 1) : 'transparent'}"></span>
+      <input class="st-ly-name" value="${k ? L.name.replace(/"/g, '&quot;') : 'Everything else'}" aria-label="Layer name" ${k ? '' : 'readonly tabindex="-1"'}>
+      ${k ? `<button type="button" class="st-sw-btn" data-act="down" aria-label="Smaller" title="Smaller"${L.li === 0 ? ' disabled' : ''}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 12h12"/></svg></button>
+      <span class="st-ly-size" title="How much of the object this layer takes">${levelName(L)}</span>
+      <button type="button" class="st-sw-btn" data-act="up" aria-label="Bigger" title="Bigger"${L.li === L.levels.length - 1 ? ' disabled' : ''}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 12h12M12 6v12"/></svg></button>` : ''}
+      <button type="button" class="st-sw-btn" data-act="hide" aria-label="${off ? 'Show' : 'Hide'} this layer" title="${off ? 'Show' : 'Hide'}: hidden layers are left out of the SVG">${off ? ICON.eyeOff : ICON.eye}</button>
+      ${k ? `<button type="button" class="st-sw-btn" data-act="del" aria-label="Remove this layer" title="Remove: its shapes go back into Everything else">${ICON.x}</button>` : ''}`;
+    const nm = el.querySelector('.st-ly-name');
+    if (k) {
+      nm.addEventListener('focus', () => { objSel = k - 1; box.querySelectorAll('.st-ly').forEach(r => r.classList.remove('is-sel')); el.classList.add('is-sel'); drawOverlay(); });
+      nm.addEventListener('change', () => { L.name = nm.value.trim() || `Object ${k}`; schedule(0); });
+      nm.addEventListener('keydown', (e) => { if (e.key === 'Enter') nm.blur(); });
+      el.querySelector('[data-act=down]').addEventListener('click', () => { if (L.li > 0) { L.li--; objSel = k - 1; renderLayers(); schedule(0); } });
+      el.querySelector('[data-act=up]').addEventListener('click', () => { if (L.li < L.levels.length - 1) { L.li++; objSel = k - 1; renderLayers(); schedule(0); } });
+      el.querySelector('[data-act=del]').addEventListener('click', () => {
+        S.objects.splice(k - 1, 1); objSel = Math.min(objSel, S.objects.length - 1);
+        renderLayers(); schedule(0);
+      });
+    }
+    el.querySelector('[data-act=hide]').addEventListener('click', () => { if (k) L.hidden = !L.hidden; else S.restHidden = !S.restHidden; renderLayers(); schedule(0); });
+    el.addEventListener('pointerenter', () => { hoverLayer = k; drawOverlay(); });
+    box.appendChild(el);
+  };
+  for (let k = 1; k <= S.objects.length; k++) row(k);
+  row(0);
+}
+// tint each layer on the image while you pick, so you can see what went where
+function drawOverlay() {
+  const cv = $('st-lay');
+  const on = S.layerMode === 'object' && last && last.objMap && last.work && S.objects.length && (objPick || hoverLayer >= 0);
+  stage.classList.toggle('show-layers', !!on);
+  if (!on) return;
+  const [W, H] = last.work, map = last.objMap;
+  if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; }
+  const g = cv.getContext('2d'), id = g.createImageData(W, H), d = id.data;
+  const rgb = S.objects.map((_, i) => { g.fillStyle = layerColour(i); const h = g.fillStyle; return [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)]; });
+  const focus = hoverLayer >= 0 ? hoverLayer : objSel + 1;
+  for (let i = 0, n = W * H; i < n; i++) {
+    const k = map[i];
+    if (!k) { if (hoverLayer === 0) { d[i * 4] = 255; d[i * 4 + 1] = 160; d[i * 4 + 2] = 40; d[i * 4 + 3] = 110; } continue; }
+    const c = rgb[k - 1]; if (!c || S.objects[k - 1].hidden) continue;
+    d[i * 4] = c[0]; d[i * 4 + 1] = c[1]; d[i * 4 + 2] = c[2]; d[i * 4 + 3] = k === focus ? 150 : hoverLayer >= 0 ? 0 : 85;
+  }
+  g.putImageData(id, 0, 0);
+}
+
+$('st-lays').addEventListener('pointerleave', () => { if (hoverLayer >= 0) { hoverLayer = -1; drawOverlay(); } });
+
+function saveObjectLayers(m) {
+  const files = {}, slug = (t) => t.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'layer';
+  m.objLayers.forEach((l, n) => { files[`${img.name}-${String(n + 1).padStart(2, '0')}-${slug(l.name)}.svg`] = strToU8(l.svg); });
+  files[`${img.name}-all.svg`] = strToU8(m.svg);
+  save(new Blob([zipSync(files, { level: 6 })], { type: 'application/zip' }), `${img.name}-layers.zip`);
+  status(`Saved ${m.objLayers.length} layer${m.objLayers.length === 1 ? '' : 's'} as a ZIP.`, 'ok');
+}
+
+renderLayers();
+
+/* ---------------- phone layout ----------------
+   On a phone the picture stays pinned at the top, its view switch and tools sit in a strip right under it,
+   and the settings are tabs (only one group at a time, so nothing needs a long scroll). Once an image is
+   open the site header scrolls away, which gives the picture the whole top of the screen. */
+const phone = matchMedia('(max-width:900px)');
+const viewBox = document.querySelector('.st-page .gf-view'), panel = $('st-panel');
+const MAIN_TAB = { color: 'Colours', bw: 'B&W', detail: 'Detail' };
+function layoutPhone() {
+  const strip = $('st-strip'), tools = document.querySelector('.st-page .gf-tools'), vw = $('st-view');
+  if (phone.matches) {
+    if (tools.parentNode !== strip) strip.append(vw, tools);
+    if (!panel.dataset.ptab) panel.dataset.ptab = 'main';
+    panel.querySelectorAll('details').forEach(d => { d.open = true; });
+  } else {
+    if (tools.parentNode !== stage) { stage.insertBefore(tools, readout); stage.insertBefore(vw, readout); }
+    delete panel.dataset.ptab;
+  }
+  document.body.classList.toggle('st-editing', phone.matches && !!img);
+  placeTabs();
+}
+function placeTabs() {
+  if (!phone.matches) return;
+  const top = parseFloat(getComputedStyle(viewBox).top) || 0;
+  panel.style.setProperty('--st-tabs-top', Math.round(top + viewBox.offsetHeight) + 'px');
+}
+function syncTabs() {
+  panel.querySelector('[data-ptab=main]').textContent = MAIN_TAB[S.mode];
+  panel.querySelectorAll('.st-ptabs button').forEach(b => b.setAttribute('aria-selected', String(b.dataset.ptab === (panel.dataset.ptab || 'main'))));
+}
+panel.querySelectorAll('.st-ptabs button').forEach(b => b.addEventListener('click', () => {
+  panel.dataset.ptab = b.dataset.ptab; syncTabs();
+  // keep the tab bar where it is: if the page had scrolled past the top of the settings, go back to it
+  const y = panel.getBoundingClientRect().top + scrollY - (parseFloat(panel.style.getPropertyValue('--st-tabs-top')) || 0);
+  if (scrollY > y) scrollTo({ top: y });
+}));
+phone.addEventListener('change', layoutPhone);
+new ResizeObserver(placeTabs).observe(viewBox);
+layoutPhone();
 
 syncUI();

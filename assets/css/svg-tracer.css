@@ -34,6 +34,34 @@
 .st-pal-tools .btn svg{width:15px;height:15px}
 #st-pick[aria-pressed=true]{border-color:var(--amber-300);color:var(--amber-300);background:rgba(243,102,46,.14)}
 
+/* layers */
+.st-seg{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:3px;border-radius:12px;border:1px solid var(--border);background:rgba(0,0,0,.2);margin-bottom:8px}
+.st-seg button{appearance:none;border:0;background:transparent;color:var(--text-dim);font:700 .82rem/1 var(--font);padding:10px 8px;border-radius:9px;cursor:pointer}
+.st-seg button:hover{color:var(--text)}
+.st-seg button[aria-pressed=true]{background:rgba(243,102,46,.18);color:var(--amber-300);box-shadow:inset 0 0 0 1px var(--flame-500)}
+.st-obj-pick{width:100%;justify-content:center;margin:4px 0 10px}
+.st-obj-pick svg{width:17px;height:17px}
+.st-obj-pick[aria-pressed=true]{border-color:var(--amber-300);color:var(--amber-300);background:rgba(243,102,46,.14)}
+.st-lays{display:grid;gap:6px}
+.st-lays .hint{margin:0}
+.st-ly{display:flex;align-items:center;gap:6px;padding:5px 5px 5px 8px;border-radius:10px;border:1px solid var(--border);background:var(--surface);min-width:0}
+.st-ly.is-sel{border-color:var(--amber-300)}
+.st-ly.is-off{opacity:.5}
+.st-ly-dot{flex:none;width:14px;height:14px;border-radius:4px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.35)}
+.st-ly-name{flex:1;min-width:0;border:0;background:transparent;color:var(--text);font:600 .84rem var(--font);padding:5px 4px;border-radius:6px;text-overflow:ellipsis}
+.st-ly-name:hover{background:rgba(255,255,255,.05)}
+.st-ly-name:focus{outline:1px solid var(--amber-300);background:rgba(0,0,0,.25)}
+.st-ly-rest .st-ly-name{color:var(--text-dim)}
+.st-ly-size{flex:none;font:700 .62rem var(--font);letter-spacing:.04em;text-transform:uppercase;color:var(--text-faint);min-width:40px;text-align:center}
+.st-ly .st-sw-btn:disabled{opacity:.3;cursor:default;background:transparent;color:var(--text-faint)}
+.st-lay{position:absolute;inset:0;width:100%;height:100%;display:none;pointer-events:none}
+.st-stage.show-layers .st-lay{display:block}
+.st-stage.is-objpick{cursor:pointer}
+@media (pointer:coarse){
+  .st-ly .st-sw-btn{width:34px;height:34px}
+  .st-ly-name{font-size:.9rem}
+}
+
 /* stage */
 .st-stage{touch-action:none;user-select:none;-webkit-user-select:none;cursor:grab}
 .st-stage.is-panning{cursor:grabbing}
@@ -104,6 +132,32 @@
 }
 @media (max-width:420px){
   .st-pal{grid-template-columns:1fr 1fr}
+}
+
+/* phone: settings in tabs, the view switch and tools in a strip under the picture */
+.st-ptabs,.st-strip{display:none}
+@media (max-width:900px){
+  .st-ptabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;padding:3px;border-radius:12px;border:1px solid var(--border);
+    background:var(--surface);margin:0 0 14px;position:sticky;top:var(--st-tabs-top,0px);z-index:5;box-shadow:0 10px 18px -12px rgba(0,0,0,.9)}
+  .st-ptabs button{appearance:none;border:0;background:transparent;color:var(--text-dim);font:700 .84rem/1 var(--font);padding:12px 4px;border-radius:9px;cursor:pointer;min-height:44px}
+  .st-ptabs button[aria-selected=true]{background:rgba(243,102,46,.18);color:var(--amber-300);box-shadow:inset 0 0 0 1px var(--flame-500)}
+  #st-panel[data-ptab] .gf-group[data-ptab]{display:none}
+  #st-panel[data-ptab=main] .gf-group[data-ptab=main]:not(.hidden),#st-panel[data-ptab=layers] .gf-group[data-ptab=layers],
+  #st-panel[data-ptab=shapes] .gf-group[data-ptab=shapes]:not(.hidden),#st-panel[data-ptab=output] .gf-group[data-ptab=output]{display:block}
+  #st-panel[data-ptab]:not([data-ptab=main]) :is(.st-drop,.st-sample,.st-tabs,.st-mode-hint){display:none}
+  #st-panel[data-ptab] .gf-group>summary{display:none}
+  #st-panel[data-ptab] .gf-group{border-top:0;padding-top:0;margin-top:0}
+  .st-wide{display:none}
+  .st-strip{display:flex;align-items:center;gap:6px;margin-top:8px}
+  .st-strip .st-view{position:static;flex:1;min-width:0;justify-content:space-between}
+  .st-strip .st-view button{flex:1;padding:11px 4px}
+  .st-strip .gf-tools{position:static;display:flex;gap:6px}
+  .st-strip #st-zin,.st-strip #st-zout{display:none}
+  .st-strip .gf-tool{width:42px;height:42px}
+  .st-stage.is-empty~.st-strip{display:none}
+  /* while you edit, the site header scrolls away and the picture keeps the whole top of the screen */
+  body.st-editing .site-head{position:relative}
+  body.st-editing .gf-view{top:0}
 }
 
 /* showcase + how-to */
