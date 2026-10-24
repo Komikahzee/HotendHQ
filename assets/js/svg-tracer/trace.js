@@ -5,8 +5,9 @@
    Shared by the worker and the Node tests.
    ============================================================ */
 import * as P from './prep.js?v=469c7cc377';
-import { vectorize as trace } from './vectorize.js?v=0d28b5d966';
-import { segment, flatten, fit, fitExact } from './regions.js?v=389d31c8ad';
+import { vectorize as trace } from './vectorize.js?v=c1cac59615';
+import { segment, flatten, fit, fitExact } from './regions.js?v=c896e2b9bf';
+import { objectMap } from './layers.js?v=5eb73171e4';
 
 /** Working size: small images are enlarged (edges land between pixels, so curves come out smooth),
     huge ones are capped so the browser stays quick. */
@@ -47,19 +48,7 @@ export function prepare(rgba, w, h, o) {
   } else {
     if (o.palette && o.palette.length) {
       palette = o.palette.map(hx => { const rgb = P.fromHex(hx); const l = P.rgbToLab(...rgb); return { rgb, lab: [l[0], l[1] * chroma, l[2] * chroma], weight: 0 }; });
-    } else {
-      // palette from the (smaller) cleaned original: fast, and edges are already thin there
-      const ps = Math.min(1, Math.sqrt(1.2e6 / (w * h)));
-      const pw = Math.max(1, Math.round(w * ps)), ph = Math.max(1, Math.round(h * ps));
-      let small = ps < 1 ? P.resize(clean, w, h, pw, ph) : clean;
-      // noisy images: pick colours from a calmer copy, so small flat areas still read as flat
-      if (noise > 4.5 && dn < 2) small = P.denoise(small, pw, ph, 2);
-      const labSmall = P.labOf(small, pw * ph);
-      palette = P.buildPalette(labSmall, small, pw, ph, { count: +o.colors || 0, merge: +o.merge || 12, chroma });
-      P.weightChroma(labSmall, chroma);
-      // auto mode: look again for small details the first pass missed
-      if (!(+o.colors)) palette = P.refinePalette(labSmall, small, pw, ph, palette, { merge: +o.merge || 12, chroma });
-    }
+    } else palette = autoPalette(clean, w, h, noise, dn, o, chroma);
     lbl = P.label(labBig, big, W, H, palette, Math.max(2, Math.ceil(s) + 1));
     // a rare colour that is just a mix of two others (anti-aliasing leftovers): drop it and label again
     if (!(o.palette && o.palette.length) && palette.length > 2) {
@@ -69,7 +58,13 @@ export function prepare(rgba, w, h, o) {
       if (keep.length < palette.length) { palette = keep; lbl = P.label(labBig, big, W, H, palette, Math.max(2, Math.ceil(s) + 1)); }
     }
   }
-  if (o.mode !== 'bw' && !(o.palette && o.palette.length) && !(+o.colors)) palette = pruneColours(lbl, W, H, palette, labBig, s, chroma);
+  if (o.mode !== 'bw' && !(o.palette && o.palette.length) && !(+o.colors)) {
+    palette = pruneColours(lbl, W, H, palette, labBig, s, chroma);
+    if (o.flat) relaxBorders(lbl, labBig, palette, W, H, s);
+    if (o.flat) palette = rescueDetails(lbl, labBig, palette, autoPalette(clean, w, h, noise, dn, o, chroma), W, s);
+    // "Fewer" colour detail: every step down takes colours away, closest pairs first
+    if (+o.fewer > 0) palette = fewerColours(lbl, palette, Math.max(2, Math.round(palette.length * FEWER[Math.min(5, +o.fewer)])));
+  }
   const detail = o.detail == null || o.detail === 'auto' ? (noise > 4.5 ? 8 : 2) : +o.detail;
   const minArea = Math.max(1, Math.round(detail * s * s));
   P.despeckle(lbl, W, H, minArea);
@@ -79,6 +74,143 @@ export function prepare(rgba, w, h, o) {
   palette.forEach((p, i) => { p.weight = tot ? cnt[i] / tot : 0; p.hex = P.hex(p.rgb); });
   const bg = P.borderLabel(lbl, W, H);
   return { mode: o.mode === 'bw' ? 'bw' : 'color', lbl, W, H, s, w, h, palette, bg: bg === P.TRANSPARENT ? -1 : bg, denoise: dn, noise, threshold, ms: Date.now() - t0 };
+}
+
+/** The colours of the image, picked from the (smaller) cleaned original: fast, and edges are already thin there. */
+function autoPalette(clean, w, h, noise, dn, o, chroma) {
+  const ps = Math.min(1, Math.sqrt(1.2e6 / (w * h)));
+  const pw = Math.max(1, Math.round(w * ps)), ph = Math.max(1, Math.round(h * ps));
+  let small = ps < 1 ? P.resize(clean, w, h, pw, ph) : clean;
+  // noisy images: pick colours from a calmer copy, so small flat areas still read as flat
+  if (noise > 4.5 && dn < 2) small = P.denoise(small, pw, ph, 2);
+  const labSmall = P.labOf(small, pw * ph);
+  let palette = P.buildPalette(labSmall, small, pw, ph, { count: +o.colors || 0, merge: +o.merge || 12, chroma });
+  P.weightChroma(labSmall, chroma);
+  // auto mode: look again for small details the first pass missed
+  if (!(+o.colors)) palette = P.refinePalette(labSmall, small, pw, ph, palette, { merge: +o.merge || 12, chroma });
+  return palette;
+}
+
+const FEWER = [1, 0.8, 0.65, 0.5, 0.38, 0.28];
+
+/** True when colour c (rgb) looks like a mix of two of `others` (rgb) in Lab: JPEG edges shift a blend's
+    channels apart, so the RGB test alone misses some. */
+function labBlend(c, others, tol = 18) {
+  const C = P.rgbToLab(...c), O = others.map(o => P.rgbToLab(...o));
+  for (let i = 0; i < O.length; i++) for (let j = i + 1; j < O.length; j++) {
+    const a = O[i], b = O[j], vx = b[0] - a[0], vy = b[1] - a[1], vz = b[2] - a[2], vv = vx * vx + vy * vy + vz * vz;
+    if (vv < 1) continue;
+    const ux = C[0] - a[0], uy = C[1] - a[1], uz = C[2] - a[2], t = (ux * vx + uy * vy + uz * vz) / vv;
+    if (t > 0.1 && t < 0.9 && (ux - t * vx) ** 2 + (uy - t * vy) ** 2 + (uz - t * vz) ** 2 < tol * tol) return true;
+  }
+  return false;
+}
+
+/** Merge the two closest colours until `target` are left (a small colour goes sooner than a big one at the
+    same distance). The bigger of the two keeps its colour, so what is left are still the image's own colours,
+    just fewer of them. Changes lbl in place. */
+function fewerColours(lbl, palette, target) {
+  const T = P.TRANSPARENT, K = palette.length;
+  if (K <= target) return palette;
+  const cnt = new Float64Array(K);
+  for (let i = 0; i < lbl.length; i++) if (lbl[i] !== T) cnt[lbl[i]]++;
+  const owner = palette.map((_, k) => k), live = palette.map((_, k) => k);
+  while (live.length > target) {
+    let ba = 0, bb = 1, bd = Infinity;
+    for (let x = 0; x < live.length; x++) for (let y = x + 1; y < live.length; y++) {
+      const p = palette[live[x]].lab, q = palette[live[y]].lab;
+      const d = ((p[0] - q[0]) ** 2 + (p[1] - q[1]) ** 2 + (p[2] - q[2]) ** 2) * Math.sqrt(Math.min(cnt[live[x]], cnt[live[y]]) + 1);
+      if (d < bd) { bd = d; ba = x; bb = y; }
+    }
+    let keep = live[ba], gone = live[bb]; if (cnt[gone] > cnt[keep]) { const t = keep; keep = gone; gone = t; }
+    owner[gone] = keep; cnt[keep] += cnt[gone];
+    live.splice(live.indexOf(gone), 1);
+  }
+  const root = (k) => { while (owner[k] !== k) k = owner[k]; return k; };
+  const idx = new Map(live.map((k, i) => [k, i])), map = palette.map((_, k) => idx.get(root(k)));
+  for (let i = 0; i < lbl.length; i++) if (lbl[i] !== T) lbl[i] = map[lbl[i]];
+  return live.map(k => palette[k]);
+}
+
+/** Remove shading picks each area's outline while merging, and where an area fades into the next (a soft
+    fur edge, a glow) that outline can land anywhere in the fade, even as a straight cut. Move every border
+    pixel to the neighbouring colour it is closer to, until nothing changes: borders settle halfway through
+    each fade and follow its real shape. Colours stay flat; only where one ends and the next begins moves. */
+function relaxBorders(lbl, lab, palette, W, H, s) {
+  const T = P.TRANSPARENT, n = W * H, pl = palette.map(p => p.lab);
+  const d = (i, l) => { const L = pl[l]; return (lab[i * 3] - L[0]) ** 2 + (lab[i * 3 + 1] - L[1]) ** 2 + (lab[i * 3 + 2] - L[2]) ** 2; };
+  let q = new Int32Array(n), qn = 0; const inQ = new Uint8Array(n);
+  const push = (i) => { if (!inQ[i]) { inQ[i] = 1; q[qn++] = i; } };
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    const i = y * W + x, l = lbl[i]; if (l === T) continue;
+    if ((x > 0 && lbl[i - 1] !== l) || (x < W - 1 && lbl[i + 1] !== l) || (y > 0 && lbl[i - W] !== l) || (y < H - 1 && lbl[i + W] !== l)) push(i);
+  }
+  for (let round = 0, rounds = Math.round(6 * s); round < rounds && qn; round++) {
+    const cur = q.subarray(0, qn).slice(); qn = 0;
+    for (const i of cur) inQ[i] = 0;
+    for (const i of cur) {
+      const l = lbl[i]; if (l === T) continue;
+      const x = i % W; let best = l, bd = d(i, l) * 0.8;
+      const nb = [x > 0 ? i - 1 : -1, x < W - 1 ? i + 1 : -1, i - W, i + W];
+      for (const j of nb) { if (j < 0 || j >= n) continue; const m = lbl[j]; if (m === T || m === l) continue; const e = d(i, m); if (e < bd) { bd = e; best = m; } }
+      if (best !== l) { lbl[i] = best; for (const j of nb) if (j >= 0 && j < n && lbl[j] !== T) push(j); }
+    }
+  }
+}
+
+/** Remove shading works on areas, and an area smaller than a letter's stroke can melt into what is around it.
+    Put back what got lost: a pixel far from its area's colour goes to a colour that is much closer to it,
+    taken from the flat palette, or from the image's own colours when it is one the flat palette lacks
+    (a fine green line, say). Shading is never far from its area's colour, so it stays flat. */
+function rescueDetails(lbl, lab, palette, extra, W, s) {
+  const T = P.TRANSPARENT, D = (a, b) => (a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2 + (a[2] - b[2]) ** 2;
+  const pal = [...palette];
+  const rgbs = palette.map(p => p.rgb);
+  for (const e of extra) if (pal.length < 250 && pal.every(p => D(p.lab, e.lab) > 30 * 30) && !P.isBlend(e.rgb, rgbs, 28) && !labBlend(e.rgb, rgbs)) pal.push({ rgb: e.rgb, lab: e.lab, weight: 0 });
+  // between[l][q]: colour q sits partway from colour l to some other colour, so on l's edges q is only the
+  // anti-aliasing towards that colour (grey between white and black), never a detail of its own
+  const K = pal.length, between = new Uint8Array(K * K);
+  for (let l = 0; l < K; l++) for (let q = 0; q < K; q++) {
+    if (q === l) continue;
+    const o = pal[l].lab, Q = pal[q].lab;
+    for (let m = 0; m < K && !between[l * K + q]; m++) {
+      if (m === l || m === q) continue;
+      const M = pal[m].lab, vx = M[0] - o[0], vy = M[1] - o[1], vz = M[2] - o[2], vv = vx * vx + vy * vy + vz * vz;
+      const ux = Q[0] - o[0], uy = Q[1] - o[1], uz = Q[2] - o[2], t = (ux * vx + uy * vy + uz * vz) / vv;
+      if (t > 0.15 && t < 0.85 && (ux - t * vx) ** 2 + (uy - t * vy) ** 2 + (uz - t * vz) ** 2 < 12 * 12) between[l * K + q] = 1;
+    }
+  }
+  const used = new Uint8Array(pal.length), c = [0, 0, 0], n = lbl.length, R = Math.max(1, Math.round(s)) + 1;
+  // a detail has a sharp edge within a couple of pixels; a smooth highlight or shadow does not
+  const dl = (i, j) => j < 0 || j >= n ? 0 : (lab[i * 3] - lab[j * 3]) ** 2 + (lab[i * 3 + 1] - lab[j * 3 + 1]) ** 2 + (lab[i * 3 + 2] - lab[j * 3 + 2]) ** 2;
+  const edgy = (i) => Math.max(dl(i, i - R), dl(i, i + R), dl(i, i - R * W), dl(i, i + R * W)) > 20 * 20;
+  for (let i = 0; i < lbl.length; i++) {
+    const l = lbl[i]; if (l === T) continue;
+    c[0] = lab[i * 3]; c[1] = lab[i * 3 + 1]; c[2] = lab[i * 3 + 2];
+    const dOwn = D(c, pal[l].lab);
+    if (dOwn > 20 * 20 && edgy(i)) {
+      const o = pal[l].lab, ux = c[0] - o[0], uy = c[1] - o[1], uz = c[2] - o[2];
+      let best = l, bd = dOwn * 0.6, br = Infinity;
+      for (let q = 0; q < pal.length; q++) {
+        if (q === l || between[l * K + q]) continue;
+        const Q = pal[q].lab, d = D(c, Q);
+        if (d < bd) { bd = d; best = q; br = -1; continue; }   // simply much closer to another colour
+        if (br < 0) continue;
+        // or an anti-aliased mix of its area's colour and this one, at least 35 % this one (a thin line or letter)
+        const vx = Q[0] - o[0], vy = Q[1] - o[1], vz = Q[2] - o[2], vv = vx * vx + vy * vy + vz * vz;
+        const t = (ux * vx + uy * vy + uz * vz) / vv; if (t < 0.35 || t > 1.3) continue;
+        const r = (ux - t * vx) ** 2 + (uy - t * vy) ** 2 + (uz - t * vz) ** 2;
+        if (r < 0.12 * dOwn + 36 && r < br) { br = r; best = q; }
+      }
+      lbl[i] = best;
+    }
+    used[lbl[i]] = 1;
+  }
+  // only keep the added colours that were used
+  const map = new Int32Array(pal.length), out = [];
+  pal.forEach((p, q) => { if (q < palette.length || used[q]) { map[q] = out.length; out.push(p); } });
+  if (out.length < pal.length) for (let i = 0; i < lbl.length; i++) if (lbl[i] !== T) lbl[i] = map[lbl[i]];
+  return out;
 }
 
 /** Drop colours that are only edge blends or noise, not colours of the art: anti-aliased borders between two
@@ -103,10 +235,13 @@ function pruneColours(lbl, W, H, palette, lab, s, chroma) {
     const drop = palette.map((p, k) => {
       if (!cnt[k]) return true;
       const inner = core[k] / cnt[k], share = cnt[k] / tot;
-      if (inner < (share < 0.01 ? 0.5 : 0.25) && P.isBlend(p.rgb, rgbs.filter((_, j) => j !== k), 28)) return true;   // a band between two colours
-      if (share < 0.02 && inner < 0.1) return true;                                           // speckle
-      // a slightly-off copy of a bigger colour (JPEG edges, shading left over)
-      return inner < 0.3 && labs.some((L, j) => cnt[j] > cnt[k] && (L[0] - labs[k][0]) ** 2 + (L[1] - labs[k][1]) ** 2 + (L[2] - labs[k][2]) ** 2 < 144);
+      const others = rgbs.filter((_, j) => j !== k);
+      if (inner < (share < 0.01 ? 0.6 : 0.25) && (P.isBlend(p.rgb, others, 28) || labBlend(p.rgb, others))) return true;   // a band between two colours
+      // the closest bigger colour: a thin colour of its own (a fine line, small lettering) is a detail, not noise
+      let dMin = Infinity;
+      labs.forEach((L, j) => { if (j !== k && cnt[j] > cnt[k]) dMin = Math.min(dMin, (L[0] - labs[k][0]) ** 2 + (L[1] - labs[k][1]) ** 2 + (L[2] - labs[k][2]) ** 2); });
+      if (share < 0.02 && inner < 0.1 && dMin < 625) return true;                             // speckle
+      return inner < 0.3 && dMin < 144;                                                       // a slightly-off copy of a bigger colour
     });
     // never fall below two colours: the biggest ones stay
     const order = [...cnt.keys()].sort((a, b) => cnt[b] - cnt[a]);
@@ -115,10 +250,12 @@ function pruneColours(lbl, W, H, palette, lab, s, chroma) {
     const map = new Int32Array(K).fill(-1); const kept = [];
     palette.forEach((p, k) => { if (!drop[k]) { map[k] = kept.length; kept.push(p); } });
     const kl = kept.map(labOfP);
-    const near = (i, cand) => {
-      const a = lab[i * 3], b = lab[i * 3 + 1], c = lab[i * 3 + 2];
+    // closest by the pixel itself plus the colour it had: a band halfway between two colours splits along the
+    // real border, while thin dark lettering (whose pixels are mostly blended) stays with the dark colour
+    const near = (i, cand, l) => {
+      const a = lab[i * 3], b = lab[i * 3 + 1], c = lab[i * 3 + 2], o = labs[l];
       let best = -1, bd = Infinity;
-      for (const q of cand) { const L = kl[q], d = (L[0] - a) ** 2 + (L[1] - b) ** 2 + (L[2] - c) ** 2; if (d < bd) { bd = d; best = q; } }
+      for (const q of cand) { const L = kl[q], d = (L[0] - a) ** 2 + (L[1] - b) ** 2 + (L[2] - c) ** 2 + (L[0] - o[0]) ** 2 + (L[1] - o[1]) ** 2 + (L[2] - o[2]) ** 2; if (d < bd) { bd = d; best = q; } }
       return best;
     };
     const all = kept.map((_, q) => q);
@@ -133,7 +270,7 @@ function pruneColours(lbl, W, H, palette, lab, s, chroma) {
         const xx = x + dx, yy = y + dy; if (xx < 0 || yy < 0 || xx >= W || yy >= H) continue;
         const m = lbl[yy * W + xx]; if (m !== T && map[m] >= 0) cand.add(map[m]);
       }
-      out[i] = near(i, cand.size ? cand : all);
+      out[i] = near(i, cand.size ? cand : all, l);
     }
     lbl.set(out);
     palette = kept;
@@ -148,7 +285,9 @@ export function toSvg(prep, o) {
   const skip = new Set([P.TRANSPARENT, ...(o.hidden || [])]);
   // background: in black & white it is the paper; in colour, the colour that owns the image border
   if (o.removeBg) skip.add(prep.mode === 'bw' ? 0 : prep.bg);
-  const res = trace(lbl, W, H, { smooth: o.smooth ?? 5, corners: o.corners ?? 5, eps: o.eps, workScale: prep.s, scale: w / W, stacked: !o.cutout, skip });
+  const opts = { smooth: o.smooth ?? 5, corners: o.corners ?? 5, eps: o.eps, workScale: prep.s, scale: w / W, stacked: !o.cutout, skip };
+  if (o.objects && o.objects.length) return layeredSvg(prep, o, opts, t0);
+  const res = trace(lbl, W, H, opts);
   const body = [];
   for (const r of res.regions) {
     const last = body[body.length - 1];
@@ -159,6 +298,63 @@ export function toSvg(prep, o) {
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">\n${svgBody}\n</svg>\n`;
   const layers = palette.map((p, i) => ({ i, hex: p.hex, d: res.regions.filter(r => r.label === i).map(r => r.d) })).filter(l => l.d.length);
   return { svg, layers, paths: res.regions.length, bytes: svg.length, ms: Date.now() - t0 };
+}
+
+/* ---------- object layers ----------
+   o.objects: the picked objects (layers.js); o.layerNames: a name per object; o.layerHidden: layer numbers
+   left out (0 = everything else). Each pixel's label becomes colour + K × layer, so a colour that runs
+   from one object into another is cut where they meet, and every layer is a group of its own shapes. */
+const XMLNS = 'xmlns="http://www.w3.org/2000/svg" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"';
+const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+export const layerId = (name, k) => 'layer-' + k + (String(name).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40) ? '-' + String(name).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40) : '');
+const layerName = (o, k) => k ? (o.layerNames && o.layerNames[k - 1]) || `Layer ${k}` : 'Everything else';
+const group = (o, k, inner) => `<g id="${layerId(layerName(o, k), k)}" inkscape:groupmode="layer" inkscape:label="${esc(layerName(o, k))}">\n${inner}\n</g>`;
+// paint order: everything else first, then each layer in the order it was picked
+const groupOrder = (n) => Array.from({ length: n + 1 }, (_, k) => k);
+
+function layeredSvg(prep, o, opts, t0) {
+  const { lbl, W, H, w, h, palette } = prep;
+  const K = palette.length, n = W * H, NO = 65535;
+  const map = objectMap(lbl, W, H, w, h, o.objects, { s: prep.s });
+  const L = o.objects.length, hiddenL = new Set(o.layerHidden || []);
+  const lab = new Uint16Array(n);
+  for (let i = 0; i < n; i++) lab[i] = lbl[i] === P.TRANSPARENT ? NO : map[i] * K + lbl[i];
+  const skip = new Set([NO]);
+  for (let k = 0; k <= L; k++) for (let c = 0; c < K; c++) if (hiddenL.has(k) || opts.skip.has(c)) skip.add(k * K + c);
+  const res = trace(lab, W, H, { ...opts, skip, group: (l) => l === NO ? -1 : (l / K) | 0 });
+  const byLayer = groupOrder(L).map(() => []);
+  for (const r of res.regions) byLayer[(r.label / K) | 0].push(r);
+  const rule = o.cutout ? ' fill-rule="evenodd"' : '';
+  const parts = [], layers = [], head = `<svg ${XMLNS} width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">\n`;
+  for (const k of groupOrder(L)) {
+    const regs = byLayer[k];
+    if (!regs.length) continue;
+    const body = [];
+    for (const r of regs) {
+      const c = r.label % K, last = body[body.length - 1];
+      if (last && last.c === c) last.d.push(r.d); else body.push({ c, d: [r.d] });
+    }
+    parts.push(group(o, k, body.map(g => `<path fill="${palette[g.c].hex}"${rule} d="${g.d.join('')}"/>`).join('\n')));
+    layers.push({ k, name: layerName(o, k), svg: head + parts[parts.length - 1] + '\n</svg>\n' });
+  }
+  const svg = `${head}${parts.join('\n')}\n</svg>\n`;
+  return { svg, layers: [], objLayers: layers, objMap: map, paths: res.regions.length, bytes: svg.length, ms: Date.now() - t0 };
+}
+
+// Detailed and pixel-exact traces are made of many small regions: each joins the layer most of it is in
+function regionLayers(rid, R, W, H, w, h, o) {
+  if (!o.objects || !o.objects.length) return null;
+  const map = objectMap(rid, W, H, w, h, o.objects, { regions: true });
+  const rg = new Uint8Array(R);
+  for (let i = 0; i < rid.length; i++) if (rid[i] >= 0) rg[rid[i]] = map[i];
+  return { map, rg, hidden: new Set(o.layerHidden || []), L: o.objects.length };
+}
+// rid with the regions of hidden layers taken out, for the painted preview
+function hideRegions(rid, lay) {
+  if (!lay || !lay.hidden.size) return rid;
+  const out = new Int32Array(rid.length);
+  for (let i = 0; i < rid.length; i++) out[i] = rid[i] >= 0 && lay.hidden.has(lay.rg[rid[i]]) ? -1 : rid[i];
+  return out;
 }
 
 
@@ -172,25 +368,33 @@ export function toSvg(prep, o) {
 const DETAIL = { 1: { k: 40, min: 8 }, 2: { k: 16, min: 5 }, 3: { k: 8, min: 3 } };
 export function traceDetailed(rgba, w, h, o = {}, progress = () => {}) {
   const t0 = Date.now();
-  const { W, H, s } = workSize(w, h, o.quality || 'high');
-  const big = P.resize(rgba, w, h, W, H);
-  const D = DETAIL[o.detail] || DETAIL[2];
-  progress('regions');
-  const { rid, regions } = segment(big, W, H, { sigma: 0.8, k: D.k * Math.max(1, s), minSize: Math.round(D.min * s * s) });
-  const sum = new Float64Array(regions * 4);
-  for (let i = 0; i < W * H; i++) { const r = rid[i]; if (r < 0) continue; sum[r * 4] += big[i * 4]; sum[r * 4 + 1] += big[i * 4 + 1]; sum[r * 4 + 2] += big[i * 4 + 2]; sum[r * 4 + 3]++; }
-  const hexOf = (r) => '#' + [0, 1, 2].map(c => Math.round(sum[r * 4 + c] / sum[r * 4 + 3]).toString(16).padStart(2, '0')).join('');
-  let fills;
-  if (o.gradients !== false) {
-    progress('shading');
-    // pixels per region (a sample of up to ~4000 for big regions keeps the fit quick)
-    const px = Array.from({ length: regions }, () => []);
-    for (let i = 0; i < W * H; i++) { const r = rid[i]; if (r < 0) continue; const c = sum[r * 4 + 3]; if (c < 4000 || i % Math.floor(c / 4000) === 0) px[r].push(i); }
-    fills = px.map((ix, r) => fit(ix, big, W, hexOf(r), sum[r * 4 + 3], { minArea: 60 * s * s, flatErr: 2 }));
-  } else fills = Array.from({ length: regions }, (_, r) => ({ hex: hexOf(r) }));
-  progress('curves');
-  const k = w / W;
-  const res = trace(rid, W, H, { smooth: o.smooth ?? 5, corners: o.corners ?? 5, workScale: s, scale: k, stacked: false, skip: new Set([-1]) });
+  // o.cache (an object the caller keeps): the regions, fills and curves are reused when only the layers change
+  const key = JSON.stringify(['d', w, h, o.quality, o.detail, o.gradients, o.smooth, o.corners]);
+  let C = o.cache && o.cache.key === key ? o.cache.v : null;
+  if (!C) {
+    const { W, H, s } = workSize(w, h, o.quality || 'high');
+    const big = P.resize(rgba, w, h, W, H);
+    const D = DETAIL[o.detail] || DETAIL[2];
+    progress('regions');
+    const { rid, regions } = segment(big, W, H, { sigma: 0.8, k: D.k * Math.max(1, s), minSize: Math.round(D.min * s * s) });
+    const sum = new Float64Array(regions * 4);
+    for (let i = 0; i < W * H; i++) { const r = rid[i]; if (r < 0) continue; sum[r * 4] += big[i * 4]; sum[r * 4 + 1] += big[i * 4 + 1]; sum[r * 4 + 2] += big[i * 4 + 2]; sum[r * 4 + 3]++; }
+    const hexOf = (r) => '#' + [0, 1, 2].map(c => Math.round(sum[r * 4 + c] / sum[r * 4 + 3]).toString(16).padStart(2, '0')).join('');
+    let fills;
+    if (o.gradients !== false) {
+      progress('shading');
+      // pixels per region (a sample of up to ~4000 for big regions keeps the fit quick)
+      const px = Array.from({ length: regions }, () => []);
+      for (let i = 0; i < W * H; i++) { const r = rid[i]; if (r < 0) continue; const c = sum[r * 4 + 3]; if (c < 4000 || i % Math.floor(c / 4000) === 0) px[r].push(i); }
+      fills = px.map((ix, r) => fit(ix, big, W, hexOf(r), sum[r * 4 + 3], { minArea: 60 * s * s, flatErr: 2 }));
+    } else fills = Array.from({ length: regions }, (_, r) => ({ hex: hexOf(r) }));
+    progress('curves');
+    const k = w / W;
+    const res = trace(rid, W, H, { smooth: o.smooth ?? 5, corners: o.corners ?? 5, workScale: s, scale: k, stacked: false, skip: new Set([-1]) });
+    C = { W, H, s, rid, regions, fills, res, k };
+    if (o.cache) { o.cache.key = key; o.cache.v = C; }
+  }
+  const { W, H, rid, regions, fills, res, k } = C;
   const defs = [], f = (v) => +(v * k).toFixed(1);
   const paint = fills.map((F) => {
     if (!F.type) return F.hex;
@@ -200,14 +404,27 @@ export function traceDetailed(rgba, w, h, o = {}, progress = () => {}) {
     return `url(#${id})`;
   });
   // shapes never overlap (holes are cut), so the stroke layer underneath only ever shows through seams
-  const ids = [], under = [], over = [];
+  const lay = regionLayers(rid, regions, W, H, w, h, o);
+  const ids = [], under = [], over = [], gu = [], go = [], gi = [];
+  let drawn = 0;
   res.regions.forEach((r, i) => {
+    const k = lay ? lay.rg[r.label] : 0;
+    if (lay && lay.hidden.has(k)) return;
     const id = 'p' + i.toString(36), pt = paint[r.label];
-    ids.push(`<path id="${id}" d="${r.d}"/>`); under.push(`<use xlink:href="#${id}" stroke="${pt}"/>`); over.push(`<use xlink:href="#${id}" fill="${pt}"/>`);
+    (lay ? (gi[k] ||= []) : ids).push(`<path id="${id}" d="${r.d}"/>`);
+    (lay ? (gu[k] ||= []) : under).push(`<use xlink:href="#${id}" stroke="${pt}"/>`);
+    (lay ? (go[k] ||= []) : over).push(`<use xlink:href="#${id}" fill="${pt}"/>`);
+    drawn++;
   });
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">\n<defs>${defs.join('')}\n${ids.join('\n')}</defs>\n<g fill="none" stroke-width="1.2" stroke-linejoin="round">${under.join('')}</g>\n<g fill-rule="evenodd">${over.join('')}</g>\n</svg>\n`;
-  return { svg, paths: res.regions.length, regions, gradients: defs.length, bytes: svg.length, ms: Date.now() - t0,
-    ...(o.preview ? { preview: paintFills(rid, W, H, fills, w, h) } : {}) };
+  const U = (a) => `<g fill="none" stroke-width="1.2" stroke-linejoin="round">${a.join('')}</g>`, O = (a) => `<g fill-rule="evenodd">${a.join('')}</g>`;
+  // with layers, each layer carries its own shapes, so it can also be saved on its own
+  const head = `<svg ${lay ? XMLNS : 'xmlns="http://www.w3.org/2000/svg"'} xmlns:xlink="http://www.w3.org/1999/xlink" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">\n<defs>${defs.join('')}\n${ids.join('\n')}</defs>\n`;
+  const groups = lay ? groupOrder(lay.L).filter(k => go[k]).map(k => ({ k, g: group(o, k, `<defs>${gi[k].join('\n')}</defs>\n` + U(gu[k]) + '\n' + O(go[k])) })) : null;
+  const body = groups ? groups.map(x => x.g).join('\n') : U(under) + '\n' + O(over);
+  const svg = `${head}${body}\n</svg>\n`;
+  return { svg, paths: drawn, regions, gradients: defs.length, bytes: svg.length, ms: Date.now() - t0, objMap: lay && lay.map, work: [W, H],
+    objLayers: groups && groups.map(x => ({ k: x.k, name: layerName(o, x.k), svg: `${head}${x.g}\n</svg>\n` })),
+    ...(o.preview ? { preview: paintFills(hideRegions(rid, lay), W, H, fills, w, h) } : {}) };
 }
 
 /* ============================================================
@@ -220,61 +437,72 @@ export function traceDetailed(rgba, w, h, o = {}, progress = () => {}) {
 const ROUNDS = [{ k: 8, minSize: 3, sigma: 0.8 }, { k: 3, minSize: 2, sigma: 0.5 }, { k: 1.2, minSize: 1, sigma: 0 }, { k: 0.4, minSize: 1, sigma: 0 }, { k: 0.01, minSize: 1, sigma: 0 }];
 export function traceExact(rgba, w, h, o = {}, progress = () => {}) {
   const t0 = Date.now();
-  const W = w, H = h, n = W * H, tol = o.tol ?? 4;
-  // fully transparent pixels stay empty; colours are taken as painted over nothing (alpha is not traced)
-  progress('regions');
-  let { rid, regions: R } = segment(rgba, W, H, ROUNDS[0]);
-  let fills = null, errs = null;
-  const rounds = Math.min(ROUNDS.length, o.rounds ?? ROUNDS.length);
-  for (let round = 0; ; round++) {
-    progress('shading', round);
-    // pixels of each region, contiguous (counting sort)
-    const cnt = new Int32Array(R + 1);
-    for (let i = 0; i < n; i++) if (rid[i] >= 0) cnt[rid[i] + 1]++;
-    for (let r = 0; r < R; r++) cnt[r + 1] += cnt[r];
-    const pix = new Int32Array(cnt[R]), pos = cnt.slice(0, R);
-    for (let i = 0; i < n; i++) if (rid[i] >= 0) pix[pos[rid[i]]++] = i;
-    fills = new Array(R); errs = new Float32Array(R);
-    for (let r = 0; r < R; r++) {
-      let ix = pix.subarray(cnt[r], cnt[r + 1]);
-      // big regions: fit on an even sample (the error is then a close estimate)
-      if (ix.length > 6000) { const st = ix.length / 6000, sm = new Int32Array(6000); for (let k = 0; k < 6000; k++) sm[k] = ix[Math.floor(k * st)]; ix = sm; }
-      const f = fitExact(ix, rgba, W, { tol });
-      fills[r] = f.fill; errs[r] = f.e;
+  const key = JSON.stringify(['x', w, h, o.tol, o.rounds]);
+  let C = o.cache && o.cache.key === key ? o.cache.v : null;
+  if (!C) {
+    const W = w, H = h, n = W * H, tol = o.tol ?? 4;
+    // fully transparent pixels stay empty; colours are taken as painted over nothing (alpha is not traced)
+    progress('regions');
+    let { rid, regions: R } = segment(rgba, W, H, ROUNDS[0]);
+    let fills = null, errs = null;
+    const rounds = Math.min(ROUNDS.length, o.rounds ?? ROUNDS.length);
+    for (let round = 0; ; round++) {
+      progress('shading', round);
+      // pixels of each region, contiguous (counting sort)
+      const cnt = new Int32Array(R + 1);
+      for (let i = 0; i < n; i++) if (rid[i] >= 0) cnt[rid[i] + 1]++;
+      for (let r = 0; r < R; r++) cnt[r + 1] += cnt[r];
+      const pix = new Int32Array(cnt[R]), pos = cnt.slice(0, R);
+      for (let i = 0; i < n; i++) if (rid[i] >= 0) pix[pos[rid[i]]++] = i;
+      fills = new Array(R); errs = new Float32Array(R);
+      for (let r = 0; r < R; r++) {
+        let ix = pix.subarray(cnt[r], cnt[r + 1]);
+        // big regions: fit on an even sample (the error is then a close estimate)
+        if (ix.length > 6000) { const st = ix.length / 6000, sm = new Int32Array(6000); for (let k = 0; k < 6000; k++) sm[k] = ix[Math.floor(k * st)]; ix = sm; }
+        const f = fitExact(ix, rgba, W, { tol });
+        fills[r] = f.fill; errs[r] = f.e;
+      }
+      if (round + 1 >= rounds) break;
+      // regions still off by more than tol are split again, along their own finer edges
+      const bad = new Uint8Array(R); let nb = 0;
+      for (let r = 0; r < R; r++) if (errs[r] > tol && cnt[r + 1] - cnt[r] > 1) { bad[r] = 1; nb++; }
+      if (!nb) break;
+      progress('regions', round + 1);
+      const masked = new Uint8ClampedArray(rgba);
+      for (let i = 0; i < n; i++) if (rid[i] < 0 || !bad[rid[i]]) masked[i * 4 + 3] = 0;
+      const sub = segment(masked, W, H, ROUNDS[round + 1]);
+      // new id = the old region for good pixels, (old region, sub region) for re-split ones
+      // a sub region nearly always lies inside one old region: remember that pair per sub region, Map only for the rest
+      const map = new Map(); let next = 0; const keep = new Int32Array(R).fill(-1); const nr = new Int32Array(n);
+      const subOld = new Int32Array(sub.regions).fill(-1), subNew = new Int32Array(sub.regions);
+      for (let i = 0; i < n; i++) {
+        const r = rid[i]; if (r < 0) { nr[i] = -1; continue; }
+        if (!bad[r]) { if (keep[r] < 0) keep[r] = next++; nr[i] = keep[r]; continue; }
+        const q = sub.rid[i];
+        if (subOld[q] === r) { nr[i] = subNew[q]; continue; }
+        if (subOld[q] < 0) { subOld[q] = r; nr[i] = subNew[q] = next++; continue; }
+        const key = r * 4294967296 + q; let v = map.get(key);
+        if (v === undefined) { v = next++; map.set(key, v); }
+        nr[i] = v;
+      }
+      rid = nr; R = next;
     }
-    if (round + 1 >= rounds) break;
-    // regions still off by more than tol are split again, along their own finer edges
-    const bad = new Uint8Array(R); let nb = 0;
-    for (let r = 0; r < R; r++) if (errs[r] > tol && cnt[r + 1] - cnt[r] > 1) { bad[r] = 1; nb++; }
-    if (!nb) break;
-    progress('regions', round + 1);
-    const masked = new Uint8ClampedArray(rgba);
-    for (let i = 0; i < n; i++) if (rid[i] < 0 || !bad[rid[i]]) masked[i * 4 + 3] = 0;
-    const sub = segment(masked, W, H, ROUNDS[round + 1]);
-    // new id = the old region for good pixels, (old region, sub region) for re-split ones
-    // a sub region nearly always lies inside one old region: remember that pair per sub region, Map only for the rest
-    const map = new Map(); let next = 0; const keep = new Int32Array(R).fill(-1); const nr = new Int32Array(n);
-    const subOld = new Int32Array(sub.regions).fill(-1), subNew = new Int32Array(sub.regions);
-    for (let i = 0; i < n; i++) {
-      const r = rid[i]; if (r < 0) { nr[i] = -1; continue; }
-      if (!bad[r]) { if (keep[r] < 0) keep[r] = next++; nr[i] = keep[r]; continue; }
-      const q = sub.rid[i];
-      if (subOld[q] === r) { nr[i] = subNew[q]; continue; }
-      if (subOld[q] < 0) { subOld[q] = r; nr[i] = subNew[q] = next++; continue; }
-      const key = r * 4294967296 + q; let v = map.get(key);
-      if (v === undefined) { v = next++; map.set(key, v); }
-      nr[i] = v;
-    }
-    rid = nr; R = next;
+    progress('curves');
+    const res = trace(rid, W, H, { exact: true, smooth: 0, corners: 10, workScale: 1, scale: 1, stacked: false, skip: new Set([-1]) });
+    C = { W, H, rid, R, fills, errs, res };
+    if (o.cache) { o.cache.key = key; o.cache.v = C; }
   }
-  progress('curves');
-  const res = trace(rid, W, H, { exact: true, smooth: 0, corners: 10, workScale: 1, scale: 1, stacked: false, skip: new Set([-1]) });
-  // flat colours: one path per colour; gradients: one path each
-  const defs = [], byHex = new Map(), body = [];
+  const { W, H, rid, R, fills, errs, res } = C;
+  // flat colours: one path per colour (per layer); gradients: one path each
+  const lay = regionLayers(rid, R, W, H, w, h, o);
+  const defs = [], byHex = new Map(), body = [], gb = [];
   const num = (v) => String(+v.toFixed(1));
+  let drawn = 0, colours = new Set();
   for (const r of res.regions) {
-    const F = fills[r.label];
-    if (!F.type) { let a = byHex.get(F.hex); if (!a) byHex.set(F.hex, a = []); a.push(r.d); continue; }
+    const F = fills[r.label], k = lay ? lay.rg[r.label] : 0;
+    if (lay && lay.hidden.has(k)) continue;
+    drawn++;
+    if (!F.type) { colours.add(F.hex); const key = k + F.hex; let a = byHex.get(key); if (!a) byHex.set(key, a = [k, F.hex]); a.push(r.d); continue; }
     const id = 'g' + defs.length.toString(36);
     const st = F.stops.map(q => `<stop offset="${q.t}" stop-color="${q.hex}"/>`).join('');
     if (F.type === 'linear') defs.push(`<linearGradient id="${id}" gradientUnits="userSpaceOnUse" x1="${num(F.x1)}" y1="${num(F.y1)}" x2="${num(F.x2)}" y2="${num(F.y2)}">${st}</linearGradient>`);
@@ -282,13 +510,18 @@ export function traceExact(rgba, w, h, o = {}, progress = () => {}) {
       const Rr = Math.max(F.r, 1e-3);
       defs.push(`<radialGradient id="${id}" gradientUnits="userSpaceOnUse" cx="${num(F.cx)}" cy="${num(F.cy)}" r="${num(Rr)}">${F.stops.map(q => `<stop offset="${((F.r0 + q.t * (F.r - F.r0)) / Rr).toFixed(4)}" stop-color="${q.hex}"/>`).join('')}</radialGradient>`);
     }
-    body.push([`url(#${id})`, r.d]);
+    (gb[k] ||= []).push([`url(#${id})`, r.d]);
   }
-  for (const [hx, ds] of byHex) body.unshift([hx, ds.join('')]);
+  for (const [k, hx, ...ds] of [...byHex.values()].reverse()) (gb[k] ||= []).unshift([hx, ds.join('')]);
+  const paths = (a) => a.map(([pt, d]) => `<path fill="${pt}" d="${d}"/>`).join('\n');
+  const groups = lay ? groupOrder(lay.L).filter(k => gb[k]).map(k => ({ k, g: group(o, k, paths(gb[k])) })) : null;
+  const inner = groups ? groups.map(x => x.g).join('\n') : paths(gb[0] || []);
   // crispEdges: the shapes tile the pixel grid exactly, so no edge needs smoothing and no hairline seams appear
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" shape-rendering="crispEdges" fill-rule="evenodd">\n${defs.length ? '<defs>' + defs.join('') + '</defs>\n' : ''}${body.map(([pt, d]) => `<path fill="${pt}" d="${d}"/>`).join('\n')}\n</svg>\n`;
-  return { svg, paths: res.regions.length, regions: R, gradients: defs.length, colours: byHex.size, bytes: svg.length, ms: Date.now() - t0,
-    ...(o.preview ? { preview: paintFills(rid, W, H, fills, w, h) } : {}), ...(o.debug ? { rid, fills, errs } : {}) };
+  const head = `<svg ${lay ? XMLNS : 'xmlns="http://www.w3.org/2000/svg"'} width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" shape-rendering="crispEdges" fill-rule="evenodd">\n${defs.length ? '<defs>' + defs.join('') + '</defs>\n' : ''}`;
+  const svg = `${head}${inner}\n</svg>\n`;
+  return { svg, paths: drawn, regions: R, gradients: defs.length, colours: colours.size, bytes: svg.length, ms: Date.now() - t0, objMap: lay && lay.map, work: [W, H],
+    objLayers: groups && groups.map(x => ({ k: x.k, name: layerName(o, x.k), svg: `${head}${x.g}\n</svg>\n` })),
+    ...(o.preview ? { preview: paintFills(hideRegions(rid, lay), W, H, fills, w, h) } : {}), ...(o.debug ? { rid, fills, errs } : {}) };
 }
 
 /* ============================================================

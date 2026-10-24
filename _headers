@@ -18,6 +18,11 @@
   Cross-Origin-Opener-Policy: same-origin
   Cross-Origin-Embedder-Policy: credentialless
 
+# SVG tracer: the same, so its object finder runs on several CPU threads
+/svg-tracer
+  Cross-Origin-Opener-Policy: same-origin
+  Cross-Origin-Embedder-Policy: credentialless
+
 # Pendant studio: the AI models and runtime never change under the same name
 /generators/pendant/ai/*
   Cache-Control: public, max-age=2592000

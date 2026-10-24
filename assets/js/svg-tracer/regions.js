@@ -79,11 +79,12 @@ export function blurLab(lab, W, H, sigma) {
 /* ---------------- remove shading ---------------- */
 // strength presets: soft = mean edge strength a border may have and still be merged; spread = how far
 // the colours inside one area may wander (stops photos from melting into a few huge blobs);
-// wL = weight of lightness against colour; maxDiff = largest jump between the two areas' averages
+// wL = weight of lightness against colour; maxDiff = largest jump between the two areas' averages;
+// hue = largest change in the colour itself (a and b, lightness aside)
 const LEVELS = {
-  1: { soft: 10, spread: 5, wL: 1, maxDiff: 30 },        // light: photos and detailed art keep their tones
-  2: { soft: 10, spread: 7, wL: 0.8, maxDiff: 38 },
-  3: { soft: 8, spread: Infinity, wL: 0.6, maxDiff: 45 }, // strong: every shaded area becomes one colour
+  1: { soft: 10, spread: 5, wL: 1, maxDiff: 30, hue: 22 },        // light: photos and detailed art keep their tones
+  2: { soft: 10, spread: 7, wL: 0.8, maxDiff: 38, hue: 24 },
+  3: { soft: 8, spread: Infinity, wL: 0.6, maxDiff: 45, hue: 26 }, // strong: every shaded area becomes one colour
 };
 
 /**
@@ -119,10 +120,15 @@ export function flatten(big, W, H, o = {}) {
   const minArea = 30 * s * s, alive = new Uint8Array(R).fill(1), ver = new Int32Array(R), par = new Int32Array(R);
   for (let i = 0; i < R; i++) par[i] = i;
   const cost = (a, b, e) => {
-    if (Math.min(cnt[a], cnt[b]) < minArea) return e.s / e.c * 0.01;     // specks always go, into the softest neighbour
     const na = cnt[a], nb = cnt[b];
     const dl = (sL[a] / na - sL[b] / nb) * wL, da = sa[a] / na - sa[b] / nb, db = sb[a] / na - sb[b] / nb;
-    if (Math.sqrt(dl * dl + da * da + db * db) > L.maxDiff) return Infinity;
+    const diff = Math.sqrt(dl * dl + da * da + db * db);
+    // specks go into the softest neighbour, unless they stand out clearly (small lettering, dots, fine lines)
+    if (Math.min(na, nb) < minArea && (diff < 25 || Math.min(na, nb) < 4 * s * s)) return e.s / e.c * 0.01;
+    if (diff > L.maxDiff) return Infinity;
+    // shading mostly changes lightness; two areas that differ this much in the colour itself (a pink muzzle on
+    // an orange face) are different parts, however soft the border between them
+    if (da * da + db * db > L.hue * L.hue) return Infinity;
     if (L.spread < Infinity) {
       const N = na + nb, mL = (sL[a] + sL[b]) / N * wL, ma = (sa[a] + sa[b]) / N, mb = (sb[a] + sb[b]) / N;
       if (Math.sqrt(Math.max(0, (q2[a] + q2[b]) / N - mL * mL - ma * ma - mb * mb)) > L.spread) return Infinity;
