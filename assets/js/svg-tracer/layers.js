@@ -101,7 +101,7 @@ export function objectMap(lbl, W, H, w, h, objs, o = {}) {
       if (o.regions) return;
       const x = Math.min(W - 1, Math.max(0, Math.floor(ob.x * W / w))), y = Math.min(H - 1, Math.max(0, Math.floor(ob.y * H / h)));
       const within = ob.within && sampler(ob.within, W, H);
-      const m = shapeAt(lbl, W, H, y * W + x, Math.max(1, Math.round(2 * (o.s || 1))), within && ((i) => within(i) > 64));
+      const m = shapeAt(lbl, W, H, y * W + x, Math.max(2, Math.round(3 * (o.s || 1))), within && ((i) => within(i) > 64));
       for (let i = 0; i < n; i++) if (m[i]) map[i] = id;
       return;
     }

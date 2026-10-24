@@ -7,7 +7,7 @@
 import * as P from './prep.js?v=469c7cc377';
 import { vectorize as trace } from './vectorize.js?v=c1cac59615';
 import { segment, flatten, fit, fitExact } from './regions.js?v=c896e2b9bf';
-import { objectMap } from './layers.js?v=a8d3195749';
+import { objectMap } from './layers.js?v=5eb73171e4';
 
 /** Working size: small images are enlarged (edges land between pixels, so curves come out smooth),
     huge ones are capped so the browser stays quick. */
